@@ -225,328 +225,150 @@
   </main>
 
   <script>
-  // ---------- Helpers ----------
-  const $ = (sel,root=document)=>root.querySelector(sel);
-  const $$ = (sel,root=document)=>Array.from(root.querySelectorAll(sel));
-  const esc = (s='')=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('\"','&quot;').replaceAll(\"'\",\"&#039;\");
-  const pad = n=>String(n).padStart(2,'0');
-  const fmtTime = d=>\`\${pad(d.getHours())}:\${pad(d.getMinutes())}:\${pad(d.getSeconds())}\`;
-  const id = p=>\`\${p}_\${Date.now().toString(36)}_\${Math.random().toString(36).slice(2,8)}\`;
-  const debounce = (fn,ms=300)=>{let t;return (...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms)}};
+// ===================== Config & Helpers =====================
+const STORAGE_KEY = 'football_state_ce_v2_min';
+const $   = (s, r=document)=>r.querySelector(s);
+const esc = (s='')=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;')
+                            .replaceAll('>','&gt;').replaceAll('"','&quot;')
+                            .replaceAll("'","&#039;");
+const id  = p=>`${p}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,8)}`;
 
-  // ---------- State ----------
-  const STORAGE_KEY = 'football_state_ce_v2';
-  const SCHEMA_VERSION = 2;
-  let state = {
-    schemaVersion: SCHEMA_VERSION,
-    currentWeek: 1,
-    teams: [], /* {id,name,logo,members:[{id,name,age,position,number,phone,birthdate,photo,joinDate}], table fields computed } */
-    matches: [], /* {id,homeId,awayId,hg,ag,week,date} */
-    playerStats: {}, /* {[playerId]:{teamId,goals,assists,saves,cleanSheets,yellowCards,redCards}} */
-    activities: []
-  };
+// ===================== State & Persistence =====================
+let state = { teams: [] }; // {id,name,logo,members:[]}
 
-  // ---------- Seed (first run) ----------
-  function seed(){
-    const t = (name,members=[])=>({id:id('team'),name,logo:'',played:0,wins:0,draws:0,losses:0,points:0,goalsFor:0,goalsAgainst:0,form:[],members});
-    const p = (name,age,position,number,phone,birthdate)=>({id:id('player'),name,age,position,number,phone,photo:'',joinDate:'1/1/2567',birthdate});
-    state.teams = [
-      t('แมนเชสเตอร์ ซิตี้',[p('เออร์ลิง ฮาลันด์',23,'forward',9,'081-234-5678','2000-07-21'),p('เควิน เดอ บรอยน์',32,'midfielder',17,'081-234-5679','1991-06-28')]),
-      t('อาร์เซนอล',[p('บูคาโย ซากา',22,'forward',7,'081-234-5680','2001-09-05'),p('มาร์ติน เอเดการ์ด',25,'midfielder',8,'081-234-5681','1998-08-17')]),
-      t('ลิเวอร์พูล'), t('เชลซี'), t('แมนเชสเตอร์ ยูไนเต็ด'), t('ท็อตแน่ม')
-    ];
-  }
-
-  // ---------- Persistence ----------
-  function save(){
-    try{localStorage.setItem(STORAGE_KEY, JSON.stringify(state));}
-    catch(e){console.error(e); alert('ไม่สามารถบันทึกลงเครื่องได้ (พื้นที่เต็ม?)');}
-  }
-  const saveDebounced = debounce(save,250);
-
-  function load(){
+function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function load(){
+  try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if(!raw){seed(); return;}
-    try{
-      const data = JSON.parse(raw);
-      if(!data.schemaVersion){
-        seed();
-      }else{ state = data; }
-    }catch(e){console.error(e); seed();}
-  }
+    if(raw) state = JSON.parse(raw);
+    if(!Array.isArray(state.teams)) state.teams = [];
+  } catch { state = { teams: [] }; }
+}
+function seedIfEmpty(){
+  if(state.teams.length) return;
+  state.teams = [
+    {id:id('team'), name:'Manchester City', logo:'', members:[]},
+    {id:id('team'), name:'Arsenal',         logo:'', members:[]}
+  ];
+  save();
+}
 
-  // ---------- Derive ----------
-  const teamMap = ()=>{
-    const m = new Map(); state.teams.forEach(t=>m.set(t.id,t)); return m;
-  };
+// ===================== UI Rendering =====================
+function renderTeamSelect(){
+  const sel = $('#selEditTeam');
+  if(!sel) return;
+  sel.innerHTML = '<option value="">-- เลือกทีม --</option>' +
+    state.teams.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('');
+}
 
-  function recompute(){
-    state.teams.forEach(t=>Object.assign(t,{played:0,wins:0,draws:0,losses:0,points:0,goalsFor:0,goalsAgainst:0,form:[]}));
-    const map = teamMap();
-    state.matches.slice().reverse().forEach(m=>{
-      const H = map.get(m.homeId), A = map.get(m.awayId); if(!H||!A) return;
-      H.played++; A.played++; H.goalsFor+=m.hg; H.goalsAgainst+=m.ag; A.goalsFor+=m.ag; A.goalsAgainst+=m.hg;
-      if(m.hg>m.ag){H.wins++;H.points+=3;H.form.push('W');A.losses++;A.form.push('L');}
-      else if(m.hg<m.ag){A.wins++;A.points+=3;A.form.push('W');H.losses++;H.form.push('L');}
-      else{H.draws++;A.draws++;H.points++;A.points++;H.form.push('D');A.form.push('D');}
-      H.form=H.form.slice(-10); A.form=A.form.slice(-10);
-    });
+function showTeamPreview(team){
+  const box = $('#teamLogoPreview');
+  if(!box) return;
+  if(team?.logo){
+    box.innerHTML = `<img src="${team.logo}" class="w-full h-full object-cover" alt="${esc(team.name)}">`;
+  } else {
+    box.innerHTML = `<span class="text-gray-400">ไม่มี</span>`;
   }
+}
 
-  const sortTeams = (a,b)=> b.points-a.points || (b.goalsFor-b.goalsAgainst)-(a.goalsFor-a.goalsAgainst) || b.goalsFor-a.goalsFor || b.wins-a.wins || a.name.localeCompare(b.name,'th');
+// ===================== Logo file handling =====================
+let pendingLogoDataURL = ''; // เก็บไฟล์ที่เลือกสำหรับทีมใหม่/แก้ไข
 
-  // ---------- Render ----------
-  function setActive(page){ $$('.page').forEach(p=>p.classList.remove('active')); $('#'+page).classList.add('active'); $$('.tab').forEach(b=>b.classList.toggle('active', b.dataset.p===page)); }
-  function renderHeader(){ $('#wk').textContent = state.currentWeek; $('#statWeek').textContent = state.currentWeek; }
-  function renderStats(){
-    $('#statTeams').textContent = state.teams.length;
-    $('#statMatches').textContent = state.matches.length;
-    $('#statMembers').textContent = state.teams.reduce((s,t)=>s+(t.members?.length||0),0);
-  }
-  function renderTopTeams(){
-    const box = $('#topTeams');
-    const data = [...state.teams].sort(sortTeams).slice(0,3);
-    box.innerHTML = data.length? data.map((t,i)=>`<div class="bg-white border rounded-xl p-4 text-center">
-      <div class="text-2xl mb-1">${['🥇','🥈','🥉'][i]||''}</div>
-      <div class="font-bold">${esc(t.name)}</div>
-      <div class="text-blue-600 text-xl font-extrabold">${t.points}</div>
-      <div class="text-xs text-gray-500 mt-1">${t.wins} ชนะ • ${t.draws} เสมอ • ${t.losses} แพ้</div>
-    </div>`).join('') : '<div class="text-gray-500 text-center">ยังไม่มีการแข่งขัน</div>';
-  }
-  function renderRecentMatches(){
-    const box = $('#recentMatches');
-    if(!state.matches.length){ box.innerHTML='<p class="text-gray-500 text-center">ยังไม่มีแมตช์</p>'; return; }
-    const map = teamMap();
-    box.innerHTML = state.matches.slice(0,6).map(m=>{
-      const H=map.get(m.homeId)?.name||'—', A=map.get(m.awayId)?.name||'—';
-      const tag = m.hg>m.ag?'✅ เหย้าชนะ': m.hg<m.ag?'✅ เยือนชนะ':'⚖️ เสมอ';
-      return `<div class="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
-        <div class="font-semibold truncate">${esc(H)} <span class="text-gray-500">vs</span> ${esc(A)}</div>
-        <div class="flex items-center gap-3"><span class="text-sm bg-blue-600 text-white px-2 py-0.5 rounded">${m.hg}–${m.ag}</span><span class="text-xs text-gray-600">${tag}</span></div>
-      </div>`
-    }).join('');
-  }
-  function renderActivities(){
-    const box = $('#activities');
-    box.innerHTML = state.activities.length? state.activities.slice(0,10).map(a=>`<div class="bg-gray-50 p-2 rounded border-l-4 border-blue-500 text-sm">${esc(a)}</div>`).join('') : '<p class="text-gray-500 text-center">ยังไม่มีกิจกรรม</p>';
-  }
-  function renderTable(){
-    const tb = $('#tbl'); tb.innerHTML='';
-    [...state.teams].sort(sortTeams).forEach((t,i)=>{
-      const gd = t.goalsFor - t.goalsAgainst, gdC = gd>0?'text-green-600':gd<0?'text-rose-600':'text-gray-600';
-      tb.insertAdjacentHTML('beforeend', `<tr class="hover:bg-blue-50"><td class="font-bold ${i<3?'text-blue-700':''}">${i+1}</td>
-        <td class="text-left font-semibold">
-          <div class="flex items-center gap-2">
-            <div class="w-6 h-6 rounded-full overflow-hidden border">
-              ${t.logo ? `<img src="${t.logo}" alt="${esc(t.name)}" class="w-full h-full object-cover">`
-                       : `<div class="w-full h-full bg-blue-600 text-white flex items-center justify-center text-xs">${esc(t.name.charAt(0))}</div>`}
-            </div>
-            <span>${esc(t.name)}</span>
-          </div>
-        </td><td>${t.played}</td><td>${t.wins}</td><td>${t.draws}</td><td>${t.losses}</td>
-        <td>${t.goalsFor}</td><td>${t.goalsAgainst}</td><td class="${gdC}">${gd>0?'+':''}${gd}</td>
-        <td><span class="bg-blue-600 text-white px-2 py-0.5 rounded font-bold">${t.points}</span></td>
-        <td class="text-xs">${t.form.slice(-5).join(' ')||'-'}</td></tr>`);
-    });
-  }
-  function fillTeamSelect(sel, opts={withAll:false,withCount:false}){
-    sel.innerHTML = opts.withAll? '<option value="all">👥 ทุกทีม</option>' : '<option value="">-- เลือกทีม --</option>';
-    state.teams.forEach(t=> sel.insertAdjacentHTML('beforeend', `<option value="${t.id}">${esc(t.name)}${opts.withCount?` (${t.members?.length||0} คน)`:''}</option>`));
-  }
-  function renderSelects(){
-    fillTeamSelect($('#selHome')); fillTeamSelect($('#selAway'));
-    fillTeamSelect($('#selTeamForPlayer'));
-    const et=$('#selEditTeam'); et.innerHTML='<option value="">-- เลือกทีม --</option>'; state.teams.forEach(t=>et.insertAdjacentHTML('beforeend',`<option value="${t.id}">${esc(t.name)}</option>`));
-    fillTeamSelect($('#selMemberTeam'));
-    fillTeamSelect($('#selRosterTeam'),{withAll:true,withCount:true});
-    fillTeamSelect($('#npTeam'));
-  }
-  function renderPlayerSelect(){
-    const teamId = $('#selTeamForPlayer').value; const sel = $('#selPlayer'); sel.innerHTML='<option value="">-- เลือกผู้เล่น --</option>';
-    if(!teamId) return; const team = state.teams.find(t=>t.id===teamId); if(!team||!team.members?.length){ sel.innerHTML='<option value="">-- ทีมนี้ยังไม่มีนักกีฬา --</option>'; return; }
-    team.members.forEach(m=> sel.insertAdjacentHTML('beforeend', `<option value="${m.id}">${esc(m.name)}${m.number?` (#${m.number})`:''}</option>`));
-  }
-  function renderMatchLog(){
-    const box = $('#matchLog'); if(!state.matches.length){box.innerHTML='<p class="text-gray-500 text-center">ยังไม่มีแมตช์</p>';return;}
-    const map = teamMap();
-    box.innerHTML = state.matches.map(m=>`<div class="bg-gray-50 p-3 rounded flex items-center justify-between">
-      <div class="font-semibold truncate">${esc(map.get(m.homeId)?.name||'')} <span class="text-gray-500">vs</span> ${esc(map.get(m.awayId)?.name||'')}</div>
-      <div class="flex items-center gap-2"><span class="bg-blue-600 text-white text-sm px-2 py-0.5 rounded">${m.hg}–${m.ag}</span>
-        <button class="btn-danger text-xs" data-del-match="${m.id}">ลบ</button></div>
-    </div>`).join('');
-  }
-  function topList(key){
-    const entries = Object.entries(state.playerStats).filter(([_,s])=> (s[key]||0)>0).sort((a,b)=> (b[1][key]||0)-(a[1][key]||0)).slice(0,5);
-    if(!entries.length) return '<p class="text-gray-500 text-center">ยังไม่มีข้อมูล</p>';
-    const nameById = pid=>{for(const t of state.teams){const p=t.members?.find(x=>x.id===pid); if(p) return {name:p.name, team:t.name};} return {name:'',team:''};};
-    return entries.map(([pid,s],i)=>{const info=nameById(pid); return `<div class="flex items-center justify-between p-3 bg-gray-50 rounded border-l-4 border-blue-500">
-      <div class="flex items-center gap-3"><span class="text-lg font-bold text-gray-600">${i+1}</span><div>
-        <div class="font-semibold">${esc(info.name)}</div><div class="text-xs text-gray-600">${esc(info.team)}</div></div></div>
-      <div class="text-right"><div class="text-lg font-bold text-blue-600">${s[key]||0}</div></div></div>`}).join('');
-  }
-  function renderPlayerBlocks(){
-    $('#topGoals').innerHTML = topList('goals');
-    $('#topAssists').innerHTML = topList('assists');
-    $('#topCS').innerHTML = topList('cleanSheets');
-  }
-  function renderMembers(){
-    const teamId = $('#selMemberTeam')?.value; const wrap=$('#memberForm'); if(!wrap) return;
-    if(!teamId){wrap.classList.add('hidden'); return;} wrap.classList.remove('hidden');
-    const team = state.teams.find(t=>t.id===teamId); const list = $('#membersList'); $('#mCount').textContent = team.members?.length||0;
-    if(!team.members?.length){ list.innerHTML='<p class="text-gray-500 text-center">ยังไม่มีสมาชิก</p>'; return; }
-    list.innerHTML = team.members.map(m=>`<div class="bg-white rounded-xl shadow p-3 border">
-      <div class="text-center">
-        <h4 class="font-bold">${esc(m.name)} ${m.number?`<span class='text-xs bg-blue-500 text-white rounded px-1 ml-1'>#${m.number}</span>`:''}</h4>
-        <div class="text-sm text-gray-600">อายุ: ${m.age} ปี • ${esc(m.position)}</div>
-        <div class="mt-2"><button class="btn-danger text-xs" data-del-member="${teamId}|${m.id}">🗑️ ลบ</button></div>
-      </div>
-    </div>`).join('');
-  }
-  function renderRoster(){
-    const sel = $('#selRosterTeam'); const teamId = sel?.value || 'all'; const box = $('#rosterWrap'); if(!box) return;
-    const card = m=>`<div class="bg-gradient-to-b from-white to-gray-50 rounded-xl shadow p-4 border"><div class="text-center">
-      <h4 class="text-sm font-bold">${esc(m.name)}</h4><div class="text-xs text-gray-600">อายุ: ${m.age} ปี</div></div></div>`;
-    let all=[];
-    if(teamId==='all'){ state.teams.forEach(t=> (t.members||[]).forEach(m=>all.push({...m,team:t.name}))); }
-    else { const t=state.teams.find(x=>x.id===teamId); (t?.members||[]).forEach(m=>all.push({...m,team:t.name})); }
-    if(!all.length){ box.innerHTML=`<div class='bg-white rounded-2xl shadow p-8 text-center'><div class='text-6xl mb-3'>👤</div><h3 class='font-bold'>ยังไม่มีนักกีฬา</h3></div>`; return; }
-    if(teamId==='all'){
-      const groups={}; all.forEach(p=> (groups[p.team] ||= []).push(p));
-      box.innerHTML = Object.entries(groups).map(([team,players])=>`<div class="bg-white rounded-2xl shadow p-5 mb-4">
-        <h3 class="font-bold mb-3">${esc(team)} <span class="text-sm text-gray-500">${players.length} คน</span></h3>
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">${players.map(card).join('')}</div>
-      </div>`).join('');
-    }else{
-      box.innerHTML = `<div class="bg-white rounded-2xl shadow p-5"><div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">${all.map(card).join('')}</div></div>`;
-    }
-  }
+const fileInput = $('#inpTeamLogo');
+fileInput?.addEventListener('change', (e)=>{
+  const f = e.target.files?.[0];
+  if(!f) return;
+  if(!f.type.startsWith('image/')) { alert('กรุณาเลือกรูปภาพ'); e.target.value=''; return; }
+  if(f.size > 5*1024*1024) { alert('ไฟล์เกิน 5MB'); e.target.value=''; return; }
+  const r = new FileReader();
+  r.onload = ev => { pendingLogoDataURL = ev.target.result; showTeamPreview({logo: pendingLogoDataURL}); };
+  r.onerror = () => alert('อ่านรูปไม่สำเร็จ');
+  r.readAsDataURL(f);
+});
 
-  // ---------- Actions ----------
-  const addActivity = msg=>{ state.activities.unshift(msg); state.activities=state.activities.slice(0,120); };
+// ===================== Actions =====================
+function addTeam(){
+  const name = $('#inpTeamName').value.trim();
+  if(!name) return alert('ใส่ชื่อทีม');
+  if(state.teams.some(t => t.name === name)) return alert('มีทีมนี้อยู่แล้ว');
 
-  function recordMatch(){
-    const homeId=$('#selHome').value, awayId=$('#selAway').value; const hg=+$('#hg').value||0, ag=+$('#ag').value||0;
-    if(!homeId||!awayId) return alert('กรุณาเลือกทีม'); if(homeId===awayId) return alert('ทีมเหย้าและทีมเยือนต้องไม่ซ้ำกัน'); if(hg<0||ag<0) return alert('สกอร์ต้องเป็นเลข 0 ขึ้นไป');
-    state.matches.unshift({id:id('match'),homeId,awayId,hg,ag,week:state.currentWeek,date:new Date().toISOString()});
-    const map=teamMap(); addActivity(\`\${new Date().toLocaleString('th-TH')}: บันทึกผล \${map.get(homeId)?.name} \${hg}-\${ag} \${map.get(awayId)?.name} [สัปดาห์ \${state.currentWeek}]\`);
-    recompute(); renderAll(); saveDebounced(); $('#selHome').value=''; $('#selAway').value=''; $('#hg').value=0; $('#ag').value=0;
-  }
+  state.teams.push({ id:id('team'), name, logo: pendingLogoDataURL || '', members: [] });
+  save();
+  renderTeamSelect();
 
-  function addPlayerStat(key){
-    const teamId=$('#selTeamForPlayer').value; const pid=$('#selPlayer').value; if(!teamId) return alert('กรุณาเลือกทีม'); if(!pid) return alert('กรุณาเลือกผู้เล่น');
-    state.playerStats[pid] ||= {teamId,goals:0,assists:0,saves:0,cleanSheets:0,yellowCards:0,redCards:0};
-    state.playerStats[pid][key] = (state.playerStats[pid][key]||0)+1;
-    const name = (()=>{for(const t of state.teams){const p=t.members?.find(x=>x.id===pid); if(p) return \`\${p.name}\`;} return 'ผู้เล่น';})();
-    const tname = state.teams.find(t=>t.id===teamId)?.name||'';
-    addActivity(\`\${new Date().toLocaleString('th-TH')}: อัปเดตสถิติ \${name} (\${tname}) — \${key}\`);
-    renderPlayerBlocks(); renderStats(); saveDebounced(); $('#selPlayer').value='';
-  }
+  // reset form
+  $('#inpTeamName').value = '';
+  if(fileInput) fileInput.value = '';
+  pendingLogoDataURL = '';
+  showTeamPreview(null);
 
-  function applyTeamEdit(){
-    const idTeam=$('#selEditTeam').value; const name=$('#inpTeamName').value.trim(); if(!idTeam) return alert('เลือกทีม'); if(!name) return alert('ใส่ชื่อทีม');
-    const t = state.teams.find(x=>x.id===idTeam); const old=t.name; t.name=name;
-    const f = $('#teamLogoInputEdit');
-    const done= (withLogo)=>{ addActivity(\`แก้ไขทีม "\${old}" เป็น "\${name}"\${withLogo?' และอัปเดตโลโก้':''}\`); renderSelects(); renderStats(); renderTable(); renderHeader(); saveDebounced(); };
-    if(f && f.files && f.files[0]){ const file=f.files[0]; if(file.size>5*1024*1024) return alert('รูปใหญ่เกิน 5MB'); const r=new FileReader(); r.onload=e=>{ t.logo=e.target.result; updateTeamLogoPreview('edit', t.logo, t.name); f.value=''; done(true); }; r.onerror=()=>alert('อ่านรูปไม่สำเร็จ'); r.readAsDataURL(file); }
-    else done(false);
-  }
+  alert('✅ เพิ่มทีมใหม่เรียบร้อย');
+}
 
-  function addTeamWithLogo(){
-    const name=$('#inpTeamNameNew')?.value.trim() || $('#inpTeamName')?.value.trim(); if(!name) return alert('ใส่ชื่อทีม'); if(state.teams.some(t=>t.name===name)) return alert('มีทีมนี้แล้ว');
-    const f=$('#teamLogoInputNew');
-    const doAdd=(logo)=>{ state.teams.push({id:id('team'),name,logo:logo||'',played:0,wins:0,draws:0,losses:0,points:0,goalsFor:0,goalsAgainst:0,form:[],members:[]}); addActivity(\`เพิ่มทีมใหม่ "\${name}"\`); $('#inpTeamNameNew').value=''; $('#inpTeamName').value=''; if(f) f.value=''; updateTeamLogoPreview('new', null, name); renderSelects(); renderStats(); renderTable(); saveDebounced(); };
-    if(f && f.files && f.files[0]){ const file=f.files[0]; if(file.size>5*1024*1024) return alert('รูปใหญ่เกิน 5MB'); const r=new FileReader(); r.onload=e=>doAdd(e.target.result); r.onerror=()=>alert('อ่านรูปไม่สำเร็จ'); r.readAsDataURL(file); }
-    else doAdd('');
-  }
+function updateTeam(){
+  const teamId = $('#selEditTeam').value;
+  const name   = $('#inpTeamName').value.trim();
+  if(!teamId) return alert('กรุณาเลือกทีม');
+  if(!name)    return alert('ใส่ชื่อทีม');
 
-  function deleteTeam(){
-    const idTeam=$('#selEditTeam').value; if(!idTeam) return alert('เลือกทีม'); const t=state.teams.find(x=>x.id===idTeam);
-    if(!confirm(\`ยืนยันลบทีม "\${t.name}" ?\`)) return;
-    state.matches = state.matches.filter(m=>m.homeId!==idTeam && m.awayId!==idTeam);
-    state.teams = state.teams.filter(x=>x.id!==idTeam);
-    recompute(); addActivity(\`ลบทีม "\${t.name}"\`); renderSelects(); renderStats(); renderTable(); renderMatchLog(); saveDebounced();
-  }
+  const t = state.teams.find(x=>x.id===teamId);
+  if(!t) return alert('ไม่พบทีม');
 
-  function addMember(){
-    const teamId=$('#selMemberTeam')?.value; const name=$('#memberName')?.value?.trim(); const age=+($('#memberAge')?.value||0); const pos=$('#memberPos')?.value;
-    if(!teamId||!name||!age||!pos) return alert('กรอกข้อมูลให้ครบ'); const team=state.teams.find(t=>t.id===teamId); team.members ||= [];
-    team.members.push({id:id('player'),name,age,position:pos,number:null,phone:'',photo:'',joinDate:new Date().toLocaleDateString('th-TH'),birthdate:''});
-    addActivity(\`เพิ่มสมาชิก "\${name}" ในทีม "\${team.name}"\`); if($('#memberName')) $('#memberName').value=''; if($('#memberAge')) $('#memberAge').value=''; if($('#memberPos')) $('#memberPos').value=''; renderMembers(); renderStats(); saveDebounced();
-  }
-  function deleteMember(teamId, pid){
-    const t=state.teams.find(x=>x.id===teamId); const m=t.members.find(x=>x.id===pid); if(!m) return; if(!confirm(\`ลบ "\${m.name}" ?\`)) return;
-    t.members = t.members.filter(x=>x.id!==pid); addActivity(\`ลบสมาชิก "\${m.name}" ออกจากทีม "\${t.name}"\`);
-    renderMembers(); renderStats(); saveDebounced();
-  }
+  t.name = name;
+  // ถ้ามีเลือกรูปใหม่ในรอบนี้ ให้บันทึกทับ
+  if(pendingLogoDataURL) t.logo = pendingLogoDataURL;
 
-  function toggleAddPlayerForm(){ const f=$('#addPlayerForm'); const b=$('#btnToggleAddPlayer'); if(!f||!b) return; if(f.classList.contains('hidden')){ f.classList.remove('hidden'); b.textContent='❌ ยกเลิก'; } else { f.classList.add('hidden'); b.textContent='➕ เพิ่มนักกีฬา'; clearNP(); } }
-  const clearNP=()=>{$('#npTeam')&&($('#npTeam').value=''); $('#npName')&&($('#npName').value=''); $('#npAge')&&($('#npAge').value=''); $('#npBirth')&&($('#npBirth').value=''); $('#npPos')&&($('#npPos').value=''); $('#npNum')&&($('#npNum').value=''); $('#npPhone')&&($('#npPhone').value=''); };
-  function addNewPlayer(){
-    const teamId=$('#npTeam').value, name=$('#npName').value.trim(), age=+$('#npAge').value||0, birth=$('#npBirth').value, pos=$('#npPos').value, num=$('#npNum').value, phone=$('#npPhone').value.trim();
-    if(!teamId||!name||!age||!pos) return alert('กรอกข้อมูลให้ครบ'); const t=state.teams.find(x=>x.id===teamId); const number=num?+num:null;
-    if(number && t.members?.some(m=>m.number===number)) return alert(\`เบอร์เสื้อ \${number} ซ้ำในทีมนี้\`);
-    const player={id:id('player'),name,age,birthdate:birth||'',position:pos,number,phone,photo:'',joinDate:new Date().toLocaleDateString('th-TH')};
-    t.members ||= []; t.members.push(player);
-    addActivity(\`เพิ่มนักกีฬา "\${name}" (\${birth||'—'}) ในทีม "\${t.name}"\`);
-    renderRoster(); renderSelects(); renderStats(); saveDebounced(); clearNP(); toggleAddPlayerForm();
-  }
+  save();
+  renderTeamSelect();
+  $('#selEditTeam').value = t.id; // คงการเลือก
+  showTeamPreview(t);
+  if(fileInput) fileInput.value = '';
+  pendingLogoDataURL = '';
+  alert('💾 บันทึกการแก้ไขเรียบร้อย');
+}
 
-  // --- Logo helpers ---
-  function handleTeamLogoFile(e, mode){
-    const file=e.target.files?.[0]; if(!file) return; if(file.size>5*1024*1024){ alert('ไฟล์ใหญ่เกิน 5MB'); e.target.value=''; return; }
-    const r=new FileReader(); r.onload=ev=> updateTeamLogoPreview(mode, ev.target.result); r.onerror=()=>alert('อ่านรูปไม่สำเร็จ'); r.readAsDataURL(file);
-  }
-  function updateTeamLogoPreview(mode, dataURL, name=''){
-    const el = mode==='edit'? $('#teamLogoPreviewEdit') : $('#teamLogoPreviewNew');
-    if(!el) return; if(!dataURL){ el.innerHTML='🏳️'; return; }
-    el.innerHTML = `<img src="${dataURL}" alt="${esc(name||'team')}" class="w-full h-full object-cover">`;
-  }
+function deleteTeam(){
+  const teamId = $('#selEditTeam').value;
+  if(!teamId) return alert('กรุณาเลือกทีม');
+  const t = state.teams.find(x=>x.id===teamId);
+  if(!t) return;
 
-  // ---------- Wiring ----------
-  function renderAll(){ renderHeader(); renderStats(); renderTopTeams(); renderRecentMatches(); renderActivities(); renderTable(); renderSelects(); renderPlayerBlocks(); renderRoster(); renderMatchLog(); }
+  if(!confirm(`ยืนยันลบทีม "${t.name}" ?`)) return;
+  state.teams = state.teams.filter(x=>x.id!==teamId);
+  save();
+  renderTeamSelect();
+  $('#inpTeamName').value = '';
+  if(fileInput) fileInput.value = '';
+  pendingLogoDataURL = '';
+  showTeamPreview(null);
+  alert('🗑️ ลบทีมเรียบร้อย');
+}
 
-  function bind(){
-    $$('.tab').forEach(b=> b.addEventListener('click',()=> setActive(b.dataset.p)) );
-    $('#wk+').addEventListener('click',()=>{state.currentWeek++; renderHeader(); saveDebounced();});
-    $('#wk-').addEventListener('click',()=>{state.currentWeek=Math.max(1,state.currentWeek-1); renderHeader(); saveDebounced();});
-    $('#btnSave').addEventListener('click',()=>{save(); alert('บันทึกลงเครื่องเรียบร้อย');});
-    $('#btnExport').addEventListener('click',()=>{ const blob=new Blob([JSON.stringify(state)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='league-data-v2.json'; a.click(); URL.revokeObjectURL(a.href); });
-    $('#importFile').addEventListener('change',e=>{ const f=e.target.files?.[0]; if(!f) return; const r=new FileReader(); r.onload=ev=>{ try{ const d=JSON.parse(ev.target.result); if(!d.schemaVersion) throw new Error('bad'); state=d; recompute(); renderAll(); save(); alert('นำเข้าข้อมูลเรียบร้อย'); }catch{ alert('ไฟล์ไม่ถูกต้อง'); } }; r.readAsText(f); e.target.value=''; });
-    $('#btnClear').addEventListener('click',()=>{ if(confirm('ล้างข้อมูลทั้งหมด?')){ localStorage.removeItem(STORAGE_KEY); location.reload(); } });
+// ===================== Wiring =====================
+function bind(){
+  $('#btnTeamAdd')   ?.addEventListener('click', addTeam);
+  $('#btnTeamUpdate')?.addEventListener('click', updateTeam);
+  $('#btnTeamDelete')?.addEventListener('click', deleteTeam);
 
-    $('#selTeamForPlayer').addEventListener('change', renderPlayerSelect);
-    $$('#players .btn-stat').forEach(b=> b.addEventListener('click',()=> addPlayerStat(b.dataset.s)) );
+  $('#selEditTeam')?.addEventListener('change', (e)=>{
+    const t = state.teams.find(x=>x.id===e.target.value);
+    $('#inpTeamName').value = t?.name || '';
+    pendingLogoDataURL = ''; // เลือกทีม -> ไม่ใช้รูปชั่วคราวค้าง
+    showTeamPreview(t || null);
+    if(fileInput) fileInput.value = '';
+  });
+}
 
-    $('#saveMatch').addEventListener('click', recordMatch);
-    $('#incH').addEventListener('click',()=> $('#hg').value = (+$('#hg').value||0)+1 );
-    $('#incA').addEventListener('click',()=> $('#ag').value = (+$('#ag').value||0)+1 );
-    $('#setDraw').addEventListener('click',()=> { $('#hg').value=1; $('#ag').value=1; });
+// ===================== Init =====================
+function init(){
+  load();        // โหลดจาก localStorage
+  seedIfEmpty(); // มีค่าแรกเริ่มเพื่อให้เห็น UI ทำงาน
+  renderTeamSelect();
+  bind();
+  showTeamPreview(null);
+}
+document.addEventListener('DOMContentLoaded', init);
+</script>
 
-    $('#selEditTeam').addEventListener('change', e=>{ const t=state.teams.find(x=>x.id===e.target.value); $('#inpTeamName').value=t?.name||''; updateTeamLogoPreview('edit', t?.logo||'', t?.name||''); });
-    $('#btnTeamUpdate').addEventListener('click', applyTeamEdit);
-    $('#btnTeamAdd').addEventListener('click', addTeamWithLogo);
-    $('#btnTeamDelete').addEventListener('click', deleteTeam);
-    $('#btnChooseTeamLogoEdit').addEventListener('click', ()=> $('#teamLogoInputEdit').click());
-    $('#btnChooseTeamLogoNew').addEventListener('click', ()=> $('#teamLogoInputNew').click());
-    $('#teamLogoInputEdit').addEventListener('change', e=> handleTeamLogoFile(e,'edit'));
-    $('#teamLogoInputNew').addEventListener('change', e=> handleTeamLogoFile(e,'new'));
-    $('#btnClearTeamLogoEdit').addEventListener('click', ()=>{ const idTeam=$('#selEditTeam').value; const t=state.teams.find(x=>x.id===idTeam); if(!t) return; t.logo=''; updateTeamLogoPreview('edit','', t.name); saveDebounced(); });
-
-    $('#btnToggleAddPlayer').addEventListener('click', toggleAddPlayerForm);
-    $('#btnAddNewPlayer').addEventListener('click', addNewPlayer);
-    $('#btnClearNewPlayer').addEventListener('click', clearNP);
-    $('#btnCancelNewPlayer').addEventListener('click', toggleAddPlayerForm);
-
-    // delegated deletes
-    $('#matchLog').addEventListener('click', e=>{ const id = e.target?.dataset?.delMatch; if(!id) return; if(!confirm('ลบแมตช์นี้?')) return; state.matches = state.matches.filter(x=>x.id!==id); addActivity('ลบแมตช์'); recompute(); renderMatchLog(); renderTable(); renderRecentMatches(); saveDebounced(); });
-    $('#membersList').addEventListener('click', e=>{ const key=e.target?.dataset?.delMember; if(!key) return; const [tid,pid]=key.split('|'); deleteMember(tid,pid); });
-  }
-
-  function tick(){ $('#now').textContent = fmtTime(new Date()); requestAnimationFrame(()=>setTimeout(tick,1000)); }
-
-  // ---------- Init ----------
-  function init(){ load(); recompute(); bind(); renderAll(); tick(); }
-  document.addEventListener('DOMContentLoaded', init);
-  </script>
 </body>
 </html>
