@@ -26,7 +26,7 @@
       padding:.85rem;display:flex;gap:.8rem;align-items:center;
       box-shadow:0 18px 30px rgba(2,6,23,.06),0 2px 6px rgba(2,6,23,.04),inset 0 1px 0 rgba(255,255,255,.9)}
     .player-card:hover{transform:translateY(-2px);transition:.2s ease;box-shadow:0 22px 36px rgba(2,6,23,.10),0 4px 10px rgba(2,6,23,.06)}
-    .player-avatar{width:56px;height:56px;border-radius:14px;overflow:hidden;box-shadow:0 4px 10px rgba(2,6,23,.12)}
+    .player-avatar { width: 72px; height: 72px; border-radius: 6px;overflow: hidden;border: 2px solid #e5e7eb;box-shadow: 0 2px 6px rgba(0,0,0,.06);background: #fff;}
     .num-badge{position:absolute;left:44px;top:-6px;transform:translateX(-50%);
       background:var(--team-color);color:var(--team-contrast);font-weight:800;
       border-radius:999px;padding:.18rem .5rem;font-size:.7rem;box-shadow:0 4px 10px rgba(0,0,0,.25)}
@@ -34,6 +34,8 @@
       border-radius:999px;padding:.1rem .5rem;font-size:.72rem}
     .team-header{background:var(--team-color);color:var(--team-contrast);border-radius:1rem;
       padding:.9rem 1rem;box-shadow:inset 0 -2px 0 rgba(255,255,255,.25),0 10px 24px rgba(0,0,0,.08)}
+    /* เบอร์เสื้อแบบใหม่ (ขวาบนของชื่อ) */
+.num-badge-static{background: var(--team-color);color: var(--team-contrast);font-weight: 700;border-radius: 999px;padding: 0.1rem 0.5rem;font-size: 0.7rem;line-height: 1;white-space: nowrap;box-shadow: 0 4px 10px rgba(0,0,0,.12);}
   </style>
 </head>
 <body class="bg-gradient-to-br from-green-50 to-blue-50 min-h-screen">
@@ -522,21 +524,28 @@
       const team=state.teams.find(t=>t.id===teamId);
       if($('#rosterTeamName')) $('#rosterTeamName').textContent = team?.name || '-';
       const grid=$('#rosterGrid');
-      const items = (team?.members||[]).map(p=>`
-        <div class="player-card">
-          <div class="relative">
-            <span class="num-badge">#${p.num||'-'}</span>
-            <img src="${p.photo||''}" alt="${esc(p.name)}" class="player-avatar object-cover">
-          </div>
-          <div class="min-w-0">
-            <div class="font-bold truncate">${esc(p.name)}</div>
-            <div class="flex flex-wrap items-center gap-2 text-xs text-slate-600 mt-0.5">
-              <span class="chip">${labelPos(p.pos)}</span>
-              <span class="chip">อายุ ${p.age??''}</span>
-              <span class="chip">${(p.birth||'').split('-').reverse().join('/')}</span>
-            </div>
-          </div>
-        </div>`).join('');
+      const items = (team?.members || []).map(p => `
+  <div class="player-card">
+    <div class="relative">
+      <img src="${p.photo || ''}" alt="${esc(p.name)}" class="player-avatar object-cover">
+    </div>
+    <div class="min-w-0 flex-1">
+      <!-- ชื่อ + เบอร์เสื้อ (ย้ายมุมขวาบน) -->
+      <div class="flex items-start justify-between gap-2">
+        <div class="font-bold truncate">${esc(p.name)}</div>
+        <span class="num-badge-static">#${p.num || '-'}</span>
+      </div>
+
+      <!-- ข้อมูล 3 บรรทัด: ตำแหน่ง / อายุ / ว/ด/ป เกิด -->
+      <div class="mt-1 text-xs text-slate-600 space-y-0.5">
+        <div><span class="chip">${labelPos(p.pos)}</span></div>
+        <div><span class="chip">อายุ ${p.age ?? ''}</span></div>
+        <div><span class="chip">${(p.birth || '').split('-').reverse().join('/')}</span></div>
+      </div>
+    </div>
+  </div>
+`).join('');
+
       grid.innerHTML = items || `<div class="text-slate-400">ยังไม่มีรายชื่อ</div>`;
     }
 
