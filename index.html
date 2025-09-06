@@ -6,7 +6,23 @@
   <title>ระบบตารางคะแนนฟุตบอล — CE v2 (Full)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&display=swap" rel="stylesheet">
-  <style>
+<style>
+  @layer components {
+    .input { @apply w-full rounded-xl border border-slate-300 px-3 py-2 text-sm
+                   focus:outline-none focus:ring-2 focus:ring-slate-400; }
+    .lbl   { @apply block mb-1 text-sm font-medium text-slate-700; }
+
+    .btn   { @apply inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-medium
+                     border transition shadow-sm hover:shadow active:scale-[.99]; }
+    .btn-green { @apply bg-emerald-500 text-white border-transparent hover:bg-emerald-600; }  /* เพิ่มนักกีฬา */
+    .btn-white { @apply bg-white text-slate-700 border-slate-300 hover:bg-slate-50; }         /* ล้างฟอร์ม/ดาวน์โหลด */
+    .btn-red   { @apply bg-rose-500 text-white border-transparent hover:bg-rose-600; }         /* ยกเลิก/ลบรูป */
+
+    .btn-ghost { @apply bg-white text-slate-700 border-slate-300 hover:bg-slate-50; }          /* ปุ่มย่อย ๆ */
+    .chip      { @apply inline-flex items-center rounded-full bg-slate-100 text-slate-700
+                         px-2 py-0.5 text-[11px] font-medium; }
+    .avatar    { @apply w-28 h-28 rounded-full bg-slate-100 grid place-items-center text-3xl overflow-hidden; }
+  }
     :root{ color-scheme:light; --team-color:#16a34a; --team-contrast:#ffffff }
     body{font-family:'Kanit',system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
     .page{display:none}.page.active{display:block}
@@ -176,6 +192,7 @@
         <!-- Roster -->
     <section id="roster" class="page">
       <div class="bg-white rounded-2xl shadow p-5 mb-4 flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
+       
         <div class="flex items-center gap-2">
           <span class="font-semibold">เลือกทีม:</span>
           <select id="selRosterTeam" class="sel w-56"></select>
@@ -194,42 +211,62 @@
         </div>
       </div>
 
-      <div id="addPlayerForm" class="bg-white rounded-2xl shadow p-5 mb-5 hidden">
-        <h3 class="text-center font-bold text-gray-800 mb-3">➕ เพิ่มนักกีฬาใหม่</h3>
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div class="flex flex-col items-center gap-3">
-            <div id="preview" class="player-avatar grid place-items-center bg-slate-100 text-3xl">👤</div>
-            <input id="npPhoto" type="file" accept="image/*" class="hidden">
-            <div class="flex gap-2">
-              <button id="btnPickPhoto" class="btn-s">📷 เลือกรูป</button>
-              <button id="btnClearPhoto" class="btn-danger">🧹 ลบรูป</button>
-            </div>
-          </div>
+<div id="addPlayerForm" class="bg-white rounded-2xl shadow p-5 mb-5 hidden">
+  <h3 class="text-center font-bold text-gray-800 mb-4">➕ เพิ่มนักกีฬาใหม่</h3>
 
-          <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div><label class="lbl">ทีม *</label><select id="npTeam" class="sel"></select></div>
-            <div><label class="lbl">ชื่อ-นามสกุล *</label><input id="npName" class="inp"></div>
-            <div><label class="lbl">ตำแหน่ง *</label>
-              <select id="npPos" class="sel">
-                <option value="">-- เลือกตำแหน่ง --</option>
-                <option value="goalkeeper">ผู้รักษาประตู</option>
-                <option value="defender">กองหลัง</option>
-                <option value="midfielder">กองกลาง</option>
-                <option value="forward">กองหน้า</option>
-              </select>
-            </div>
-            <div><label class="lbl">เบอร์เสื้อ</label><input id="npNum" type="number" min="1" max="99" class="inp"></div>
-            <div><label class="lbl">วันเกิด</label><input id="npBirth" type="date" class="inp"></div>
-            <div><label class="lbl">อายุ *</label><input id="npAge" type="number" class="inp" placeholder="คำนวณอัตโนมัติ"></div>
-            <div class="md:col-span-2 flex gap-2 justify-center mt-2">
-              <button id="btnAddNewPlayer" class="btn-main">✅ เพิ่มนักกีฬา</button>
-              <button id="btnClearNewPlayer" class="btn-s">🔄 ล้างฟอร์ม</button>
-              <button id="btnDownloadRoster" class="btn-s">⬇️ ดาวน์โหลดรายชื่อทีม</button>
-              <button id="btnCancelNewPlayer" class="btn-danger">❌ ยกเลิก</button>
-            </div>
-          </div>
-        </div>
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+    <!-- ซ้าย: รูปตัวอย่าง + ปุ่มเลือกรูป -->
+    <div class="flex flex-col items-center gap-3">
+      <div id="preview" class="avatar">👤</div>
+      <input id="npPhoto" type="file" accept="image/*" class="hidden">
+      <div class="flex gap-2">
+        <button id="btnPickPhoto" type="button" class="btn btn-ghost">📷 เลือกรูป</button>
+        <button id="btnClearPhoto" type="button" class="btn btn-red">🧹 ลบรูป</button>
       </div>
+    </div>
+
+    <!-- ขวา: ฟิลด์ฟอร์ม (ไม่ซ้อนกัน) -->
+    <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="md:col-span-2">
+        <label class="lbl" for="npName">ชื่อนักกีฬา</label>
+        <input id="npName" name="name" type="text" class="input" placeholder="เช่น สุเมธ ศุภกิจ">
+      </div>
+
+      <div>
+        <label class="lbl" for="npNum">เบอร์เสื้อ</label>
+        <input id="npNum" name="num" type="number" class="input" min="0" placeholder="เช่น 10">
+      </div>
+
+      <div>
+        <label class="lbl" for="npPos">ตำแหน่ง</label>
+        <select id="npPos" name="pos" class="input">
+          <option value="">— เลือกตำแหน่ง —</option>
+          <option value="GK">GK — ผู้รักษาประตู</option>
+          <option value="DF">DF — กองหลัง</option>
+          <option value="MF">MF — กองกลาง</option>
+          <option value="FW">FW — กองหน้า</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="lbl" for="npAge">อายุ</label>
+        <input id="npAge" name="age" type="number" class="input" min="0" placeholder="เช่น 24">
+      </div>
+
+      <div>
+        <label class="lbl" for="npBirth">วันเกิด</label>
+        <input id="npBirth" name="birth" type="date" class="input">
+      </div>
+
+      <div class="md:col-span-2 flex flex-wrap items-center gap-2 pt-2">
+        <button id="btnAddPlayer"   type="button" class="btn btn-green">✅ เพิ่มนักกีฬา</button>
+        <button id="btnResetForm"   type="button" class="btn btn-white">🧽 ล้างฟอร์ม</button>
+        <button id="btnDownload"    type="button" class="btn btn-white">⬇️ ดาวน์โหลด</button>
+        <button id="btnCancel"      type="button" class="btn btn-red">✖️ ยกเลิก</button>
+      </div>
+    </div>
+  </div>
+</div>
 
       <div class="team-header mb-4"><h2 class="font-bold text-xl">รายชื่อทีม: <span id="rosterTeamName">-</span></h2></div>
       <div id="rosterGrid" class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
@@ -539,11 +576,11 @@
       </div>
 
       <!-- ข้อมูล 3 บรรทัด: ตำแหน่ง / อายุ / ว/ด/ป เกิด -->
-      <div class="mt-1 text-xs text-slate-600 space-y-0.5">
-        <div><span class="chip">${labelPos(p.pos)}</span></div>
-        <div><span class="chip">อายุ ${p.age ?? ''}</span></div>
-        <div><span class="chip">${(p.birth || '').split('-').reverse().join('/')}</span></div>
-      </div>
+      <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-600">
+  <span class="chip">${labelPos(p.pos)}</span>
+  <span class="chip">อายุ ${p.age ?? '-'}</span>
+  <span class="chip">${(p.birth || '').split('-').reverse().join('/')}</span>
+</div>
     </div>
   </div>
 `).join('');
