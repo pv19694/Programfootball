@@ -123,18 +123,18 @@
     <section id="match" class="page">
       <div class="bg-white rounded-2xl shadow p-5 max-w-3xl mx-auto space-y-4">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div><label class="lbl">ทีมเหย้า</label><select id="selHome" class="sel"></select></div>
-          <div><label class="lbl">ทีมเยือน</label><select id="selAway" class="sel"></select></div>
+          <div><label class="lbl">ทีม 1</label><select id="selHome" class="sel"></select></div>
+          <div><label class="lbl">ทีม 2</label><select id="selAway" class="sel"></select></div>
         </div>
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="lbl">สกอร์เหย้า</label><input id="hg" type="number" min="0" max="20" value="0" class="inp text-center"></div>
-          <div><label class="lbl">สกอร์เยือน</label><input id="ag" type="number" min="0" max="20" value="0" class="inp text-center"></div>
+          <div><label class="lbl">สกอร์ทีม 1</label><input id="hg" type="number" min="0" max="20" value="0" class="inp text-center"></div>
+          <div><label class="lbl">สกอร์ทีม 2</label><input id="ag" type="number" min="0" max="20" value="0" class="inp text-center"></div>
         </div>
         <div class="flex flex-wrap gap-2 justify-center">
           <button id="saveMatch" class="btn-main">✅ บันทึกผล</button>
-          <button id="incH" class="btn-s">🏠 +1 เหย้า</button>
-          <button id="incA" class="btn-s">🛫 +1 เยือน</button>
-          <button id="setDraw" class="btn-s">⚖️ 1–1</button>
+          <button id="incH" class="btn-s">🟧 +1 ทีม 1</button>
+          <button id="incA" class="btn-s">🟪 +1 ทีม 2</button>
+          <button id="setDraw" class="btn-s">⚖️ เสมอ</button>
         </div>
       </div>
       <div class="bg-white rounded-2xl shadow p-5 mt-5">
@@ -153,9 +153,7 @@
         </div>
         <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
           <button data-s="goals" class="btn-stat btn-s">⚽ ประตู</button>
-          <button data-s="assists" class="btn-stat btn-s">🎯 แอสซิสต์</button>
           <button data-s="saves" class="btn-stat btn-s">🥅 เซฟ</button>
-          <button data-s="cleanSheets" class="btn-stat btn-s">🛡️ คลีนชีท</button>
           <button data-s="yellowCards" class="btn-stat btn-s">🟨 เหลือง</button>
           <button data-s="redCards" class="btn-stat btn-s">🟥 แดง</button>
         </div>
