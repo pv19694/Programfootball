@@ -60,19 +60,92 @@
 
   <main class="container mx-auto px-4 py-6 space-y-6">
     <!-- Dashboard -->
-    <section id="dashboard" class="page active">...</section>
+    <section id="dashboard" class="page active">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="card"><div class="t">ทีมทั้งหมด</div><div id="statTeams" class="v"></div></div>
+        <div class="card"><div class="t">แมตช์ทั้งหมด</div><div id="statMatches" class="v"></div></div>
+        <div class="card"><div class="t">สมาชิกทั้งหมด</div><div id="statMembers" class="v"></div></div>
+        <div class="card"><div class="t">สัปดาห์ปัจจุบัน</div><div id="statWeek" class="v"></div></div>
+      </div>
+      <div class="bg-white rounded-2xl shadow p-5 mt-5">
+        <h3 class="font-bold text-gray-800 mb-3">🥇 Top Teams</h3>
+        <div id="topTeams" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3"></div>
+      </div>
+      <div class="bg-white rounded-2xl shadow p-5 mt-5">
+        <h3 class="font-bold text-gray-800 mb-3">🗓️ แมตช์ล่าสุด</h3>
+        <div id="recentMatches" class="space-y-2"></div>
+      </div>
+      <div class="bg-white rounded-2xl shadow p-5 mt-5">
+        <h3 class="font-bold text-gray-800 mb-3">📊 กิจกรรมล่าสุด</h3>
+        <div id="activities" class="space-y-2 max-h-64 overflow-y-auto" aria-live="polite"></div>
+      </div>
+    </section>
 
     <!-- Table -->
-    <section id="table" class="page">...</section>
+    <section id="table" class="page">
+      <div class="bg-white rounded-2xl shadow overflow-hidden">
+        <div class="bg-gradient-to-r from-blue-800 to-blue-600 text-white p-4 text-center text-xl font-bold">JAKHONG LEAGUE</div>
+        <div class="p-3 overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-blue-700 text-white">
+              <tr><th>#</th><th class="text-left">ทีม</th><th>แข่ง</th><th>ชนะ</th><th>เสมอ</th><th>แพ้</th><th>ได้</th><th>เสีย</th><th>+/-</th><th>คะแนน</th><th>ฟอร์ม</th></tr>
+            </thead>
+            <tbody id="tbl"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
 
     <!-- Match -->
-    <section id="match" class="page">...</section>
+    <section id="match" class="page">
+      <div class="bg-white rounded-2xl shadow p-5 max-w-3xl mx-auto space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div><label class="lbl">ทีมเหย้า</label><select id="selHome" class="sel"></select></div>
+          <div><label class="lbl">ทีมเยือน</label><select id="selAway" class="sel"></select></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="lbl">สกอร์เหย้า</label><input id="hg" type="number" min="0" max="20" value="0" class="inp text-center"></div>
+          <div><label class="lbl">สกอร์เยือน</label><input id="ag" type="number" min="0" max="20" value="0" class="inp text-center"></div>
+        </div>
+        <div class="flex flex-wrap gap-2 justify-center">
+          <button id="saveMatch" class="btn-main">✅ บันทึกผล</button>
+          <button id="incH" class="btn-s">🏠 +1 เหย้า</button>
+          <button id="incA" class="btn-s">🛫 +1 เยือน</button>
+          <button id="setDraw" class="btn-s">⚖️ 1–1</button>
+        </div>
+      </div>
+      <div class="bg-white rounded-2xl shadow p-5 mt-5">
+        <h3 class="font-bold text-gray-800 mb-3">📜 ประวัติแมตช์</h3>
+        <div id="matchLog" class="space-y-2 max-h-80 overflow-y-auto"></div>
+      </div>
+    </section>
 
     <!-- Players -->
-    <section id="players" class="page">...</section>
+    <section id="players" class="page">
+      <div class="bg-white rounded-2xl shadow p-5 mb-5">
+        <h3 class="text-center font-bold text-gray-800 mb-4">📝 บันทึกสถิติผู้เล่น</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+          <div><label class="lbl">ทีม</label><select id="selTeamForPlayer" class="sel"></select></div>
+          <div><label class="lbl">ผู้เล่น</label><select id="selPlayer" class="sel"></select></div>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+          <button data-s="goals" class="btn-stat btn-s">⚽ ประตู</button>
+          <button data-s="saves" class="btn-stat btn-s">🥅 เซฟ</button>
+          <button data-s="yellowCards" class="btn-stat btn-s">🟨 เหลือง</button>
+          <button data-s="redCards" class="btn-stat btn-s">🟥 แดง</button>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div class="panel"><h4>🏆 ดาวซัลโว</h4><div id="topGoals"></div></div>
+        <div class="panel"><h4>🎯 แอสซิสต์</h4><div id="topAssists"></div></div>
+        <div class="panel"><h4>🥅 คลีนชีท</h4><div id="topCS"></div></div>
+      </div>
+    </section>
 
     <!-- Teams -->
-    <section id="teams" class="page">...</section>
+    <section id="teams" class="page">
+      <div class="bg-white rounded-2xl shadow p-5">...</div>
+    </section>
 
     <!-- Roster -->
     <section id="roster" class="page">
@@ -86,119 +159,14 @@
           <button id="btnToggleAddPlayer" class="btn-main">➕ เพิ่มนักกีฬา</button>
         </div>
       </div>
-
-      <div id="addPlayerForm" class="bg-white rounded-2xl shadow p-5 mb-5 hidden">
-        <h3 class="text-center font-bold text-gray-800 mb-3">➕ เพิ่มนักกีฬาใหม่</h3>
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div class="flex flex-col items-center gap-3">
-            <div id="preview" class="player-avatar grid place-items-center bg-slate-100 text-3xl">👤</div>
-            <input id="npPhoto" type="file" accept="image/*" class="hidden">
-            <div class="flex gap-2">
-              <button id="btnPickPhoto" class="btn-s">📷 เลือกรูป</button>
-              <button id="btnClearPhoto" class="btn-danger">🧹 ลบรูป</button>
-            </div>
-          </div>
-
-          <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div><label class="lbl">ทีม *</label><select id="npTeam" class="sel"></select></div>
-            <div><label class="lbl">ชื่อ-นามสกุล *</label><input id="npName" class="inp"></div>
-            <div><label class="lbl">ตำแหน่ง *</label>
-              <select id="npPos" class="sel">
-                <option value="">-- เลือกตำแหน่ง --</option>
-                <option value="goalkeeper">ผู้รักษาประตู</option>
-                <option value="defender">กองหลัง</option>
-                <option value="midfielder">กองกลาง</option>
-                <option value="forward">กองหน้า</option>
-              </select>
-            </div>
-            <div><label class="lbl">เบอร์เสื้อ</label><input id="npNum" type="number" min="1" max="99" class="inp"></div>
-            <div><label class="lbl">วันเกิด</label><input id="npBirth" type="date" class="inp"></div>
-            <div><label class="lbl">อายุ *</label><input id="npAge" type="number" class="inp" placeholder="คำนวณอัตโนมัติ"></div>
-            <div class="md:col-span-2 flex gap-2 justify-center mt-2">
-              <button id="btnAddNewPlayer" class="btn-main">✅ เพิ่มนักกีฬา</button>
-              <button id="btnClearNewPlayer" class="btn-s">🔄 ล้างฟอร์ม</button>
-              <button id="btnDownloadRoster" class="btn-s">⬇️ ดาวน์โหลดรายชื่อทีม</button>
-              <button id="btnCancelNewPlayer" class="btn-danger">❌ ยกเลิก</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
+      <div id="addPlayerForm" class="bg-white rounded-2xl shadow p-5 mb-5 hidden">...</div>
       <div class="team-header mb-4"><h2 class="font-bold text-xl">รายชื่อทีม: <span id="rosterTeamName">-</span></h2></div>
       <div id="rosterGrid" class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
     </section>
   </main>
 
   <script>
-    const STORAGE_KEY='football_state_ce_v2';
-    const $=(s,r=document)=>r.querySelector(s);
-    const esc=s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
-
-    let state={teams:[]};
-    function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}
-    function load(){try{state=JSON.parse(localStorage.getItem(STORAGE_KEY))||{teams:[]}}catch{state={teams:[]}}}
-
-    function calcAgeFromISO(iso){if(!iso)return'';const b=new Date(iso),t=new Date();let a=t.getFullYear()-b.getFullYear();const m=t.getMonth()-b.getMonth();if(m<0||(m===0&&t.getDate()<b.getDate()))a--;return a;}
-
-    // render roster grid
-    function renderRosterGrid(){
-      const teamId=$('#selRosterTeam').value;const team=state.teams.find(t=>t.id===teamId);
-      $('#rosterTeamName').textContent=team?.name||'-';
-      const grid=$('#rosterGrid');
-      grid.innerHTML=(team?.members||[]).map(p=>`
-        <div class="player-card">
-          <div class="relative">
-            <span class="num-badge">#${p.num||'-'}</span>
-            <img src="${p.photo||''}" alt="${esc(p.name)}" class="player-avatar object-cover">
-          </div>
-          <div class="min-w-0">
-            <div class="font-bold truncate">${esc(p.name)}</div>
-            <div class="flex flex-wrap items-center gap-2 text-xs text-slate-600 mt-0.5">
-              <span class="chip">${p.pos}</span>
-              <span class="chip">อายุ ${p.age??''}</span>
-              <span class="chip">${(p.birth||'').split('-').reverse().join('/')}</span>
-            </div>
-          </div>
-        </div>`).join('');
-    }
-
-    // add player
-    let tempPlayerPhoto='';
-    $('#btnPickPhoto')?.addEventListener('click',()=>$('#npPhoto').click());
-    $('#btnClearPhoto')?.addEventListener('click',()=>{tempPlayerPhoto='';$('#preview').innerHTML='👤';$('#npPhoto').value='';});
-    $('#npPhoto')?.addEventListener('change',e=>{
-      const f=e.target.files?.[0];if(!f)return;
-      const r=new FileReader();r.onload=ev=>{tempPlayerPhoto=ev.target.result;$('#preview').innerHTML=`<img src=\"${tempPlayerPhoto}\" class=\"w-full h-full object-cover\">`;};r.readAsDataURL(f);
-    });
-    $('#npBirth')?.addEventListener('input',()=>{$('#npAge').value=calcAgeFromISO($('#npBirth').value);});
-
-    $('#btnAddNewPlayer')?.addEventListener('click',()=>{
-      const teamId=$('#npTeam').value;const team=state.teams.find(t=>t.id===teamId);if(!team)return;
-      const name=$('#npName').value.trim(),pos=$('#npPos').value,num=$('#npNum').value;
-      const birth=$('#npBirth').value,age=parseInt($('#npAge').value||calcAgeFromISO(birth)||0,10);
-      if(!name||!pos||!age)return alert('ข้อมูลไม่ครบ');
-      team.members.push({id:Date.now(),name,pos,num,birth,age,photo:tempPlayerPhoto||''});
-      save();renderRosterGrid();
-      ['npName','npPos','npNum','npBirth','npAge'].forEach(k=>$('#'+k).value='');tempPlayerPhoto='';$('#preview').innerHTML='👤';$('#npPhoto').value='';
-    });
-
-    $('#btnDownloadRoster')?.addEventListener('click',()=>{
-      const teamId=$('#selRosterTeam').value;const team=state.teams.find(t=>t.id===teamId);if(!team)return;
-      const blob=new Blob([JSON.stringify({team:team.name,players:team.members},null,2)],{type:'application/json'});
-      const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`roster-${team.name}.json`;a.click();URL.revokeObjectURL(url);
-    });
-
-    $('#btnToggleAddPlayer')?.addEventListener('click',()=>$('#addPlayerForm').classList.toggle('hidden'));
-    $('#selRosterTeam')?.addEventListener('change',renderRosterGrid);
-
-    function init(){
-      load();
-      if(!state.teams.length) state.teams=[{id:'t1',name:'Jakhong',logo:'',members:[]}];
-      $('#selRosterTeam').innerHTML=state.teams.map(t=>`<option value=\"${t.id}\">${esc(t.name)}</option>`).join('');
-      $('#npTeam').innerHTML=$('#selRosterTeam').innerHTML;
-      renderRosterGrid();
-    }
-    document.addEventListener('DOMContentLoaded',init);
+    // === JS ส่วนของคุณ (state, save/load, render, roster, match, team ฯลฯ) ===
   </script>
 </body>
 </html>
