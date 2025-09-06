@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ระบบตารางคะแนนฟุตบอล — CE v2 (Full)</title>
+  <title>ระบบตารางคะแนนสนามฟุตบอล Jakhong</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
@@ -21,7 +21,8 @@
     .btn-ghost { @apply bg-white text-slate-700 border-slate-300 hover:bg-slate-50; }          /* ปุ่มย่อย ๆ */
     .chip      { @apply inline-flex items-center rounded-full bg-slate-100 text-slate-700
                          px-2 py-0.5 text-[11px] font-medium; }
-    .avatar    { @apply w-28 h-28 rounded-full bg-slate-100 grid place-items-center text-3xl overflow-hidden; }
+    .avatar { @apply w-40 h-40 md:w-56 md:h-56 rounded-2xl bg-slate-100 grid place-items-center text-3xl overflow-hidden; }
+    .avatar img { width:100%; height:100%; object-fit:cover; display:block; }
   }
     :root{ color-scheme:light; --team-color:#16a34a; --team-contrast:#ffffff }
     body{font-family:'Kanit',system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
@@ -220,13 +221,21 @@
       <div id="preview" class="avatar">👤</div>
       <input id="npPhoto" type="file" accept="image/*" class="hidden">
       <div class="flex gap-2">
-        <button id="btnPickPhoto" type="button" class="btn btn-ghost">📷 เลือกรูป</button>
+        <button id="btnPickPhoto"  type="button" class="btn btn-ghost">📷 เลือกรูป</button>
         <button id="btnClearPhoto" type="button" class="btn btn-red">🧹 ลบรูป</button>
       </div>
     </div>
 
     <!-- ขวา: ฟิลด์ฟอร์ม (ไม่ซ้อนกัน) -->
     <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+      <!-- ทีมที่ต้องการเพิ่มนักกีฬา (สคริปต์จะเติม options ให้อัตโนมัติ) -->
+      <div class="md:col-span-2">
+        <label class="lbl" for="npTeam">เพิ่มให้ทีม</label>
+        <select id="npTeam" class="input">
+          <!-- renderTeamSelects() จะเติม option ให้ -->
+        </select>
+      </div>
+
       <div class="md:col-span-2">
         <label class="lbl" for="npName">ชื่อนักกีฬา</label>
         <input id="npName" name="name" type="text" class="input" placeholder="เช่น สุเมธ ศุภกิจ">
@@ -259,14 +268,15 @@
       </div>
 
       <div class="md:col-span-2 flex flex-wrap items-center gap-2 pt-2">
-        <button id="btnAddPlayer"   type="button" class="btn btn-green">✅ เพิ่มนักกีฬา</button>
-        <button id="btnResetForm"   type="button" class="btn btn-white">🧽 ล้างฟอร์ม</button>
-        <button id="btnDownload"    type="button" class="btn btn-white">⬇️ ดาวน์โหลด</button>
-        <button id="btnCancel"      type="button" class="btn btn-red">✖️ ยกเลิก</button>
+        <button id="btnAddNewPlayer"    type="button" class="btn btn-green">✅ เพิ่มนักกีฬา</button>
+        <button id="btnClearNewPlayer"  type="button" class="btn btn-white">🧽 ล้างฟอร์ม</button>
+        <button id="btnDownloadRoster"  type="button" class="btn btn-white">⬇️ ดาวน์โหลด</button>
+        <button id="btnCancelNewPlayer" type="button" class="btn btn-red">✖️ ยกเลิก</button>
       </div>
     </div>
   </div>
 </div>
+
 
       <div class="team-header mb-4"><h2 class="font-bold text-xl">รายชื่อทีม: <span id="rosterTeamName">-</span></h2></div>
       <div id="rosterGrid" class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
