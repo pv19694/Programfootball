@@ -3,52 +3,45 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ระบบตารางคะแนนฟุตบอล — CE v2 (Fixed)</title>
+  <title>ระบบตารางคะแนนฟุตบอล — CE v2</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&display=swap" rel="stylesheet">
   <style>
-    :root{color-scheme:light}
+    :root{ color-scheme:light; --team-color:#16a34a; --team-contrast:#ffffff }
     body{font-family:'Kanit',system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-    .page{display:none} .page.active{display:block}
-    .btn{background:#f8fafc;border-radius:0.75rem;padding:.6rem .8rem;font-weight:600}
-    .btn.active,.btn:hover{background:#e0f2fe}
-    .card{background:#fff;border-radius:1rem;box-shadow:0 1px 4px rgba(0,0,0,.08);padding:1rem;text-align:center}
-    .card .t{font-size:.85rem;color:#64748b}
-    .card .v{font-size:1.5rem;font-weight:800;color:#2563eb}
-    .lbl{display:block;font-size:.8rem;font-weight:700;color:#334155;margin-bottom:.25rem}
-    .sel,.inp{width:100%;padding:.65rem;border:2px solid #e5e7eb;border-radius:.9rem}
-    .btn-main{background:#10b981;color:#fff;font-weight:700;border-radius:.9rem;padding:.6rem 1rem}
-    .btn-s{background:#3b82f6;color:#fff;font-weight:700;border-radius:.9rem;padding:.5rem .9rem}
-    .btn-danger{background:#ef4444;color:#fff;font-weight:700;border-radius:.9rem;padding:.5rem .9rem}
-    .panel{background:#fff;border-radius:1rem;box-shadow:0 1px 4px rgba(0,0,0,.08);padding:1rem}
-    table th,table td{padding:.5rem;text-align:center}
-    .form-row{display:grid;grid-template-columns:repeat(1,minmax(0,1fr));gap:.75rem}
-    @media(min-width:768px){.form-row{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    .page{display:none}.page.active{display:block}
+    .btn{border-radius:.9rem;padding:.55rem .9rem;font-weight:700;cursor:pointer}
+    .btn-main{background:#0ea5e9;color:#fff;box-shadow:0 8px 18px rgba(14,165,233,.25)}
+    .btn-s{background:#3b82f6;color:#fff;border-radius:.9rem;padding:.5rem .9rem}
+    .btn-danger{background:#ef4444;color:#fff;border-radius:.9rem;padding:.5rem .9rem}
+    .inp,.sel{width:100%;padding:.7rem;border:2px solid #e5e7eb;border-radius:.9rem;background:#fff}
+    .inp:focus,.sel:focus{outline:none;border-color:#93c5fd;box-shadow:0 0 0 4px rgba(147,197,253,.3)}
+    /* player card */
+    .player-card{position:relative;background:#fff;border-radius:1.1rem;border:1px solid rgba(2,6,23,.06);
+      padding:.85rem;display:flex;gap:.8rem;align-items:center;
+      box-shadow:0 18px 30px rgba(2,6,23,.06),0 2px 6px rgba(2,6,23,.04),inset 0 1px 0 rgba(255,255,255,.9)}
+    .player-card:hover{transform:translateY(-2px);transition:.2s ease;box-shadow:0 22px 36px rgba(2,6,23,.10),0 4px 10px rgba(2,6,23,.06)}
+    .player-avatar{width:56px;height:56px;border-radius:14px;overflow:hidden;box-shadow:0 4px 10px rgba(2,6,23,.12)}
+    .num-badge{position:absolute;left:44px;top:-6px;transform:translateX(-50%);
+      background:var(--team-color);color:var(--team-contrast);font-weight:800;
+      border-radius:999px;padding:.18rem .5rem;font-size:.7rem;box-shadow:0 4px 10px rgba(0,0,0,.25)}
+    .chip{border:1px solid rgba(2,6,23,.08);background:linear-gradient(180deg,#fff,rgba(255,255,255,.92));
+      border-radius:999px;padding:.1rem .5rem;font-size:.72rem}
+    .team-header{background:var(--team-color);color:var(--team-contrast);border-radius:1rem;
+      padding:.9rem 1rem;box-shadow:inset 0 -2px 0 rgba(255,255,255,.25),0 10px 24px rgba(0,0,0,.08)}
   </style>
 </head>
 <body class="bg-gradient-to-br from-green-50 to-blue-50 min-h-screen">
+
   <!-- Header -->
   <header class="bg-white/90 backdrop-blur shadow sticky top-0 z-50">
     <div class="container mx-auto px-4 py-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-      <div class="flex items-center gap-3">
-        <div class="text-3xl">⚽</div>
-        <div>
-          <h1 class="text-xl md:text-2xl font-bold text-gray-800">ระบบตารางคะแนนฟุตบอล — CE v2</h1>
-          <p class="text-sm text-gray-600">สัปดาห์ที่
-            <button id="wk-" class="px-2 rounded bg-gray-100 hover:bg-gray-200" title="ลดสัปดาห์">−</button>
-            <span id="wk" class="font-semibold">1</span>
-            <button id="wk+" class="px-2 rounded bg-gray-100 hover:bg-gray-200" title="เพิ่มสัปดาห์">＋</button>
-            | อัปเดต: <span id="now">--:--:--</span>
-          </p>
-        </div>
-      </div>
-      <div class="flex flex-wrap items-center gap-2">
-        <button id="btnSave"   class="text-sm bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-lg">💾 บันทึก</button>
-        <button id="btnExport" class="text-sm bg-sky-500 hover:bg-sky-600 text-white px-3 py-1.5 rounded-lg">📤 ส่งออก</button>
-        <label class="text-sm bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1.5 rounded-lg cursor-pointer">
-          📥 นำเข้า<input id="importFile" type="file" accept="application/json" class="hidden">
-        </label>
-        <button id="btnClear" class="text-sm bg-rose-500 hover:bg-rose-600 text-white px-3 py-1.5 rounded-lg">🧹 ล้างข้อมูล</button>
+      <h1 class="text-xl md:text-2xl font-bold text-gray-800">ระบบตารางคะแนนฟุตบอล — CE v2</h1>
+      <div class="flex gap-2">
+        <button id="btnSave" class="btn-s">💾 บันทึก</button>
+        <button id="btnExport" class="btn-s">📤 ส่งออก</button>
+        <label class="btn-s cursor-pointer">📥 นำเข้า<input id="importFile" type="file" accept="application/json" class="hidden"></label>
+        <button id="btnClear" class="btn-danger">🧹 ล้างข้อมูล</button>
       </div>
     </div>
   </header>
@@ -56,515 +49,156 @@
   <!-- Nav -->
   <nav class="bg-white shadow">
     <div class="container mx-auto px-4 py-2 grid grid-cols-3 md:grid-cols-6 gap-2">
-      <button class="tab btn active" data-p="dashboard">🏠 หน้าหลัก</button>
-      <button class="tab btn" data-p="table">🏆 ตารางคะแนน</button>
-      <button class="tab btn" data-p="match">⚽ บันทึกผล</button>
-      <button class="tab btn" data-p="players">👤 สถิติผู้เล่น</button>
-      <button class="tab btn" data-p="teams">⚙️ จัดการทีม</button>
-      <button class="tab btn" data-p="roster">📋 รายชื่อนักกีฬา</button>
+      <button class="tab btn-s active" data-p="dashboard">🏠 หน้าหลัก</button>
+      <button class="tab btn-s" data-p="table">🏆 ตารางคะแนน</button>
+      <button class="tab btn-s" data-p="match">⚽ บันทึกผล</button>
+      <button class="tab btn-s" data-p="players">👤 สถิติผู้เล่น</button>
+      <button class="tab btn-s" data-p="teams">⚙️ จัดการทีม</button>
+      <button class="tab btn-s" data-p="roster">📋 รายชื่อนักกีฬา</button>
     </div>
   </nav>
 
   <main class="container mx-auto px-4 py-6 space-y-6">
     <!-- Dashboard -->
-    <section id="dashboard" class="page active">
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div class="card"><div class="t">ทีมทั้งหมด</div><div id="statTeams" class="v">0</div></div>
-        <div class="card"><div class="t">แมตช์ทั้งหมด</div><div id="statMatches" class="v">0</div></div>
-        <div class="card"><div class="t">สมาชิกทั้งหมด</div><div id="statMembers" class="v">0</div></div>
-        <div class="card"><div class="t">สัปดาห์ปัจจุบัน</div><div id="statWeek" class="v">1</div></div>
-      </div>
-      <div class="bg-white rounded-2xl shadow p-5">
-        <h3 class="font-bold text-gray-800 mb-3">🥇 Top Teams</h3>
-        <div id="topTeams" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3"></div>
-      </div>
-      <div class="bg-white rounded-2xl shadow p-5">
-        <h3 class="font-bold text-gray-800 mb-3">🗓️ แมตช์ล่าสุด</h3>
-        <div id="recentMatches" class="space-y-2"></div>
-      </div>
-      <div class="bg-white rounded-2xl shadow p-5">
-        <h3 class="font-bold text-gray-800 mb-3">📊 กิจกรรมล่าสุด</h3>
-        <div id="activities" class="space-y-2 max-h-64 overflow-y-auto" aria-live="polite"></div>
-      </div>
-    </section>
+    <section id="dashboard" class="page active">...</section>
 
     <!-- Table -->
-    <section id="table" class="page">
-      <div class="bg-white rounded-2xl shadow overflow-hidden">
-        <div class="bg-gradient-to-r from-blue-800 to-blue-600 text-white p-4 text-center text-xl font-bold">JAKHONG LEAGUE 3</div>
-        <div class="p-3 overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead class="bg-blue-700 text-white">
-              <tr><th>#</th><th class="text-left">ทีม</th><th>แข่ง</th><th>ชนะ</th><th>เสมอ</th><th>แพ้</th><th>ได้</th><th>เสีย</th><th>+/-</th><th>คะแนน</th><th>ฟอร์ม</th></tr>
-            </thead>
-            <tbody id="tbl"></tbody>
-          </table>
-        </div>
-      </div>
-    </section>
+    <section id="table" class="page">...</section>
 
     <!-- Match -->
-    <section id="match" class="page">
-      <div class="bg-white rounded-2xl shadow p-5 max-w-3xl mx-auto space-y-4">
-        <div class="form-row">
-          <div><label class="lbl">ทีมเหย้า</label><select id="selHome" class="sel"></select></div>
-          <div><label class="lbl">ทีมเยือน</label><select id="selAway" class="sel"></select></div>
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div><label class="lbl">สกอร์เหย้า</label><input id="hg" type="number" min="0" max="20" value="0" class="inp text-center"></div>
-          <div><label class="lbl">สกอร์เยือน</label><input id="ag" type="number" min="0" max="20" value="0" class="inp text-center"></div>
-        </div>
-        <div class="flex flex-wrap gap-2 justify-center">
-          <button id="saveMatch" class="btn-main">✅ บันทึกผล</button>
-          <button id="incH" class="btn-s" title="เพิ่มประตูเหย้า">🏠 +1 เหย้า</button>
-          <button id="incA" class="btn-s" title="เพิ่มประตูเยือน">🛫 +1 เยือน</button>
-          <button id="setDraw" class="btn-s" title="ตั้ง 1–1">⚖️ 1–1</button>
-        </div>
-      </div>
-      <div class="bg-white rounded-2xl shadow p-5 mt-5">
-        <h3 class="font-bold text-gray-800 mb-3">📜 ประวัติแมตช์</h3>
-        <div id="matchLog" class="space-y-2 max-h-80 overflow-y-auto"></div>
-      </div>
-    </section>
+    <section id="match" class="page">...</section>
 
-    <!-- Players (minimal wiring) -->
-    <section id="players" class="page">
-      <div class="bg-white rounded-2xl shadow p-5 mb-5">
-        <h3 class="text-center font-bold text-gray-800 mb-4">📝 บันทึกสถิติผู้เล่น</h3>
-        <div class="form-row mb-3">
-          <div><label class="lbl">ทีม</label><select id="selTeamForPlayer" class="sel"></select></div>
-          <div><label class="lbl">ผู้เล่น</label><select id="selPlayer" class="sel"></select></div>
-        </div>
-        <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
-          <button data-s="goals" class="btn-stat btn-s">⚽ ประตู</button>
-          <button data-s="assists" class="btn-stat btn-s">🎯 แอสซิสต์</button>
-          <button data-s="saves" class="btn-stat btn-s">🥅 เซฟ</button>
-          <button data-s="cleanSheets" class="btn-stat btn-s">🛡️ คลีนชีท</button>
-          <button data-s="yellowCards" class="btn-stat btn-s">🟨 เหลือง</button>
-          <button data-s="redCards" class="btn-stat btn-s">🟥 แดง</button>
-        </div>
-      </div>
-      <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-        <div class="panel"><h4>🏆 ดาวซัลโว</h4><div id="topGoals"></div></div>
-        <div class="panel"><h4>🎯 แอสซิสต์</h4><div id="topAssists"></div></div>
-        <div class="panel"><h4>🥅 คลีนชีท</h4><div id="topCS"></div></div>
-      </div>
-    </section>
+    <!-- Players -->
+    <section id="players" class="page">...</section>
 
-    <!-- Teams (with logo upload) -->
-    <section id="teams" class="page">
-      <div class="bg-white rounded-2xl shadow p-5 mb-5">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
-          <div><label class="lbl">เลือกทีม</label><select id="selEditTeam" class="sel"></select></div>
-          <div><label class="lbl">ชื่อทีม</label><input id="inpTeamName" class="inp" placeholder="ใส่ชื่อทีม"></div>
-          <div>
-            <label class="lbl">โลโก้ทีม</label>
-            <div class="flex items-center gap-3">
-              <div id="teamLogoPreviewEdit" class="w-14 h-14 rounded-full overflow-hidden border-2 border-gray-200 bg-gradient-to-b from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold">🏳️</div>
-              <input id="teamLogoInputEdit" type="file" accept="image/*" class="hidden">
-              <button id="btnChooseTeamLogoEdit" class="btn-s">📷 เลือกรูป</button>
-              <button id="btnClearTeamLogoEdit" class="btn-danger">🧹 ลบรูป</button>
-            </div>
-          </div>
-        </div>
-        <div class="flex gap-2 justify-center mt-3">
-          <button id="btnTeamUpdate" class="btn-main">💾 บันทึกการแก้ไข</button>
-          <button id="btnTeamAdd" class="btn-s">➕ เพิ่มทีมใหม่</button>
-          <button id="btnTeamDelete" class="btn-danger">🗑️ ลบทีม</button>
-        </div>
-        <div class="mt-4 p-4 rounded-xl bg-white/70 border">
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div>
-              <label class="lbl">โลโก้ทีมใหม่</label>
-              <div class="flex items-center gap-3">
-                <div id="teamLogoPreviewNew" class="w-14 h-14 rounded-full overflow-hidden border-2 border-gray-200 bg-gradient-to-b from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold">🏳️</div>
-                <input id="teamLogoInputNew" type="file" accept="image/*" class="hidden">
-                <button id="btnChooseTeamLogoNew" class="btn-s">📷 เลือกรูป</button>
-              </div>
-            </div>
-            <div class="md:col-span-2">
-              <label class="lbl">ชื่อทีมใหม่</label>
-              <input id="inpTeamNameNew" class="inp" placeholder="ใส่ชื่อทีมใหม่แล้วกด ➕ เพิ่มทีมใหม่">
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
+    <!-- Teams -->
+    <section id="teams" class="page">...</section>
 
     <!-- Roster -->
     <section id="roster" class="page">
       <div class="bg-white rounded-2xl shadow p-5 mb-4 flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
-        <div class="flex items-center gap-2"><span class="font-semibold">เลือกทีม:</span><select id="selRosterTeam" class="sel w-56"></select></div>
-        <button id="btnToggleAddPlayer" class="btn-main">➕ เพิ่มนักกีฬา</button>
+        <div class="flex items-center gap-2">
+          <span class="font-semibold">เลือกทีม:</span>
+          <select id="selRosterTeam" class="sel w-56"></select>
+        </div>
+        <div class="flex items-center gap-3">
+          <input id="teamColor" type="color" value="#16a34a" class="w-10 h-8 p-0 border rounded-lg">
+          <button id="btnToggleAddPlayer" class="btn-main">➕ เพิ่มนักกีฬา</button>
+        </div>
       </div>
+
       <div id="addPlayerForm" class="bg-white rounded-2xl shadow p-5 mb-5 hidden">
         <h3 class="text-center font-bold text-gray-800 mb-3">➕ เพิ่มนักกีฬาใหม่</h3>
-        <div class="form-row">
-          <div><label class="lbl">ทีม *</label><select id="npTeam" class="sel"></select></div>
-          <div><label class="lbl">ชื่อ-นามสกุล *</label><input id="npName" class="inp"></div>
-          <div><label class="lbl">อายุ *</label><input id="npAge" type="number" min="15" max="50" class="inp"></div>
-          <div><label class="lbl">วันเกิด</label><input id="npBirth" type="date" class="inp"></div>
-          <div><label class="lbl">ตำแหน่ง *</label>
-            <select id="npPos" class="sel">
-              <option value="">-- เลือกตำแหน่ง --</option>
-              <option value="goalkeeper">🥅 ผู้รักษาประตู</option>
-              <option value="defender">🛡️ กองหลัง</option>
-              <option value="midfielder">⚽ กองกลาง</option>
-              <option value="forward">🎯 กองหน้า</option>
-            </select>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div class="flex flex-col items-center gap-3">
+            <div id="preview" class="player-avatar grid place-items-center bg-slate-100 text-3xl">👤</div>
+            <input id="npPhoto" type="file" accept="image/*" class="hidden">
+            <div class="flex gap-2">
+              <button id="btnPickPhoto" class="btn-s">📷 เลือกรูป</button>
+              <button id="btnClearPhoto" class="btn-danger">🧹 ลบรูป</button>
+            </div>
           </div>
-          <div><label class="lbl">เบอร์เสื้อ</label><input id="npNum" type="number" min="1" max="99" class="inp"></div>
-          <div><label class="lbl">เบอร์โทรศัพท์</label><input id="npPhone" class="inp" placeholder="081-234-5678"></div>
-        </div>
-        <div class="flex gap-2 justify-center mt-3">
-          <button id="btnAddNewPlayer" class="btn-main">✅ เพิ่มนักกีฬา</button>
-          <button id="btnClearNewPlayer" class="btn-s">🔄 ล้างฟอร์ม</button>
-          <button id="btnCancelNewPlayer" class="btn-danger">❌ ยกเลิก</button>
+
+          <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div><label class="lbl">ทีม *</label><select id="npTeam" class="sel"></select></div>
+            <div><label class="lbl">ชื่อ-นามสกุล *</label><input id="npName" class="inp"></div>
+            <div><label class="lbl">ตำแหน่ง *</label>
+              <select id="npPos" class="sel">
+                <option value="">-- เลือกตำแหน่ง --</option>
+                <option value="goalkeeper">ผู้รักษาประตู</option>
+                <option value="defender">กองหลัง</option>
+                <option value="midfielder">กองกลาง</option>
+                <option value="forward">กองหน้า</option>
+              </select>
+            </div>
+            <div><label class="lbl">เบอร์เสื้อ</label><input id="npNum" type="number" min="1" max="99" class="inp"></div>
+            <div><label class="lbl">วันเกิด</label><input id="npBirth" type="date" class="inp"></div>
+            <div><label class="lbl">อายุ *</label><input id="npAge" type="number" class="inp" placeholder="คำนวณอัตโนมัติ"></div>
+            <div class="md:col-span-2 flex gap-2 justify-center mt-2">
+              <button id="btnAddNewPlayer" class="btn-main">✅ เพิ่มนักกีฬา</button>
+              <button id="btnClearNewPlayer" class="btn-s">🔄 ล้างฟอร์ม</button>
+              <button id="btnDownloadRoster" class="btn-s">⬇️ ดาวน์โหลดรายชื่อทีม</button>
+              <button id="btnCancelNewPlayer" class="btn-danger">❌ ยกเลิก</button>
+            </div>
+          </div>
         </div>
       </div>
-      <div id="rosterWrap"></div>
+
+      <div class="team-header mb-4"><h2 class="font-bold text-xl">รายชื่อทีม: <span id="rosterTeamName">-</span></h2></div>
+      <div id="rosterGrid" class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
     </section>
   </main>
 
   <script>
-// ===================== Helpers & Storage =====================
-const STORAGE_KEY = 'football_state_ce_v2_fixed';
-const $   = (s, r=document)=>r.querySelector(s);
-const $$  = (s, r=document)=>[...r.querySelectorAll(s)];
-const esc = (s='')=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;')
-                            .replaceAll('>','&gt;').replaceAll('"','&quot;')
-                            .replaceAll("'","&#039;");
-const newid  = p=>`${p}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,8)}`;
-const nowStr = ()=>new Date().toLocaleString('th-TH');
+    const STORAGE_KEY='football_state_ce_v2';
+    const $=(s,r=document)=>r.querySelector(s);
+    const esc=s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
 
-let state = {
-  week: 1,
-  teams: [],            // {id,name,logo,members:[{id,name,pos,age,stats:{...}}]}
-  matches: [],          // {id, at, homeId, awayId, hg, ag}
-  activities: []        // string log lines
-};
+    let state={teams:[]};
+    function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}
+    function load(){try{state=JSON.parse(localStorage.getItem(STORAGE_KEY))||{teams:[]}}catch{state={teams:[]}}}
 
-function logActivity(t){
-  state.activities.unshift(`[${nowStr()}] ${t}`);
-  state.activities = state.activities.slice(0,100);
-}
+    function calcAgeFromISO(iso){if(!iso)return'';const b=new Date(iso),t=new Date();let a=t.getFullYear()-b.getFullYear();const m=t.getMonth()-b.getMonth();if(m<0||(m===0&&t.getDate()<b.getDate()))a--;return a;}
 
-function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
-function load(){
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if(raw) state = JSON.parse(raw);
-  } catch {}
-  if(!Array.isArray(state.teams)) state.teams = [];
-  if(!Array.isArray(state.matches)) state.matches = [];
-  if(!Array.isArray(state.activities)) state.activities = [];
-  if(!state.week) state.week = 1;
-}
+    // render roster grid
+    function renderRosterGrid(){
+      const teamId=$('#selRosterTeam').value;const team=state.teams.find(t=>t.id===teamId);
+      $('#rosterTeamName').textContent=team?.name||'-';
+      const grid=$('#rosterGrid');
+      grid.innerHTML=(team?.members||[]).map(p=>`
+        <div class="player-card">
+          <div class="relative">
+            <span class="num-badge">#${p.num||'-'}</span>
+            <img src="${p.photo||''}" alt="${esc(p.name)}" class="player-avatar object-cover">
+          </div>
+          <div class="min-w-0">
+            <div class="font-bold truncate">${esc(p.name)}</div>
+            <div class="flex flex-wrap items-center gap-2 text-xs text-slate-600 mt-0.5">
+              <span class="chip">${p.pos}</span>
+              <span class="chip">อายุ ${p.age??''}</span>
+              <span class="chip">${(p.birth||'').split('-').reverse().join('/')}</span>
+            </div>
+          </div>
+        </div>`).join('');
+    }
 
-function seedIfEmpty(){
-  if(state.teams.length) return;
-  const t1 = {id:newid('team'), name:'Manchester City', logo:'', members:[]};
-  const t2 = {id:newid('team'), name:'Arsenal', logo:'', members:[]};
-  state.teams = [t1,t2];
-  logActivity('สร้างข้อมูลเริ่มต้น (2 ทีม)');
-  save();
-}
-
-// ===================== Navigation (FIXED TABS) =====================
-function bindTabs(){
-  $$('.tab').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      $$('.tab').forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-      const page = btn.dataset.p;
-      $$('.page').forEach(p=>p.classList.remove('active'));
-      const el = document.getElementById(page);
-      if(el){ el.classList.add('active'); }
-      // render on enter
-      if(page==='table') renderTable();
-      if(page==='match') refreshMatchSelectors();
-      if(page==='players') refreshPlayerSelectors();
-      if(page==='roster') renderRoster();
-      if(page==='dashboard') renderDashboard();
-      if(page==='teams') renderTeamSelects();
+    // add player
+    let tempPlayerPhoto='';
+    $('#btnPickPhoto')?.addEventListener('click',()=>$('#npPhoto').click());
+    $('#btnClearPhoto')?.addEventListener('click',()=>{tempPlayerPhoto='';$('#preview').innerHTML='👤';$('#npPhoto').value='';});
+    $('#npPhoto')?.addEventListener('change',e=>{
+      const f=e.target.files?.[0];if(!f)return;
+      const r=new FileReader();r.onload=ev=>{tempPlayerPhoto=ev.target.result;$('#preview').innerHTML=`<img src=\"${tempPlayerPhoto}\" class=\"w-full h-full object-cover\">`;};r.readAsDataURL(f);
     });
-  });
-}
+    $('#npBirth')?.addEventListener('input',()=>{$('#npAge').value=calcAgeFromISO($('#npBirth').value);});
 
-// ===================== Team UI =====================
-function renderTeamSelects(){
-  const opts = ['<option value="">-- เลือกทีม --</option>'].concat(
-    state.teams.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`) ).join('');
-  ['selEditTeam','selHome','selAway','selRosterTeam','npTeam','selTeamForPlayer']
-    .forEach(id=>{ const el=$(`#${id}`); if(el) el.innerHTML = id==='selHome'||id==='selAway'? opts.replace('value=""">','value="" hidden>') : opts; });
-}
+    $('#btnAddNewPlayer')?.addEventListener('click',()=>{
+      const teamId=$('#npTeam').value;const team=state.teams.find(t=>t.id===teamId);if(!team)return;
+      const name=$('#npName').value.trim(),pos=$('#npPos').value,num=$('#npNum').value;
+      const birth=$('#npBirth').value,age=parseInt($('#npAge').value||calcAgeFromISO(birth)||0,10);
+      if(!name||!pos||!age)return alert('ข้อมูลไม่ครบ');
+      team.members.push({id:Date.now(),name,pos,num,birth,age,photo:tempPlayerPhoto||''});
+      save();renderRosterGrid();
+      ['npName','npPos','npNum','npBirth','npAge'].forEach(k=>$('#'+k).value='');tempPlayerPhoto='';$('#preview').innerHTML='👤';$('#npPhoto').value='';
+    });
 
-function showLogoPreview(targetId, teamOrUrl){
-  const box = document.getElementById(targetId);
-  if(!box) return;
-  let url = '';
-  if(typeof teamOrUrl === 'string') url = teamOrUrl;
-  else if(teamOrUrl && teamOrUrl.logo) url = teamOrUrl.logo;
-  box.innerHTML = url ? `<img src="${url}" class="w-full h-full object-cover" alt="logo">` : '🏳️';
-}
+    $('#btnDownloadRoster')?.addEventListener('click',()=>{
+      const teamId=$('#selRosterTeam').value;const team=state.teams.find(t=>t.id===teamId);if(!team)return;
+      const blob=new Blob([JSON.stringify({team:team.name,players:team.members},null,2)],{type:'application/json'});
+      const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`roster-${team.name}.json`;a.click();URL.revokeObjectURL(url);
+    });
 
-let pendingEditLogo = ''; // for edit
-let pendingNewLogo  = ''; // for new
+    $('#btnToggleAddPlayer')?.addEventListener('click',()=>$('#addPlayerForm').classList.toggle('hidden'));
+    $('#selRosterTeam')?.addEventListener('change',renderRosterGrid);
 
-function bindLogoPickers(){
-  const inputEdit = $('#teamLogoInputEdit');
-  const inputNew  = $('#teamLogoInputNew');
-  $('#btnChooseTeamLogoEdit')?.addEventListener('click',()=>inputEdit?.click());
-  $('#btnChooseTeamLogoNew') ?.addEventListener('click',()=>inputNew?.click());
-  $('#btnClearTeamLogoEdit') ?.addEventListener('click',()=>{ pendingEditLogo=''; showLogoPreview('teamLogoPreviewEdit',''); });
-
-  function onPick(fileInput, setter){
-    const f = fileInput.files?.[0];
-    if(!f) return;
-    if(!f.type.startsWith('image/')){ alert('กรุณาเลือกรูปภาพ'); fileInput.value=''; return; }
-    if(f.size>5*1024*1024){ alert('ไฟล์เกิน 5MB'); fileInput.value=''; return; }
-    const r = new FileReader();
-    r.onload = ev=>{ setter(ev.target.result); };
-    r.readAsDataURL(f);
-  }
-  inputEdit?.addEventListener('change', e=> onPick(e.target, url=>{ pendingEditLogo=url; showLogoPreview('teamLogoPreviewEdit',url);}));
-  inputNew ?.addEventListener('change', e=> onPick(e.target, url=>{ pendingNewLogo =url; showLogoPreview('teamLogoPreviewNew', url);}));
-}
-
-function addTeam(){
-  const name = $('#inpTeamNameNew').value.trim();
-  if(!name) return alert('ใส่ชื่อทีมใหม่');
-  if(state.teams.some(t=>t.name===name)) return alert('มีทีมนี้อยู่แล้ว');
-  state.teams.push({ id:newid('team'), name, logo: pendingNewLogo||'', members: [] });
-  logActivity(`เพิ่มทีมใหม่: ${name}`);
-  pendingNewLogo=''; $('#inpTeamNameNew').value=''; showLogoPreview('teamLogoPreviewNew','');
-  renderTeamSelects(); renderDashboard(); save();
-  alert('✅ เพิ่มทีมใหม่เรียบร้อย');
-}
-
-function updateTeam(){
-  const id = $('#selEditTeam').value; const name = $('#inpTeamName').value.trim();
-  if(!id) return alert('กรุณาเลือกทีม');
-  if(!name) return alert('ใส่ชื่อทีม');
-  const t = state.teams.find(x=>x.id===id); if(!t) return alert('ไม่พบทีม');
-  t.name = name; if(pendingEditLogo) t.logo = pendingEditLogo;
-  logActivity(`แก้ไขทีม: ${name}`);
-  pendingEditLogo=''; showLogoPreview('teamLogoPreviewEdit', t);
-  renderTeamSelects(); renderTable(); renderDashboard(); save();
-  alert('💾 บันทึกการแก้ไขเรียบร้อย');
-}
-
-function deleteTeam(){
-  const id = $('#selEditTeam').value; if(!id) return alert('กรุณาเลือกทีม');
-  const t = state.teams.find(x=>x.id===id); if(!t) return;
-  if(!confirm(`ยืนยันลบทีม "${t.name}" ?`)) return;
-  state.matches = state.matches.filter(m=>m.homeId!==id && m.awayId!==id);
-  state.teams   = state.teams.filter(x=>x.id!==id);
-  logActivity(`ลบทีม: ${t.name}`);
-  $('#inpTeamName').value=''; pendingEditLogo=''; showLogoPreview('teamLogoPreviewEdit','');
-  renderTeamSelects(); renderTable(); renderDashboard(); save();
-  alert('🗑️ ลบทีมเรียบร้อย');
-}
-
-function bindTeamSection(){
-  $('#btnTeamAdd')   ?.addEventListener('click', addTeam);
-  $('#btnTeamUpdate')?.addEventListener('click', updateTeam);
-  $('#btnTeamDelete')?.addEventListener('click', deleteTeam);
-  $('#selEditTeam')  ?.addEventListener('change', e=>{
-    const t = state.teams.find(x=>x.id===e.target.value);
-    $('#inpTeamName').value = t?.name || '';
-    pendingEditLogo=''; showLogoPreview('teamLogoPreviewEdit', t||'');
-  });
-}
-
-// ===================== Matches & Table =====================
-function refreshMatchSelectors(){
-  ['selHome','selAway'].forEach(id=>{ const el=$('#'+id); if(el && el.value==='') el.selectedIndex=1; });
-}
-
-function addMatch(){
-  const homeId = $('#selHome').value; const awayId = $('#selAway').value;
-  const hg = +$('#hg').value|0; const ag = +$('#ag').value|0;
-  if(!homeId || !awayId || homeId===awayId) return alert('เลือกทีมให้ถูกต้อง');
-  state.matches.unshift({ id:newid('m'), at: Date.now(), homeId, awayId, hg, ag });
-  logActivity(`บันทึกผล: ${teamName(homeId)} ${hg}–${ag} ${teamName(awayId)}`);
-  $('#hg').value=0; $('#ag').value=0;
-  renderMatchLog(); renderTable(); renderDashboard(); save();
-}
-
-function teamName(id){ return state.teams.find(t=>t.id===id)?.name || 'Unknown'; }
-
-function renderMatchLog(){
-  const wrap = $('#matchLog'); if(!wrap) return;
-  wrap.innerHTML = state.matches.slice(0,50).map(m=>{
-    const d = new Date(m.at).toLocaleString('th-TH');
-    return `<div class="p-2 rounded bg-gray-50 border"><strong>${esc(teamName(m.homeId))}</strong> ${m.hg}–${m.ag} <strong>${esc(teamName(m.awayId))}</strong> <span class="text-xs text-gray-500">${d}</span></div>`;
-  }).join('');
-}
-
-function calcTable(){
-  const map = new Map();
-  state.teams.forEach(t=>map.set(t.id,{ id:t.id, name:t.name, logo:t.logo, P:0,W:0,D:0,L:0,GF:0,GA:0,GD:0,PTS:0, form:[] }));
-  state.matches.forEach(m=>{
-    const H = map.get(m.homeId); const A = map.get(m.awayId);
-    if(!H||!A) return; H.P++; A.P++; H.GF+=m.hg; H.GA+=m.ag; A.GF+=m.ag; A.GA+=m.hg;
-    if(m.hg>m.ag){ H.W++; A.L++; H.PTS+=3; H.form.push('W'); A.form.push('L'); }
-    else if(m.hg<m.ag){ A.W++; H.L++; A.PTS+=3; A.form.push('W'); H.form.push('L'); }
-    else { H.D++; A.D++; H.PTS++; A.PTS++; H.form.push('D'); A.form.push('D'); }
-    H.GD = H.GF - H.GA; A.GD = A.GF - A.GA;
-    H.form = H.form.slice(-5); A.form = A.form.slice(-5);
-  });
-  return [...map.values()].sort((a,b)=> b.PTS-a.PTS || b.GD-a.GD || b.GF-a.GF || a.name.localeCompare(b.name));
-}
-
-function renderTable(){
-  const tbody = $('#tbl'); if(!tbody) return;
-  const rows = calcTable();
-  tbody.innerHTML = rows.map((r,i)=>{
-    const form = r.form.map(x=> x==='W'?'🟩':x==='D'?'🟨':'🟥').join('');
-    return `<tr class="odd:bg-white even:bg-slate-50">
-      <td class="font-bold">${i+1}</td>
-      <td class="text-left flex items-center gap-2">${r.logo?`<img src="${r.logo}" class="w-6 h-6 rounded-full">`:''}${esc(r.name)}</td>
-      <td>${r.P}</td><td>${r.W}</td><td>${r.D}</td><td>${r.L}</td>
-      <td>${r.GF}</td><td>${r.GA}</td><td>${r.GD}</td><td class="font-bold">${r.PTS}</td><td>${form}</td>
-    </tr>`;
-  }).join('');
-}
-
-// ===================== Players (minimal example) =====================
-function refreshPlayerSelectors(){
-  const teamId = $('#selTeamForPlayer').value || state.teams[0]?.id || '';
-  $('#selTeamForPlayer').value = teamId;
-  const team = state.teams.find(t=>t.id===teamId);
-  const players = team?.members || [];
-  $('#selPlayer').innerHTML = players.length? players.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('') : '<option value="">(ยังไม่มีผู้เล่น)</option>';
-}
-
-function addPlayerToTeam(){
-  const teamId = $('#npTeam').value; const name = $('#npName').value.trim();
-  const age = +($('#npAge').value||0); const pos = $('#npPos').value;
-  if(!teamId||!name||!age||!pos) return alert('กรอกข้อมูลที่จำเป็นให้ครบ');
-  const team = state.teams.find(t=>t.id===teamId); if(!team) return alert('ไม่พบทีม');
-  team.members.push({ id:newid('p'), name, age, pos, stats:{ goals:0, assists:0, saves:0, cleanSheets:0, yellowCards:0, redCards:0 } });
-  logActivity(`เพิ่มผู้เล่น ${name} เข้าทีม ${team.name}`);
-  renderRoster(); refreshPlayerSelectors(); renderDashboard(); save();
-  ['npName','npAge','npBirth','npNum','npPhone'].forEach(id=>$('#'+id).value=''); $('#npPos').value='';
-}
-
-function renderRoster(){
-  const teamId = $('#selRosterTeam').value || state.teams[0]?.id || '';
-  $('#selRosterTeam').value = teamId;
-  const team = state.teams.find(t=>t.id===teamId);
-  const wrap = $('#rosterWrap');
-  if(!team){ wrap.innerHTML='<div class="p-4 bg-white rounded-xl">ยังไม่มีทีม</div>'; return; }
-  wrap.innerHTML = `<div class="bg-white rounded-2xl shadow p-5">
-    <h3 class="font-bold text-gray-800 mb-3">รายชื่อ: ${esc(team.name)}</h3>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">${
-      (team.members||[]).map(m=>`<div class="p-3 rounded-xl border bg-white flex items-center gap-3">
-        <div class="w-10 h-10 rounded-full bg-slate-200 grid place-items-center">👤</div>
-        <div><div class="font-bold">${esc(m.name)}</div><div class="text-xs text-gray-500">${esc(m.pos||'')}, อายุ ${m.age||'-'}</div></div>
-      </div>`).join('') || '<div class="text-sm text-gray-500">ยังไม่มีนักกีฬา</div>'
-    }</div></div>`;
-}
-
-// ===================== Dashboard =====================
-function renderDashboard(){
-  $('#statTeams').textContent   = String(state.teams.length);
-  $('#statMatches').textContent = String(state.matches.length);
-  $('#statMembers').textContent = String(state.teams.reduce((n,t)=>n+(t.members?.length||0),0));
-  $('#statWeek').textContent    = String(state.week);
-  $('#wk').textContent          = String(state.week);
-  $('#now').textContent         = new Date().toLocaleTimeString('th-TH');
-
-  // Top teams
-  const top = calcTable().slice(0,6);
-  $('#topTeams').innerHTML = top.map((t,i)=>`<div class="p-3 rounded-xl border bg-white flex items-center gap-3">
-    <div class="text-xl w-8">${i+1}.</div>
-    ${t.logo?`<img src="${t.logo}" class="w-10 h-10 rounded-full">`: '<div class="w-10 h-10 rounded-full bg-slate-200 grid place-items-center">🏳️</div>'}
-    <div class="flex-1">
-      <div class="font-bold">${esc(t.name)}</div>
-      <div class="text-xs text-gray-500">${t.PTS} pts • GD ${t.GD}</div>
-    </div>
-  </div>`).join('') || '<div class="text-sm text-gray-500">ยังไม่มีข้อมูล</div>';
-
-  // recent matches
-  $('#recentMatches').innerHTML = state.matches.slice(0,5).map(m=>`<div class="p-2 rounded bg-gray-50 border">
-    ${esc(teamName(m.homeId))} <strong>${m.hg}–${m.ag}</strong> ${esc(teamName(m.awayId))}
-  </div>`).join('') || '<div class="text-sm text-gray-500">ยังไม่มีแมตช์</div>';
-
-  // activities
-  $('#activities').innerHTML = state.activities.map(a=>`<div class="text-sm">${esc(a)}</div>`).join('');
-}
-
-// ===================== Import/Export/Clear =====================
-function exportJSON(){
-  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href=url; a.download='football_state.json'; a.click();
-  URL.revokeObjectURL(url);
-}
-function importJSON(file){
-  const r = new FileReader();
-  r.onload = ev=>{
-    try{ const data = JSON.parse(ev.target.result);
-      if(!data || typeof data!=='object') throw 0;
-      state = Object.assign({week:1,teams:[],matches:[],activities:[]}, data);
-      logActivity('นำเข้าข้อมูลจากไฟล์');
-      afterStateChange();
-    }catch{ alert('ไฟล์ไม่ถูกต้อง'); }
-  };
-  r.readAsText(file);
-}
-function clearAll(){ if(confirm('ล้างข้อมูลทั้งหมด?')){ localStorage.removeItem(STORAGE_KEY); state={week:1,teams:[],matches:[],activities:[]}; seedIfEmpty(); afterStateChange(); } }
-
-function afterStateChange(){ save(); renderTeamSelects(); renderTable(); renderMatchLog(); renderRoster(); renderDashboard(); }
-
-// ===================== Bind Global Controls =====================
-function bindGlobal(){
-  $('#saveMatch')?.addEventListener('click', addMatch);
-  $('#incH')?.addEventListener('click', ()=> $('#hg').value = (+$('#hg').value|0)+1);
-  $('#incA')?.addEventListener('click', ()=> $('#ag').value = (+$('#ag').value|0)+1);
-  $('#setDraw')?.addEventListener('click', ()=> { $('#hg').value=1; $('#ag').value=1; });
-
-  $('#btnSave')  ?.addEventListener('click', ()=>{ save(); alert('บันทึกลงเครื่องเรียบร้อย'); });
-  $('#btnExport')?.addEventListener('click', exportJSON);
-  $('#importFile')?.addEventListener('change', e=>{ const f=e.target.files?.[0]; if(f) importJSON(f); e.target.value=''; });
-  $('#btnClear') ?.addEventListener('click', clearAll);
-
-  $('#btnToggleAddPlayer')?.addEventListener('click', ()=> $('#addPlayerForm').classList.toggle('hidden'));
-  $('#btnAddNewPlayer')   ?.addEventListener('click', addPlayerToTeam);
-  $('#btnClearNewPlayer') ?.addEventListener('click', ()=>{ ['npName','npAge','npBirth','npNum','npPhone'].forEach(id=>$('#'+id).value=''); $('#npPos').value=''; });
-  $('#btnCancelNewPlayer')?.addEventListener('click', ()=> $('#addPlayerForm').classList.add('hidden'));
-
-  // roster/team selects changes
-  $('#selRosterTeam')?.addEventListener('change', renderRoster);
-  $('#selTeamForPlayer')?.addEventListener('change', refreshPlayerSelectors);
-
-  // week controls
-  $('#wk+')?.addEventListener('click', ()=>{ state.week++; afterStateChange(); });
-  $('#wk-')?.addEventListener('click', ()=>{ state.week=Math.max(1, state.week-1); afterStateChange(); });
-
-  // clock tick
-  setInterval(()=> $('#now').textContent = new Date().toLocaleTimeString('th-TH'), 1000);
-}
-
-// ===================== Init =====================
-function init(){
-  bindTabs();
-  bindLogoPickers();
-  bindTeamSection();
-  bindGlobal();
-  load();
-  seedIfEmpty();
-  renderTeamSelects();
-  renderTable();
-  renderMatchLog();
-  renderRoster();
-  renderDashboard();
-}
-
-document.addEventListener('DOMContentLoaded', init);
+    function init(){
+      load();
+      if(!state.teams.length) state.teams=[{id:'t1',name:'Jakhong',logo:'',members:[]}];
+      $('#selRosterTeam').innerHTML=state.teams.map(t=>`<option value=\"${t.id}\">${esc(t.name)}</option>`).join('');
+      $('#npTeam').innerHTML=$('#selRosterTeam').innerHTML;
+      renderRosterGrid();
+    }
+    document.addEventListener('DOMContentLoaded',init);
   </script>
 </body>
 </html>
