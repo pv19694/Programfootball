@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ระบบตารางคะแนนฟุตบอล — CE v2</title>
+  <title>ระบบตารางคะแนนฟุตบอล — CE v2 (Full)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&display=swap" rel="stylesheet">
   <style>
@@ -16,6 +16,11 @@
     .btn-danger{background:#ef4444;color:#fff;border-radius:.9rem;padding:.5rem .9rem}
     .inp,.sel{width:100%;padding:.7rem;border:2px solid #e5e7eb;border-radius:.9rem;background:#fff}
     .inp:focus,.sel:focus{outline:none;border-color:#93c5fd;box-shadow:0 0 0 4px rgba(147,197,253,.3)}
+    .card{background:#fff;border-radius:1rem;box-shadow:0 1px 4px rgba(0,0,0,.08);padding:1rem;text-align:center}
+    .card .t{font-size:.85rem;color:#64748b}
+    .card .v{font-size:1.5rem;font-weight:800;color:#2563eb}
+    .panel{background:#fff;border-radius:1rem;box-shadow:0 1px 4px rgba(0,0,0,.08);padding:1rem}
+    table th,table td{padding:.5rem;text-align:center}
     /* player card */
     .player-card{position:relative;background:#fff;border-radius:1.1rem;border:1px solid rgba(2,6,23,.06);
       padding:.85rem;display:flex;gap:.8rem;align-items:center;
@@ -80,7 +85,6 @@
         <div id="activities" class="space-y-2 max-h-64 overflow-y-auto" aria-live="polite"></div>
       </div>
     </section>
-
     <!-- Table -->
     <section id="table" class="page">
       <div class="bg-white rounded-2xl shadow overflow-hidden">
@@ -130,7 +134,9 @@
         </div>
         <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
           <button data-s="goals" class="btn-stat btn-s">⚽ ประตู</button>
+          <button data-s="assists" class="btn-stat btn-s">🎯 แอสซิสต์</button>
           <button data-s="saves" class="btn-stat btn-s">🥅 เซฟ</button>
+          <button data-s="cleanSheets" class="btn-stat btn-s">🛡️ คลีนชีท</button>
           <button data-s="yellowCards" class="btn-stat btn-s">🟨 เหลือง</button>
           <button data-s="redCards" class="btn-stat btn-s">🟥 แดง</button>
         </div>
@@ -144,10 +150,28 @@
 
     <!-- Teams -->
     <section id="teams" class="page">
-      <div class="bg-white rounded-2xl shadow p-5">...</div>
+      <div class="bg-white rounded-2xl shadow p-5 mb-5">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
+          <div><label class="lbl">เลือกทีม</label><select id="selEditTeam" class="sel"></select></div>
+          <div><label class="lbl">ชื่อทีม</label><input id="inpTeamName" class="inp" placeholder="ใส่ชื่อทีม"></div>
+          <div>
+            <label class="lbl">โลโก้ทีม</label>
+            <div class="flex items-center gap-3">
+              <div id="teamLogoPreviewEdit" class="w-14 h-14 rounded-full overflow-hidden border-2 border-gray-200 bg-gradient-to-b from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold">🏳️</div>
+              <input id="teamLogoInputEdit" type="file" accept="image/*" class="hidden">
+              <button id="btnChooseTeamLogoEdit" class="btn-s">📷 เลือกรูป</button>
+              <button id="btnClearTeamLogoEdit" class="btn-danger">🧹 ลบรูป</button>
+            </div>
+          </div>
+        </div>
+        <div class="flex gap-2 justify-center mt-3">
+          <button id="btnTeamUpdate" class="btn-main">💾 บันทึกการแก้ไข</button>
+          <button id="btnTeamAdd" class="btn-s">➕ เพิ่มทีมใหม่</button>
+          <button id="btnTeamDelete" class="btn-danger">🗑️ ลบทีม</button>
+        </div>
+      </div>
     </section>
-
-    <!-- Roster -->
+        <!-- Roster -->
     <section id="roster" class="page">
       <div class="bg-white rounded-2xl shadow p-5 mb-4 flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
         <div class="flex items-center gap-2">
@@ -159,14 +183,477 @@
           <button id="btnToggleAddPlayer" class="btn-main">➕ เพิ่มนักกีฬา</button>
         </div>
       </div>
-      <div id="addPlayerForm" class="bg-white rounded-2xl shadow p-5 mb-5 hidden">...</div>
+
+      <div id="addPlayerForm" class="bg-white rounded-2xl shadow p-5 mb-5 hidden">
+        <h3 class="text-center font-bold text-gray-800 mb-3">➕ เพิ่มนักกีฬาใหม่</h3>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div class="flex flex-col items-center gap-3">
+            <div id="preview" class="player-avatar grid place-items-center bg-slate-100 text-3xl">👤</div>
+            <input id="npPhoto" type="file" accept="image/*" class="hidden">
+            <div class="flex gap-2">
+              <button id="btnPickPhoto" class="btn-s">📷 เลือกรูป</button>
+              <button id="btnClearPhoto" class="btn-danger">🧹 ลบรูป</button>
+            </div>
+          </div>
+
+          <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div><label class="lbl">ทีม *</label><select id="npTeam" class="sel"></select></div>
+            <div><label class="lbl">ชื่อ-นามสกุล *</label><input id="npName" class="inp"></div>
+            <div><label class="lbl">ตำแหน่ง *</label>
+              <select id="npPos" class="sel">
+                <option value="">-- เลือกตำแหน่ง --</option>
+                <option value="goalkeeper">ผู้รักษาประตู</option>
+                <option value="defender">กองหลัง</option>
+                <option value="midfielder">กองกลาง</option>
+                <option value="forward">กองหน้า</option>
+              </select>
+            </div>
+            <div><label class="lbl">เบอร์เสื้อ</label><input id="npNum" type="number" min="1" max="99" class="inp"></div>
+            <div><label class="lbl">วันเกิด</label><input id="npBirth" type="date" class="inp"></div>
+            <div><label class="lbl">อายุ *</label><input id="npAge" type="number" class="inp" placeholder="คำนวณอัตโนมัติ"></div>
+            <div class="md:col-span-2 flex gap-2 justify-center mt-2">
+              <button id="btnAddNewPlayer" class="btn-main">✅ เพิ่มนักกีฬา</button>
+              <button id="btnClearNewPlayer" class="btn-s">🔄 ล้างฟอร์ม</button>
+              <button id="btnDownloadRoster" class="btn-s">⬇️ ดาวน์โหลดรายชื่อทีม</button>
+              <button id="btnCancelNewPlayer" class="btn-danger">❌ ยกเลิก</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="team-header mb-4"><h2 class="font-bold text-xl">รายชื่อทีม: <span id="rosterTeamName">-</span></h2></div>
       <div id="rosterGrid" class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
     </section>
   </main>
 
+  <!-- Script -->
   <script>
-    // === JS ส่วนของคุณ (state, save/load, render, roster, match, team ฯลฯ) ===
+    const STORAGE_KEY='football_state_ce_v2';
+    const $=(s,r=document)=>r.querySelector(s);
+    const esc=s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+
+    let state={teams:[],matches:[],playersStats:[]};
+    function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}
+    function load(){try{state=JSON.parse(localStorage.getItem(STORAGE_KEY))||{teams:[],matches:[],playersStats:[]}}catch{state={teams:[],matches:[],playersStats:[]}}}
+
+    function calcAgeFromISO(iso){if(!iso)return'';const b=new Date(iso),t=new Date();let a=t.getFullYear()-b.getFullYear();const m=t.getMonth()-b.getMonth();if(m<0||(m===0&&t.getDate()<b.getDate()))a--;return a;}
+    // ====== ID helper ======
+    const nid = p=>`${p}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,8)}`;
+
+    // ====== Activities log ======
+    function log(msg){
+      const box = $('#activities');
+      if(!box) return;
+      const line = document.createElement('div');
+      line.className = 'text-sm text-slate-700';
+      const ts = new Date().toLocaleString();
+      line.textContent = `• [${ts}] ${msg}`;
+      box.prepend(line);
+      // limit 100
+      while(box.children.length>100) box.removeChild(box.lastChild);
+    }
+
+    // ====== Tabs ======
+    document.querySelectorAll('.tab').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        const p = btn.getAttribute('data-p');
+        document.querySelectorAll('.page').forEach(s=>s.classList.remove('active'));
+        document.getElementById(p).classList.add('active');
+      });
+    });
+
+    // ====== Team selects rendering ======
+    function renderTeamSelects(){
+      const opts = state.teams.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('');
+      if($('#selEditTeam')) $('#selEditTeam').innerHTML = '<option value="">-- เลือกทีม --</option>'+opts;
+      if($('#selHome'))     $('#selHome').innerHTML     = opts;
+      if($('#selAway'))     $('#selAway').innerHTML     = opts;
+      if($('#selTeamForPlayer')) $('#selTeamForPlayer').innerHTML = opts;
+      if($('#selRosterTeam'))    $('#selRosterTeam').innerHTML    = opts;
+      if($('#npTeam'))           $('#npTeam').innerHTML           = opts;
+    }
+
+    // ====== Standings from matches ======
+    function computeTable(){
+      const tmap = {};
+      state.teams.forEach(t=>{
+        tmap[t.id] = { id:t.id, name:t.name, logo:t.logo||'', P:0,W:0,D:0,L:0,GF:0,GA:0,GD:0,PTS:0, form:[] };
+      });
+      state.matches.forEach(m=>{
+        const H = tmap[m.homeId], A = tmap[m.awayId];
+        if(!H||!A) return;
+        H.P++; A.P++;
+        H.GF+=m.hg; H.GA+=m.ag; H.GD=H.GF-H.GA;
+        A.GF+=m.ag; A.GA+=m.hg; A.GD=A.GF-A.GA;
+
+        if(m.hg>m.ag){ H.W++; A.L++; H.PTS+=3; H.form.push('W'); A.form.push('L'); }
+        else if(m.hg<m.ag){ A.W++; H.L++; A.PTS+=3; A.form.push('W'); H.form.push('L'); }
+        else { H.D++; A.D++; H.PTS+=1; A.PTS+=1; H.form.push('D'); A.form.push('D'); }
+      });
+      const arr = Object.values(tmap).sort((a,b)=> b.PTS-a.PTS || b.GD-a.GD || b.GF-a.GF || a.name.localeCompare(b.name));
+      return arr;
+    }
+
+    function renderTable(){
+      const rows = computeTable().map((r,i)=>{
+        const last5 = r.form.slice(-5).join(' ');
+        return `<tr class="odd:bg-white even:bg-slate-50">
+          <td class="font-bold">${i+1}</td>
+          <td class="text-left"><div class="flex items-center gap-2">
+            ${r.logo?`<img src="${r.logo}" class="w-6 h-6 rounded-full object-cover border">`:'<span>🏳️</span>'}
+            <span>${esc(r.name)}</span></div></td>
+          <td>${r.P}</td><td>${r.W}</td><td>${r.D}</td><td>${r.L}</td>
+          <td>${r.GF}</td><td>${r.GA}</td><td>${r.GD}</td><td class="font-bold">${r.PTS}</td>
+          <td class="text-xs">${last5}</td></tr>`;
+      }).join('');
+      if($('#tbl')) $('#tbl').innerHTML = rows || `<tr><td colspan="11" class="py-6 text-slate-400">ยังไม่มีข้อมูล</td></tr>`;
+    }
+
+    // ====== Dashboard ======
+    function renderDashboard(){
+      const teams = state.teams.length;
+      const matches = state.matches.length;
+      const members = state.teams.reduce((s,t)=> s + (t.members?.length||0), 0);
+      if($('#statTeams'))   $('#statTeams').textContent = teams;
+      if($('#statMatches')) $('#statMatches').textContent = matches;
+      if($('#statMembers')) $('#statMembers').textContent = members;
+      if($('#statWeek'))    $('#statWeek').textContent = 1;
+
+      // Top Teams (top 3)
+      const table = computeTable();
+      if($('#topTeams')){
+        $('#topTeams').innerHTML = table.slice(0,3).map((r,i)=>`
+          <div class="panel text-left flex items-center gap-3">
+            <div class="text-2xl font-black text-sky-600">${i+1}</div>
+            ${r.logo?`<img src="${r.logo}" class="w-10 h-10 rounded-full object-cover border">`:'<div class="w-10 h-10 rounded-full grid place-items-center bg-slate-100">🏳️</div>'}
+            <div>
+              <div class="font-bold">${esc(r.name)}</div>
+              <div class="text-xs text-slate-500">Pts ${r.PTS} • GD ${r.GD}</div>
+            </div>
+          </div>`).join('') || `<div class="text-slate-400">ยังไม่มีข้อมูล</div>`;
+      }
+
+      // Recent Matches
+      if($('#recentMatches')){
+        const rec = [...state.matches].slice(-6).reverse().map(m=>{
+          const h = state.teams.find(t=>t.id===m.homeId)?.name||'—';
+          const a = state.teams.find(t=>t.id===m.awayId)?.name||'—';
+          return `<div class="flex justify-between items-center text-sm">
+            <span>${esc(h)} vs ${esc(a)}</span>
+            <span class="font-bold">${m.hg} : ${m.ag}</span>
+          </div>`;
+        }).join('');
+        $('#recentMatches').innerHTML = rec || `<div class="text-slate-400">ยังไม่มีแมตช์</div>`;
+      }
+    }
+
+    // ====== Match ======
+    function renderMatchLog(){
+      if(!$('#matchLog')) return;
+      const html = [...state.matches].reverse().map(m=>{
+        const h = state.teams.find(t=>t.id===m.homeId)?.name||'—';
+        const a = state.teams.find(t=>t.id===m.awayId)?.name||'—';
+        const ts = new Date(m.date||Date.now()).toLocaleString();
+        return `<div class="flex justify-between items-center bg-slate-50 rounded-lg px-3 py-2">
+          <span class="text-sm">${esc(h)} vs ${esc(a)} • <span class="font-bold">${m.hg}:${m.ag}</span></span>
+          <span class="text-xs text-slate-500">${ts}</span>
+        </div>`;
+      }).join('');
+      $('#matchLog').innerHTML = html || `<div class="text-slate-400">ยังไม่มีประวัติ</div>`;
+    }
+
+    $('#incH')?.addEventListener('click', ()=> { const el=$('#hg'); el.value = (+el.value||0)+1; });
+    $('#incA')?.addEventListener('click', ()=> { const el=$('#ag'); el.value = (+el.value||0)+1; });
+    $('#setDraw')?.addEventListener('click', ()=> { $('#hg').value = 1; $('#ag').value = 1; });
+
+    $('#saveMatch')?.addEventListener('click', ()=>{
+      const homeId = $('#selHome').value, awayId = $('#selAway').value;
+      const hg = +$('#hg').value||0, ag = +$('#ag').value||0;
+      if(!homeId||!awayId||homeId===awayId) return alert('เลือกทีมเหย้า/เยือนให้ถูกต้อง');
+      const m = { id:nid('m'), homeId, awayId, hg, ag, date: Date.now() };
+      state.matches.push(m);
+      save();
+      renderTable(); renderDashboard(); renderMatchLog();
+      log(`บันทึกผล ${state.teams.find(t=>t.id===homeId)?.name} ${hg}:${ag} ${state.teams.find(t=>t.id===awayId)?.name}`);
+      $('#hg').value = 0; $('#ag').value = 0;
+    });
+
+    // ====== Players stats ======
+    // playersStats: [{playerId, name, teamId, goals, assists, saves, cleanSheets, yellowCards, redCards}]
+    function ensurePlayerStat(playerId, name, teamId){
+      let s = state.playersStats.find(x=>x.playerId===playerId);
+      if(!s){ s = { playerId, name, teamId, goals:0, assists:0, saves:0, cleanSheets:0, yellowCards:0, redCards:0 }; state.playersStats.push(s); }
+      return s;
+    }
+
+    function renderPlayerDropdowns(){
+      const teamId = $('#selTeamForPlayer').value || state.teams[0]?.id || '';
+      const team = state.teams.find(t=>t.id===teamId);
+      if(!team) { $('#selPlayer').innerHTML=''; return; }
+      $('#selPlayer').innerHTML = (team.members||[]).map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');
+    }
+
+    document.querySelectorAll('.btn-stat').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        const teamId = $('#selTeamForPlayer').value;
+        const pid = $('#selPlayer').value;
+        if(!teamId||!pid) return alert('เลือกทีมและผู้เล่น');
+        const player = state.teams.find(t=>t.id===teamId)?.members?.find(m=>m.id===pid);
+        if(!player) return alert('ไม่พบผู้เล่น');
+        const key = b.getAttribute('data-s'); // goals, assists, ...
+        const stat = ensurePlayerStat(pid, player.name, teamId);
+        stat[key] = (stat[key]||0)+1;
+        save(); renderTopStats();
+        log(`อัปเดตสถิติ ${player.name}: ${key}+1`);
+      });
+    });
+
+    function topList(key){
+      // aggregate by player across teams
+      const arr = [...state.playersStats].sort((a,b)=> (b[key]||0)-(a[key]||0) ).slice(0,10);
+      return arr.map((s,i)=>{
+        const tname = state.teams.find(t=>t.id===s.teamId)?.name||'-';
+        return `<div class="flex justify-between items-center py-1 ${i%2?'':'bg-slate-50'} rounded px-2">
+          <span class="text-sm">${i+1}. ${esc(s.name)} <span class="text-xs text-slate-500">(${esc(tname)})</span></span>
+          <span class="font-bold">${s[key]||0}</span>
+        </div>`;
+      }).join('') || `<div class="text-slate-400">ยังไม่มีข้อมูล</div>`;
+    }
+    function renderTopStats(){
+      if($('#topGoals'))   $('#topGoals').innerHTML   = topList('goals');
+      if($('#topAssists')) $('#topAssists').innerHTML = topList('assists');
+      if($('#topCS'))      $('#topCS').innerHTML      = topList('cleanSheets');
+    }
+
+    $('#selTeamForPlayer')?.addEventListener('change', renderPlayerDropdowns);
+
+    // ====== Teams (logo upload + CRUD) ======
+    function renderTeamEditPreview(team){
+      const box = $('#teamLogoPreviewEdit');
+      if(!box) return;
+      if(team?.logo){ box.innerHTML = `<img src="${team.logo}" class="w-full h-full object-cover" alt="${esc(team.name)}">`; }
+      else { box.innerHTML = `🏳️`; }
+    }
+
+    let pendingLogoDataURL_Edit = '';
+    $('#btnChooseTeamLogoEdit')?.addEventListener('click', ()=> $('#teamLogoInputEdit').click());
+    $('#btnClearTeamLogoEdit')?.addEventListener('click', ()=>{ pendingLogoDataURL_Edit=''; renderTeamEditPreview(null); $('#teamLogoInputEdit').value=''; });
+
+    $('#teamLogoInputEdit')?.addEventListener('change', e=>{
+      const f = e.target.files?.[0]; if(!f) return;
+      if(!f.type.startsWith('image/')) { alert('กรุณาเลือกรูปภาพ'); e.target.value=''; return; }
+      if(f.size > 5*1024*1024) { alert('ไฟล์เกิน 5MB'); e.target.value=''; return; }
+      const r = new FileReader();
+      r.onload = ev => { pendingLogoDataURL_Edit = ev.target.result; $('#teamLogoPreviewEdit').innerHTML = `<img src="${pendingLogoDataURL_Edit}" class="w-full h-full object-cover">`; };
+      r.readAsDataURL(f);
+    });
+
+    $('#btnTeamAdd')?.addEventListener('click', ()=>{
+      const name = $('#inpTeamName').value.trim();
+      if(!name) return alert('ใส่ชื่อทีม');
+      if(state.teams.some(t=>t.name===name)) return alert('มีทีมนี้อยู่แล้ว');
+      state.teams.push({ id:nid('team'), name, logo: pendingLogoDataURL_Edit || '', members:[] });
+      save();
+      $('#inpTeamName').value=''; pendingLogoDataURL_Edit=''; $('#teamLogoInputEdit').value='';
+      renderTeamSelects(); renderTeamEditPreview(null); renderDashboard(); renderTable(); renderRosterHooks();
+      log(`เพิ่มทีมใหม่: ${name}`);
+    });
+
+    $('#btnTeamUpdate')?.addEventListener('click', ()=>{
+      const id = $('#selEditTeam').value;
+      const name = $('#inpTeamName').value.trim();
+      if(!id) return alert('เลือกทีม'); if(!name) return alert('ใส่ชื่อทีม');
+      const t = state.teams.find(x=>x.id===id); if(!t) return;
+      t.name = name; if(pendingLogoDataURL_Edit) t.logo = pendingLogoDataURL_Edit;
+      save();
+      renderTeamSelects(); $('#selEditTeam').value = t.id; renderTeamEditPreview(t);
+      pendingLogoDataURL_Edit=''; $('#teamLogoInputEdit').value='';
+      renderDashboard(); renderTable(); renderRosterHooks();
+      log(`แก้ไขทีม: ${name}`);
+    });
+
+    $('#btnTeamDelete')?.addEventListener('click', ()=>{
+      const id = $('#selEditTeam').value; if(!id) return alert('เลือกทีม');
+      const t = state.teams.find(x=>x.id===id); if(!t) return;
+      if(!confirm(`ยืนยันลบทีม "${t.name}" ?`)) return;
+      state.teams = state.teams.filter(x=>x.id!==id);
+      // remove matches involving that team
+      state.matches = state.matches.filter(m=> m.homeId!==id && m.awayId!==id );
+      save();
+      $('#inpTeamName').value=''; pendingLogoDataURL_Edit=''; $('#teamLogoInputEdit').value='';
+      renderTeamSelects(); renderTeamEditPreview(null); renderDashboard(); renderTable(); renderMatchLog(); renderRosterHooks();
+      log(`ลบทีม: ${t.name}`);
+    });
+
+    $('#selEditTeam')?.addEventListener('change', e=>{
+      const t = state.teams.find(x=>x.id===e.target.value);
+      $('#inpTeamName').value = t?.name || '';
+      pendingLogoDataURL_Edit=''; renderTeamEditPreview(t||null); $('#teamLogoInputEdit').value='';
+    });
+
+    // ====== Roster (upload + add + grid + theme) ======
+    let tempPlayerPhoto='';
+    $('#btnPickPhoto')?.addEventListener('click', ()=> $('#npPhoto').click());
+    $('#btnClearPhoto')?.addEventListener('click', ()=>{ tempPlayerPhoto=''; $('#preview').innerHTML='👤'; $('#npPhoto').value=''; });
+
+    $('#npPhoto')?.addEventListener('change', e=>{
+      const f=e.target.files?.[0]; if(!f) return;
+      if(!f.type.startsWith('image/')){ alert('กรุณาเลือกรูปภาพ'); e.target.value=''; return; }
+      if(f.size>5*1024*1024){ alert('ไฟล์เกิน 5MB'); e.target.value=''; return; }
+      const r=new FileReader(); r.onload=ev=>{ tempPlayerPhoto=ev.target.result; $('#preview').innerHTML=`<img src="${tempPlayerPhoto}" class="w-full h-full object-cover">`; }; r.readAsDataURL(f);
+    });
+
+    $('#npBirth')?.addEventListener('input', ()=>{ const iso=$('#npBirth').value; const a=calcAgeFromISO(iso); if(a||a===0) $('#npAge').value=a; });
+
+    function labelPos(pos){ return pos==='goalkeeper'? 'ผู้รักษาประตู' : pos==='defender'? 'กองหลัง' : pos==='midfielder'? 'กองกลาง' : 'กองหน้า'; }
+
+    function renderRosterGrid(){
+      const teamId=$('#selRosterTeam').value;
+      const team=state.teams.find(t=>t.id===teamId);
+      if($('#rosterTeamName')) $('#rosterTeamName').textContent = team?.name || '-';
+      const grid=$('#rosterGrid');
+      const items = (team?.members||[]).map(p=>`
+        <div class="player-card">
+          <div class="relative">
+            <span class="num-badge">#${p.num||'-'}</span>
+            <img src="${p.photo||''}" alt="${esc(p.name)}" class="player-avatar object-cover">
+          </div>
+          <div class="min-w-0">
+            <div class="font-bold truncate">${esc(p.name)}</div>
+            <div class="flex flex-wrap items-center gap-2 text-xs text-slate-600 mt-0.5">
+              <span class="chip">${labelPos(p.pos)}</span>
+              <span class="chip">อายุ ${p.age??''}</span>
+              <span class="chip">${(p.birth||'').split('-').reverse().join('/')}</span>
+            </div>
+          </div>
+        </div>`).join('');
+      grid.innerHTML = items || `<div class="text-slate-400">ยังไม่มีรายชื่อ</div>`;
+    }
+
+    $('#btnAddNewPlayer')?.addEventListener('click', ()=>{
+      const teamId=$('#npTeam').value; const team=state.teams.find(t=>t.id===teamId);
+      if(!team) return alert('เลือกทีม');
+      const name=$('#npName').value.trim(), pos=$('#npPos').value, num=$('#npNum').value;
+      const birth=$('#npBirth').value; const age=parseInt($('#npAge').value||calcAgeFromISO(birth)||0,10);
+      if(!name||!pos||!age) return alert('กรอกชื่อ ตำแหน่ง และวันเกิด/อายุ');
+
+      team.members.push({ id:nid('p'), name, pos, num, birth, age, photo: tempPlayerPhoto||'' });
+      save(); renderRosterGrid(); renderDashboard();
+      ['npName','npPos','npNum','npBirth','npAge'].forEach(k=>$('#'+k).value='');
+      tempPlayerPhoto=''; $('#preview').innerHTML='👤'; $('#npPhoto').value='';
+      log(`เพิ่มนักกีฬา ${name} ให้ทีม ${team.name}`);
+    });
+
+    $('#btnClearNewPlayer')?.addEventListener('click', ()=>{
+      ['npName','npPos','npNum','npBirth','npAge'].forEach(k=>$('#'+k).value='');
+      tempPlayerPhoto=''; $('#preview').innerHTML='👤'; $('#npPhoto').value='';
+    });
+    $('#btnCancelNewPlayer')?.addEventListener('click', ()=> $('#addPlayerForm').classList.add('hidden'));
+
+    $('#btnDownloadRoster')?.addEventListener('click', ()=>{
+      const teamId=$('#selRosterTeam').value; const team=state.teams.find(t=>t.id===teamId);
+      if(!team) return alert('ไม่มีทีมที่เลือก');
+      const blob=new Blob([JSON.stringify({team:team.name,players:team.members},null,2)],{type:'application/json'});
+      const url=URL.createObjectURL(blob); const a=document.createElement('a');
+      a.href=url; a.download=`roster-${team.name}.json`; a.click(); URL.revokeObjectURL(url);
+    });
+
+    $('#btnToggleAddPlayer')?.addEventListener('click', ()=> $('#addPlayerForm').classList.toggle('hidden'));
+    $('#selRosterTeam')?.addEventListener('change', renderRosterGrid);
+
+    // theme color (สำหรับหัวข้อทีม/ป้ายเบอร์)
+    const colorInput = $('#teamColor');
+    function setThemeColor(hex){
+      document.documentElement.style.setProperty('--team-color', hex);
+      // contrast
+      const {r,g,b} = (function hexToRgb(h){ h=h.replace('#',''); if(h.length===3)h=[...h].map(x=>x+x).join(''); const n=parseInt(h,16); return {r:(n>>16)&255,g:(n>>8)&255,b:n&255}; })(hex);
+      const yiq=(r*299+g*587+b*114)/1000;
+      document.documentElement.style.setProperty('--team-contrast', yiq>=140?'#0b1220':'#ffffff');
+      localStorage.setItem('ce_v2_theme_color', hex);
+    }
+    if(colorInput){
+      const saved = localStorage.getItem('ce_v2_theme_color'); if(saved) { colorInput.value=saved; setThemeColor(saved); }
+      colorInput.addEventListener('input', e=> setThemeColor(e.target.value));
+    }
+
+    // ====== Import / Export / Save / Clear ======
+    $('#btnSave')?.addEventListener('click', ()=>{ save(); alert('บันทึกเรียบร้อย'); });
+    $('#btnExport')?.addEventListener('click', ()=>{
+      const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+      const url=URL.createObjectURL(blob); const a=document.createElement('a');
+      a.href=url; a.download='football-ce-v2-state.json'; a.click(); URL.revokeObjectURL(url);
+    });
+    $('#importFile')?.addEventListener('change', e=>{
+      const f=e.target.files?.[0]; if(!f) return;
+      const r=new FileReader(); r.onload=ev=>{ try{
+        const obj=JSON.parse(ev.target.result);
+        if(!obj||!Array.isArray(obj.teams)) throw new Error('รูปแบบไฟล์ไม่ถูกต้อง');
+        state = { teams: obj.teams||[], matches: obj.matches||[], playersStats: obj.playersStats||[] };
+        save(); afterStateChangeAll(); alert('นำเข้าสำเร็จ');
+      }catch(err){ alert('นำเข้าไม่สำเร็จ: '+err.message); } };
+      r.readAsText(f);
+    });
+    $('#btnClear')?.addEventListener('click', ()=>{
+      if(!confirm('ยืนยันล้างข้อมูลทั้งหมด?')) return;
+      localStorage.removeItem(STORAGE_KEY);
+      state={teams:[],matches:[],playersStats:[]};
+      seedIfEmpty(); afterStateChangeAll(); alert('ล้างข้อมูลแล้วและสร้างข้อมูลเริ่มต้น');
+    });
+
+    // ====== Seed if empty ======
+    function seedIfEmpty(){
+      if(state.teams?.length) return;
+      const t1={id:nid('team'),name:'Manchester City',logo:'',members:[]};
+      const t2={id:nid('team'),name:'Arsenal',logo:'',members:[]};
+      state.teams=[t1,t2];
+      save();
+    }
+
+    // ====== Page-wide refresh after state changed ======
+    function afterStateChangeAll(){
+      renderTeamSelects();
+      // set default selects
+      if($('#selHome') && state.teams[0]) $('#selHome').value = state.teams[0].id;
+      if($('#selAway') && state.teams[1]) $('#selAway').value = state.teams[1].id;
+      if($('#selTeamForPlayer') && state.teams[0]) $('#selTeamForPlayer').value = state.teams[0].id;
+      if($('#selRosterTeam') && state.teams[0]) $('#selRosterTeam').value = state.teams[0].id;
+      if($('#npTeam') && state.teams[0]) $('#npTeam').value = state.teams[0].id;
+
+      renderPlayerDropdowns();
+      renderTable();
+      renderDashboard();
+      renderMatchLog();
+      renderTopStats();
+      renderRosterGrid();
+      // fill edit team preview
+      renderTeamEditPreview(null);
+    }
+
+    // ====== INIT ======
+    function init(){
+      load();
+      seedIfEmpty();
+      renderTeamSelects();
+
+      // defaults
+      if($('#selHome') && state.teams[0]) $('#selHome').value = state.teams[0].id;
+      if($('#selAway') && state.teams[1]) $('#selAway').value = state.teams[1].id;
+      if($('#selTeamForPlayer') && state.teams[0]) $('#selTeamForPlayer').value = state.teams[0].id;
+      if($('#selRosterTeam') && state.teams[0]) $('#selRosterTeam').value = state.teams[0].id;
+      if($('#npTeam') && state.teams[0]) $('#npTeam').value = state.teams[0].id;
+
+      renderPlayerDropdowns();
+      renderTable();
+      renderDashboard();
+      renderMatchLog();
+      renderTopStats();
+      renderRosterGrid();
+      log('ระบบพร้อมทำงาน');
+    }
+    document.addEventListener('DOMContentLoaded', init);
   </script>
 </body>
 </html>
+
