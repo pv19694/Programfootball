@@ -141,42 +141,47 @@
   </div>
 </nav>
 
-<!-- สคริปต์ควบคุม -->
+<!-- สคริปต์ควบคุม (ชุดเดียวพอ) -->
 <script>
-  // ปิด submit ถ้าอยู่ในฟอร์ม
+  // กันปุ่มในฟอร์มเผลอ submit
   document.querySelectorAll('.nav-btn').forEach(btn => btn.type = 'button');
 
-  <script>
   function showPage(id) {
-    // ซ่อนทุกหน้า
+    // ซ่อนทุกหน้าให้ตรงกับ CSS (.page/.active)
     document.querySelectorAll('.page').forEach(p => {
-      p.classList.remove('active');
+      p.classList.remove('active'); // => display:none (ตาม CSS)
       p.classList.add('hidden');
     });
 
     // โชว์หน้าเป้าหมาย
     const el = document.getElementById(id);
     if (!el) return;
+    el.classList.add('active');     // => display:block (ตาม CSS)
     el.classList.remove('hidden');
-    el.classList.add('active');
 
-    // ไฮไลต์ปุ่ม
+    // ไฮไลต์ปุ่มที่เลือก
     document.querySelectorAll('.nav-btn').forEach(b =>
       b.classList.remove('ring-2','ring-offset-2','ring-purple-400')
     );
-    const btn = document.querySelector(`.nav-btn[data-target="${id}"]`);
-    if (btn) btn.classList.add('ring-2','ring-offset-2','ring-purple-400');
+    const activeBtn = document.querySelector(`.nav-btn[data-target="${id}"]`);
+    if (activeBtn) activeBtn.classList.add('ring-2','ring-offset-2','ring-purple-400');
   }
 
-  // ป้องกัน submit และตั้งหน้าแรก
-  document.querySelectorAll('.nav-btn').forEach(b => b.type = 'button');
-  window.addEventListener('DOMContentLoaded', () => showPage('dashboard')); // หน้าแรก
+  // เดลิเกตคลิกปุ่ม (ไม่แตะ URL)
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.nav-btn');
+    if (!btn) return;
+    showPage(btn.dataset.target);
+    // กันลิงก์ # ถ้ามี
+    e.preventDefault();
+  });
+
+  // เปิดหน้าแรกตอนโหลด
+  window.addEventListener('DOMContentLoaded', () => {
+    showPage('home'); // เปลี่ยนเป็น 'dashboard' ถ้าหน้าแรกของคุณมี id=dashboard
+  });
 </script>
 
-
-
-  </div>
-</nav>
 
 <!-- เนื้อหาแต่ละหน้า -->
 <main class="container mx-auto px-4 py-6">
