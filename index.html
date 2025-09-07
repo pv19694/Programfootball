@@ -709,7 +709,7 @@ function listenCloud(){
     const d = doc.data();
     if (!d || !d.state) return;
     if (d.senderId === deviceId) return;
-    state = d.state; save(); afterStateChangeAll();
+    state = d.state; _save(); afterStateChangeAll();
     logSync(`pull ok • updatedAt=${new Date(d.updatedAt).toLocaleTimeString()}`);
   }, err=> logSync('pull error: ' + err.message));
 }
