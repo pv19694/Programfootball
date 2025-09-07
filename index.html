@@ -85,12 +85,13 @@
 
     <!-- ตัวอย่างปุ่ม -->
     <button class="relative inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold tracking-wide text-gray-700
-      bg-white shadow-md transition-all duration-300
-      hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 active:shadow-md
-      overflow-hidden">
-      <span class="absolute inset-0 rounded-xl p-[2px] bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500"></span>
-      <span class="relative bg-white rounded-xl px-5 py-2.5">🏠 หน้าหลัก</span>
-    </button>
+  bg-white shadow-md transition-all duration-300
+  hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 active:shadow-md
+  overflow-hidden">
+  <!-- เปลี่ยน p-[2px] → p-[1px] -->
+  <span class="absolute inset-0 rounded-xl p-[1px] bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 animate-gradient-x"></span>
+  <span class="relative bg-white rounded-xl px-5 py-2.5">🏠 หน้าหลัก</span>
+</button>
 
     <button class="relative inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold tracking-wide text-gray-700
       bg-white shadow-md transition-all duration-300
