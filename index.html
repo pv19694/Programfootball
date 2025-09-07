@@ -63,17 +63,27 @@
 <body class="bg-gradient-to-br from-green-50 to-blue-50 min-h-screen">
 
   <!-- Header -->
-  <header class="bg-white/90 backdrop-blur shadow sticky top-0 z-50">
-    <div class="container mx-auto px-4 py-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-      <h1 class="text-xl md:text-2xl font-bold text-gray-800">ระบบตารางคะแนนฟุตบอล — CE v2</h1>
-      <div class="flex gap-2">
-        <button id="btnSave" class="btn-s">💾 บันทึก</button>
-        <button id="btnExport" class="btn-s">📤 ส่งออก</button>
-        <label class="btn-s cursor-pointer">📥 นำเข้า<input id="importFile" type="file" accept="application/json" class="hidden"></label>
-        <button id="btnClear" class="btn-danger">🧹 ล้างข้อมูล</button>
-      </div>
+<header class="bg-white/90 backdrop-blur shadow sticky top-0 z-50">
+  <div class="container mx-auto px-4 py-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+    
+    <!-- โลโก้ + หัวข้อ -->
+    <div class="flex items-center gap-3 text-xl md:text-2xl font-bold text-gray-800">
+      <img src="https://img5.pic.in.th/file/secure-sv1/S__2703408.jpg" alt="โลโก้ Jakhong" class="h-8 w-8">
+      <span>ระบบจัดบอลสนาม Jakhong</span>
     </div>
-  </header>
+
+    <!-- ปุ่มเมนู -->
+    <div class="flex gap-2">
+      <button id="btnSave" class="btn-s">💾 บันทึก</button>
+      <button id="btnExport" class="btn-s">📤 ส่งออก</button>
+      <label class="btn-s cursor-pointer">📥 นำเข้า
+        <input id="importFile" type="file" accept="application/json" class="hidden">
+      </label>
+      <button id="btnClear" class="btn-danger">🧹 ล้างข้อมูล</button>
+    </div>
+  </div>
+</header>
+
 
   <!-- Nav -->
   <nav class="bg-white shadow">
