@@ -177,36 +177,62 @@
 
 <!-- สคริปต์สลับหน้า + ทำ active กับปุ่ม -->
 <script>
-  // ปิดพฤติกรรม submit ถ้าปุ่มอยู่ในฟอร์ม
-  document.querySelectorAll('nav button').forEach(btn => btn.type = 'button');
+  // กันปุ่มเผลอ submit ถ้าเผลออยู่ใน <form>
+  document.querySelectorAll('nav button').forEach(b => b.type = 'button');
 
-  function setActiveButton(targetId) {
-    document.querySelectorAll('nav button').forEach(b => b.classList.remove('ring-2','ring-offset-2','ring-purple-400'));
-    const btn = document.querySelector(`nav button[onclick*="${targetId}"]`);
-    if (btn) btn.classList.add('ring-2','ring-offset-2','ring-purple-400'); // ไฮไลต์ปุ่มที่เลือก
+  // ไฮไลต์ปุ่มที่ active
+  function setActiveButton(id) {
+    document.querySelectorAll('nav button')
+      .forEach(b => b.classList.remove('ring-2','ring-offset-2','ring-purple-400'));
+    const btn = document.querySelector(`nav button[onclick*="${id}"]`);
+    if (btn) btn.classList.add('ring-2','ring-offset-2','ring-purple-400');
   }
 
+  // ตัวช่วย: ซ่อนทุกหน้า (รองรับทั้ง .active และ .hidden)
+  function hideAllPages() {
+    document.querySelectorAll('.page').forEach(p => {
+      p.classList.remove('active');
+      p.classList.add('hidden');
+      // ถ้าเคยลืมใส่ hidden ไว้ ให้บังคับซ่อนด้วย style
+      p.style.display = 'none';
+    });
+  }
+
+  // แสดงหน้าเป้าหมาย
   function showPage(id) {
-    // ซ่อนทุกหน้า
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    // โชว์หน้าเป้าหมาย
-    const el = document.getElementById(id);
-    if (el) {
-      el.classList.add('active');
-      // อัปเดต hash เพื่อให้รีเฟรชแล้วยังอยู่หน้าเดิม
-      if (location.hash !== '#' + id) history.replaceState(null, '', '#' + id);
-      setActiveButton(id);
-      // เลื่อนขึ้นนิดหน่อยให้เห็นหัวข้อชัด (เผื่อ header sticky)
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    const page = document.getElementById(id);
+    if (!page) return;
+
+    hideAllPages();
+
+    // โชว์หน้าเป้าหมาย (รองรับทุกสไตล์)
+    page.classList.add('active');
+    page.classList.remove('hidden');
+    page.style.display = 'block';
+
+    // อัปเดต hash และไฮไลต์ปุ่ม
+    if (location.hash !== '#' + id) history.replaceState(null, '', '#' + id);
+    setActiveButton(id);
+
+    // ถ้าหน้าบางอันต้องโหลดข้อมูลตอนถูกเปิด ใช้ event นี้
+    page.dispatchEvent(new CustomEvent('pageshow', { bubbles: true }));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  // เปิดหน้าให้ตรงกับ hash ถ้ามี (เช่น .../#players)
+  // เปิดหน้าตาม #hash (เช่น /#score) หรือ home ถ้าไม่มี
   window.addEventListener('DOMContentLoaded', () => {
-    const initial = (location.hash || '#home').replace('#','');
+    const initial = (location.hash || '#home').slice(1);
+    // ทำให้มีหน้าแรกอย่างน้อยหนึ่งอันที่มองเห็น
     showPage(initial);
   });
+
+  // เผื่อผู้ใช้พิมพ์ hash ใหม่เอง
+  window.addEventListener('hashchange', () => {
+    const id = (location.hash || '#home').slice(1);
+    showPage(id);
+  });
 </script>
+
 
 <!-- เพิ่ม CSS animation -->
 <style>
