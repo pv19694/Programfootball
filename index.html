@@ -84,59 +84,97 @@
 <nav class="container mx-auto px-4 py-3">
   <div class="flex flex-wrap items-center gap-3 justify-center md:justify-start">
 
-    <button onclick="showPage('home')" 
-      class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold tracking-wide text-gray-700
+    <button class="nav-btn inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold tracking-wide text-gray-700
       bg-white shadow-md transition-all duration-300
       hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 active:shadow-md
       border border-transparent"
-      style="border-image: linear-gradient(90deg, #ec4899, #8b5cf6, #3b82f6) 1;">
+      style="border-image: linear-gradient(90deg, #ec4899, #8b5cf6, #3b82f6) 1;"
+      data-target="home">
       🏠 หน้าหลัก
     </button>
 
-    <button onclick="showPage('score')"
-      class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold tracking-wide text-gray-700
+    <button class="nav-btn inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold tracking-wide text-gray-700
       bg-white shadow-md transition-all duration-300
       hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 active:shadow-md
       border border-transparent"
-      style="border-image: linear-gradient(90deg, #ec4899, #8b5cf6, #3b82f6) 1;">
+      style="border-image: linear-gradient(90deg, #ec4899, #8b5cf6, #3b82f6) 1;"
+      data-target="score">
       🏆 ตารางคะแนน
     </button>
 
-    <button onclick="showPage('match')"
-      class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold tracking-wide text-gray-700
+    <button class="nav-btn inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold tracking-wide text-gray-700
       bg-white shadow-md transition-all duration-300
       hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 active:shadow-md
       border border-transparent"
-      style="border-image: linear-gradient(90deg, #ec4899, #8b5cf6, #3b82f6) 1;">
+      style="border-image: linear-gradient(90deg, #ec4899, #8b5cf6, #3b82f6) 1;"
+      data-target="match">
       ⚽ บันทึกผล
     </button>
 
-    <button onclick="showPage('players')"
-      class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold tracking-wide text-gray-700
+    <button class="nav-btn inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold tracking-wide text-gray-700
       bg-white shadow-md transition-all duration-300
       hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 active:shadow-md
       border border-transparent"
-      style="border-image: linear-gradient(90deg, #ec4899, #8b5cf6, #3b82f6) 1;">
+      style="border-image: linear-gradient(90deg, #ec4899, #8b5cf6, #3b82f6) 1;"
+      data-target="players">
       👤 สถิติผู้เล่น
     </button>
 
-    <button onclick="showPage('teams')"
-      class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold tracking-wide text-gray-700
+    <button class="nav-btn inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold tracking-wide text-gray-700
       bg-white shadow-md transition-all duration-300
       hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 active:shadow-md
       border border-transparent"
-      style="border-image: linear-gradient(90deg, #ec4899, #8b5cf6, #3b82f6) 1;">
+      style="border-image: linear-gradient(90deg, #ec4899, #8b5cf6, #3b82f6) 1;"
+      data-target="teams">
       ⚙️ จัดการทีม
     </button>
 
-    <button onclick="showPage('list')"
-      class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold tracking-wide text-gray-700
+    <button class="nav-btn inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold tracking-wide text-gray-700
       bg-white shadow-md transition-all duration-300
       hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 active:shadow-md
       border border-transparent"
-      style="border-image: linear-gradient(90deg, #ec4899, #8b5cf6, #3b82f6) 1;">
+      style="border-image: linear-gradient(90deg, #ec4899, #8b5cf6, #3b82f6) 1;"
+      data-target="list">
       📝 รายชื่อนักกีฬา
     </button>
+
+  </div>
+</nav>
+
+<!-- สคริปต์ควบคุม -->
+<script>
+  // ปิด submit ถ้าอยู่ในฟอร์ม
+  document.querySelectorAll('.nav-btn').forEach(btn => btn.type = 'button');
+
+  function showPage(id) {
+    // ซ่อนทุกหน้า
+    document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+    // โชว์เฉพาะหน้าเป้าหมาย
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('hidden');
+
+    // active ปุ่ม
+    document.querySelectorAll('.nav-btn').forEach(b => 
+      b.classList.remove('ring-2','ring-offset-2','ring-purple-400')
+    );
+    const activeBtn = document.querySelector(`.nav-btn[data-target="${id}"]`);
+    if (activeBtn) activeBtn.classList.add('ring-2','ring-offset-2','ring-purple-400');
+  }
+
+  // จับคลิกทุกปุ่ม
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('.nav-btn');
+    if (!btn) return;
+    const id = btn.dataset.target;
+    showPage(id);
+  });
+
+  // หน้าแรกที่แสดง
+  window.addEventListener('DOMContentLoaded', () => {
+    showPage('home');
+  });
+</script>
+
 
   </div>
 </nav>
@@ -178,58 +216,53 @@
 <!-- สคริปต์สลับหน้า + ทำ active กับปุ่ม -->
 <script>
   // กันปุ่มเผลอ submit ถ้าเผลออยู่ใน <form>
-  document.querySelectorAll('nav button').forEach(b => b.type = 'button');
+  <script>
+  // ป้องกันปุ่มใน <form> เผลอ submit
+  document.querySelectorAll('.nav-btn').forEach(b => b.type = 'button');
 
-  // ไฮไลต์ปุ่มที่ active
-  function setActiveButton(id) {
-    document.querySelectorAll('nav button')
-      .forEach(b => b.classList.remove('ring-2','ring-offset-2','ring-purple-400'));
-    const btn = document.querySelector(`nav button[onclick*="${id}"]`);
-    if (btn) btn.classList.add('ring-2','ring-offset-2','ring-purple-400');
-  }
+  // ถ้าเคยมี hash ติดมาจากลิงก์เก่า ให้ลบทิ้งทันที (คงไว้เฉพาะ ?room=jakhong)
+  window.addEventListener('DOMContentLoaded', () => {
+    if (location.hash) {
+      history.replaceState(null, '', location.pathname + location.search);
+    }
+    showPage('home'); // หน้าเริ่มต้น
+  });
 
-  // ตัวช่วย: ซ่อนทุกหน้า (รองรับทั้ง .active และ .hidden)
-  function hideAllPages() {
-    document.querySelectorAll('.page').forEach(p => {
-      p.classList.remove('active');
-      p.classList.add('hidden');
-      // ถ้าเคยลืมใส่ hidden ไว้ ให้บังคับซ่อนด้วย style
-      p.style.display = 'none';
-    });
-  }
-
-  // แสดงหน้าเป้าหมาย
+  // สลับหน้าแบบไม่แก้ URL
   function showPage(id) {
-    const page = document.getElementById(id);
-    if (!page) return;
+    // ซ่อนทั้งหมด
+    document.querySelectorAll('.page').forEach(p => {
+      p.classList.add('hidden');
+      p.classList.remove('active');
+    });
+    // โชว์หน้าเป้าหมาย
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove('hidden');
+    el.classList.add('active');
 
-    hideAllPages();
+    // ไฮไลต์ปุ่มที่เลือก
+    document.querySelectorAll('.nav-btn').forEach(b => 
+      b.classList.remove('ring-2','ring-offset-2','ring-purple-400')
+    );
+    const activeBtn = document.querySelector(`.nav-btn[data-target="${id}"]`);
+    if (activeBtn) activeBtn.classList.add('ring-2','ring-offset-2','ring-purple-400');
 
-    // โชว์หน้าเป้าหมาย (รองรับทุกสไตล์)
-    page.classList.add('active');
-    page.classList.remove('hidden');
-    page.style.display = 'block';
-
-    // อัปเดต hash และไฮไลต์ปุ่ม
-    if (location.hash !== '#' + id) history.replaceState(null, '', '#' + id);
-    setActiveButton(id);
-
-    // ถ้าหน้าบางอันต้องโหลดข้อมูลตอนถูกเปิด ใช้ event นี้
-    page.dispatchEvent(new CustomEvent('pageshow', { bubbles: true }));
+    // เลื่อนขึ้น (กัน header sticky บัง)
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  // เปิดหน้าตาม #hash (เช่น /#score) หรือ home ถ้าไม่มี
-  window.addEventListener('DOMContentLoaded', () => {
-    const initial = (location.hash || '#home').slice(1);
-    // ทำให้มีหน้าแรกอย่างน้อยหนึ่งอันที่มองเห็น
-    showPage(initial);
+  // ใช้อีเวนต์เดียวฟังทุกปุ่ม
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.nav-btn');
+    if (!btn) return;
+    showPage(btn.dataset.target);
   });
 
-  // เผื่อผู้ใช้พิมพ์ hash ใหม่เอง
-  window.addEventListener('hashchange', () => {
-    const id = (location.hash || '#home').slice(1);
-    showPage(id);
+  // กันกรณีมี <a href="#..."> หลงมา
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest('a[href^="#"]');
+    if (a) e.preventDefault();
   });
 </script>
 
