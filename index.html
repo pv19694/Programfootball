@@ -142,24 +142,71 @@
 </nav>
 
 <!-- เนื้อหาแต่ละหน้า -->
+<!-- เนื้อหาแต่ละหน้า -->
 <main class="container mx-auto px-4 py-6">
-  <div id="home" class="page"> <h2 class="text-xl font-bold">🏠 หน้าหลัก</h2><p>ยินดีต้อนรับสู่ระบบจัดบอลสนาม Jakhong</p> </div>
-  <div id="score" class="page hidden"> <h2 class="text-xl font-bold">🏆 ตารางคะแนน</h2><p>ตารางคะแนนจะแสดงที่นี่</p> </div>
-  <div id="match" class="page hidden"> <h2 class="text-xl font-bold">⚽ บันทึกผล</h2><p>หน้าสำหรับบันทึกผลการแข่งขัน</p> </div>
-  <div id="players" class="page hidden"> <h2 class="text-xl font-bold">👤 สถิติผู้เล่น</h2><p>สถิติของผู้เล่นทั้งหมด</p> </div>
-  <div id="teams" class="page hidden"> <h2 class="text-xl font-bold">⚙️ จัดการทีม</h2><p>เพิ่ม/แก้ไขข้อมูลทีม</p> </div>
-  <div id="list" class="page hidden"> <h2 class="text-xl font-bold">📝 รายชื่อนักกีฬา</h2><p>รายชื่อนักกีฬาของแต่ละทีม</p> </div>
+  <section id="home" class="page active">
+    <h2 class="text-xl font-bold mb-2">🏠 หน้าหลัก</h2>
+    <p>ยินดีต้อนรับสู่ระบบจัดบอลสนาม Jakhong</p>
+  </section>
+
+  <section id="score" class="page">
+    <h2 class="text-xl font-bold mb-2">🏆 ตารางคะแนน</h2>
+    <p>ตารางคะแนนจะแสดงที่นี่…</p>
+  </section>
+
+  <section id="match" class="page">
+    <h2 class="text-xl font-bold mb-2">⚽ บันทึกผล</h2>
+    <p>หน้าสำหรับบันทึกผลการแข่งขัน…</p>
+  </section>
+
+  <section id="players" class="page">
+    <h2 class="text-xl font-bold mb-2">👤 สถิติผู้เล่น</h2>
+    <p>สถิติของผู้เล่นทั้งหมด…</p>
+  </section>
+
+  <section id="teams" class="page">
+    <h2 class="text-xl font-bold mb-2">⚙️ จัดการทีม</h2>
+    <p>เพิ่ม/แก้ไขข้อมูลทีม…</p>
+  </section>
+
+  <section id="list" class="page">
+    <h2 class="text-xl font-bold mb-2">📝 รายชื่อนักกีฬา</h2>
+    <p>รายชื่อนักกีฬาของแต่ละทีม…</p>
+  </section>
 </main>
 
-<!-- JS ควบคุมการสลับหน้า -->
+<!-- สคริปต์สลับหน้า + ทำ active กับปุ่ม -->
 <script>
-function showPage(id) {
-  document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
-  document.getElementById(id).classList.remove('hidden');
-}
+  // ปิดพฤติกรรม submit ถ้าปุ่มอยู่ในฟอร์ม
+  document.querySelectorAll('nav button').forEach(btn => btn.type = 'button');
+
+  function setActiveButton(targetId) {
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('ring-2','ring-offset-2','ring-purple-400'));
+    const btn = document.querySelector(`nav button[onclick*="${targetId}"]`);
+    if (btn) btn.classList.add('ring-2','ring-offset-2','ring-purple-400'); // ไฮไลต์ปุ่มที่เลือก
+  }
+
+  function showPage(id) {
+    // ซ่อนทุกหน้า
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    // โชว์หน้าเป้าหมาย
+    const el = document.getElementById(id);
+    if (el) {
+      el.classList.add('active');
+      // อัปเดต hash เพื่อให้รีเฟรชแล้วยังอยู่หน้าเดิม
+      if (location.hash !== '#' + id) history.replaceState(null, '', '#' + id);
+      setActiveButton(id);
+      // เลื่อนขึ้นนิดหน่อยให้เห็นหัวข้อชัด (เผื่อ header sticky)
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+
+  // เปิดหน้าให้ตรงกับ hash ถ้ามี (เช่น .../#players)
+  window.addEventListener('DOMContentLoaded', () => {
+    const initial = (location.hash || '#home').replace('#','');
+    showPage(initial);
+  });
 </script>
-
-
 
 <!-- เพิ่ม CSS animation -->
 <style>
