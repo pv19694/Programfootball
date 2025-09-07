@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>ระบบตารางคะแนนสนามฟุตบอล Jakhong</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  
+<script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-auth-compat.js"></script>
+
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
   @layer components {
@@ -695,7 +700,7 @@
       renderTeamEditPreview(null);
     }
 
-    // ====== INIT ======
+       // ====== INIT ======
     function init(){
       load();
       seedIfEmpty();
@@ -717,7 +722,89 @@
       log('ระบบพร้อมทำงาน');
     }
     document.addEventListener('DOMContentLoaded', init);
+
+    /* ===========================
+   REAL-TIME SYNC (Firestore)
+   =========================== */
+(function(){
+  // 1) คีย์จาก Firebase Console (ของคุณถูกแล้ว)
+  const firebaseConfig = {
+    apiKey: "AIzaSyBh4R84xmXnccI0KVi0ypnic89jGeswhMo",
+    authDomain: "footballprogram-93b7d.firebaseapp.com",
+    projectId: "footballprogram-93b7d",
+  };
+
+  // 2) เช็คว่า SDK โหลดแล้ว (ชื่อฟังก์ชันที่ถูกต้องคือ initializeApp)
+  if (!window.firebase || !firebase.initializeApp) {
+    console.error('Firebase SDK not loaded');
+    return;
+  }
+
+  // 3) Init + Firestore + Anonymous Auth
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+  firebase.auth().signInAnonymously().catch(e=>{
+    console.error(e); alert('Firebase auth error: ' + e.message);
+  });
+
+  // 4) ใช้ ?room= ใน URL เป็นห้องซิงก์
+  const ROOM_KEY='ce_v2_room', DEVICE_KEY='ce_v2_device';
+  const getRoomFromURL = () => new URLSearchParams(location.search).get('room')?.trim() || '';
+  let roomId = getRoomFromURL() || localStorage.getItem(ROOM_KEY) || '';
+  if (roomId) localStorage.setItem(ROOM_KEY, roomId);
+
+  let deviceId = localStorage.getItem(DEVICE_KEY);
+  if (!deviceId) { deviceId = 'dev_' + Math.random().toString(36).slice(2); localStorage.setItem(DEVICE_KEY, deviceId); }
+
+  // 5) ฟังอัปเดตจากคลาวด์
+  let unsubscribe = null;
+  function listenCloud(){
+    if (!roomId) return;
+    if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+    unsubscribe = db.collection('rooms').doc(roomId).onSnapshot(doc=>{
+      const d = doc.data();
+      if (!d || !d.state) return;
+      if (d.senderId === deviceId) return; // ข้ามของที่เราส่งเอง
+      state = d.state;
+      save();                // เก็บลง localStorage ของเครื่องนี้
+      afterStateChangeAll(); // รีเฟรชทั้งหน้า
+      try { log(`อัปเดตจากคลาวด์ (${roomId})`); } catch {}
+    });
+  }
+
+  // 6) ดันขึ้นคลาวด์อัตโนมัติทุกครั้งที่ save() (debounce)
+  async function pushCloud(){
+    if (!roomId) return;
+    try {
+      await db.collection('rooms').doc(roomId).set({
+        state,
+        senderId: deviceId,
+        updatedAt: Date.now()
+      }, { merge: true });
+    } catch (e) { console.error('push fail', e); }
+  }
+  const _save = save;
+  let _t;
+  save = function(){
+    _save();
+    clearTimeout(_t);
+    _t = setTimeout(pushCloud, 600);
+  };
+
+  document.addEventListener('DOMContentLoaded', ()=>{
+    if (!roomId) {
+      roomId = prompt('ใส่ Room ID เพื่อซิงก์ (เช่น league2025)')?.trim() || '';
+      if (roomId) {
+        localStorage.setItem(ROOM_KEY, roomId);
+        const u = new URL(location.href); u.searchParams.set('room', roomId);
+        history.replaceState(null,'',u);
+      }
+    }
+    listenCloud();
+  });
+})();
   </script>
 </body>
 </html>
+
 
