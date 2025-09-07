@@ -79,7 +79,6 @@
   </div>
 </header>
 
-  <!-- Nav actions -->
 <!-- ปุ่มเมนู -->
 <nav class="container mx-auto px-4 py-3">
   <div class="flex flex-wrap items-center gap-3 justify-center md:justify-start">
@@ -89,7 +88,7 @@
       hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 active:shadow-md
       border border-transparent"
       style="border-image: linear-gradient(90deg, #ec4899, #8b5cf6, #3b82f6) 1;"
-      data-target="home">
+      data-target="dashboard">
       🏠 หน้าหลัก
     </button>
 
@@ -98,7 +97,7 @@
       hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 active:shadow-md
       border border-transparent"
       style="border-image: linear-gradient(90deg, #ec4899, #8b5cf6, #3b82f6) 1;"
-      data-target="score">
+      data-target="table">
       🏆 ตารางคะแนน
     </button>
 
@@ -134,15 +133,53 @@
       hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 active:shadow-md
       border border-transparent"
       style="border-image: linear-gradient(90deg, #ec4899, #8b5cf6, #3b82f6) 1;"
-      data-target="list">
+      data-target="roster">
       📝 รายชื่อนักกีฬา
     </button>
 
   </div>
 </nav>
 
-<!-- สคริปต์ควบคุม (ชุดเดียวพอ) -->
+<!-- สคริปต์ควบคุม (ชุดเดียว) -->
 <script>
+  
+  // กันปุ่มในฟอร์มเผลอ submit
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.nav-btn').forEach(btn => btn.type = 'button');
+    showPage('dashboard'); // หน้าแรก
+  });
+
+  function showPage(id) {
+    // ซ่อนทุกหน้า (ให้สอดคล้องกับ CSS .page/.active)
+    document.querySelectorAll('.page').forEach(p => {
+      p.classList.remove('active'); // => display:none (ตาม CSS)
+      p.classList.add('hidden');
+    });
+
+    // โชว์หน้าเป้าหมาย
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.add('active');     // => display:block
+    el.classList.remove('hidden');
+
+    // ไฮไลต์ปุ่ม
+    document.querySelectorAll('.nav-btn').forEach(b =>
+      b.classList.remove('ring-2','ring-offset-2','ring-purple-400')
+    );
+    const activeBtn = document.querySelector(`.nav-btn[data-target="${id}"]`);
+    if (activeBtn) activeBtn.classList.add('ring-2','ring-offset-2','ring-purple-400');
+  }
+
+  // เดลิเกตคลิกปุ่ม (ไม่แตะ URL)
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.nav-btn');
+    if (!btn) return;
+    showPage(btn.dataset.target);
+    e.preventDefault();
+  });
+</script>
+
+  
   // กันปุ่มในฟอร์มเผลอ submit
   document.querySelectorAll('.nav-btn').forEach(btn => btn.type = 'button');
 
