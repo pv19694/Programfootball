@@ -724,11 +724,38 @@ async function pushCloud(){
   }catch(e){ logSync('push error: ' + e.message); }
 }
 
-document.addEventListener('DOMContentLoaded', ()=>{
-  logSync(`init • room=${roomId} • device=${deviceId.slice(-6)}`);
-  listenCloud();
-  setTimeout(pushCloud, 0); // seed ห้องครั้งแรก
+document.addEventListener('DOMContentLoaded', () => {
+  startSyncCloudFirst();
 });
+
+// โหลดจากคลาวด์ก่อน ถ้าว่างค่อย seed
+async function startSyncCloudFirst(){
+  if (!roomId) return;
+  const ref = db.collection('rooms').doc(roomId);
+  try {
+    const snap = await ref.get();
+    const data = snap.data();
+
+    if (snap.exists && data?.state) {
+      // ใช้ของคลาวด์เป็นหลัก
+      state = data.state;
+      _save();                 // เซฟโลคัล (ไม่ push)
+      afterStateChangeAll();
+      logSync('startup: loaded from cloud');
+    } else {
+      // ถ้าคลาวด์ว่าง ค่อย seed จากเครื่องนี้หนึ่งครั้ง
+      await ref.set({ state, senderId: deviceId, updatedAt: Date.now() }, { merge:true });
+      logSync('startup: seeded because cloud empty');
+    }
+
+    // แล้วค่อยเริ่มฟัง realtime
+    listenCloud();
+  } catch (e) {
+    logSync('startup error: ' + e.message);
+    // ยังไงก็เริ่มฟังไว้ก่อน
+    listenCloud();
+  }
+}
 
          
        // ====== INIT ======
@@ -807,8 +834,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
       if (!d || !d.state) return;
       if (d.senderId === deviceId) return; // ข้ามของที่เราส่งเอง
       state = d.state;
-      save();                // เก็บลง localStorage ของเครื่องนี้
-      afterStateChangeAll(); // รีเฟรชทั้งหน้า
+_save();              // <-- ใช้ _save() เท่านั้น (บันทึกโลคัล ไม่ push)
+afterStateChangeAll();
       try { log(`อัปเดตจากคลาวด์ (${roomId})`); } catch {}
     });
   }
