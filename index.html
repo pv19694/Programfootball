@@ -747,14 +747,24 @@
     console.error(e); alert('Firebase auth error: ' + e.message);
   });
 
-  // 4) ใช้ ?room= ใน URL เป็นห้องซิงก์
-  const ROOM_KEY='ce_v2_room', DEVICE_KEY='ce_v2_device';
-  const getRoomFromURL = () => new URLSearchParams(location.search).get('room')?.trim() || '';
-  let roomId = getRoomFromURL() || localStorage.getItem(ROOM_KEY) || '';
+    // 4) ใช้ room 'jakhong' ตายตัว (ไม่ต้อง ?room= และไม่ถาม prompt)
+  const ROOM_KEY = 'ce_v2_room', DEVICE_KEY = 'ce_v2_device';
+  const DEFAULT_ROOM = 'jakhong';
+  const FORCE_ROOM = true; // true = บังคับใช้ DEFAULT_ROOM เสมอ
+
+  let roomId = FORCE_ROOM
+    ? DEFAULT_ROOM
+    : (new URLSearchParams(location.search).get('room')?.trim()
+       || localStorage.getItem(ROOM_KEY)
+       || DEFAULT_ROOM);
+
   if (roomId) localStorage.setItem(ROOM_KEY, roomId);
 
   let deviceId = localStorage.getItem(DEVICE_KEY);
-  if (!deviceId) { deviceId = 'dev_' + Math.random().toString(36).slice(2); localStorage.setItem(DEVICE_KEY, deviceId); }
+  if (!deviceId) {
+    deviceId = 'dev_' + Math.random().toString(36).slice(2);
+    localStorage.setItem(DEVICE_KEY, deviceId);
+  }
 
   // 5) ฟังอัปเดตจากคลาวด์
   let unsubscribe = null;
@@ -792,15 +802,9 @@
   };
 
   document.addEventListener('DOMContentLoaded', ()=>{
-    if (!roomId) {
-      roomId = prompt('ใส่ Room ID เพื่อซิงก์ (เช่น league2025)')?.trim() || '';
-      if (roomId) {
-        localStorage.setItem(ROOM_KEY, roomId);
-        const u = new URL(location.href); u.searchParams.set('room', roomId);
-        history.replaceState(null,'',u);
-      }
-    }
     listenCloud();
+    // ส่งสถานะปัจจุบันขึ้นคลาวด์ทันทีเมื่อเข้า (ช่วย seed ห้องใหม่)
+    setTimeout(pushCloud, 0);
   });
 })();
   </script>
