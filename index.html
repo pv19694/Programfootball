@@ -455,12 +455,6 @@
       while(box.children.length>100) box.removeChild(box.lastChild);
     }
 
-  function esc(s='') {
-  return String(s).replace(/[&<>"']/g, m => (
-    {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]
-  ));
-}
-
 function renderPlayerCard(p, team) {
   // เช็คว่ามีค่าหรือไม่
   const hasNum = p.num !== undefined && p.num !== null && String(p.num).trim() !== '';
