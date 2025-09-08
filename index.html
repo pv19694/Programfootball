@@ -1005,34 +1005,6 @@ bindOnce($('#selRosterTeam'),'change', renderRosterGrid);
       renderTeamEditPreview(null);
     }
 
-function logSync(m){ try{ log('[SYNC] ' + m); } catch { console.log('[SYNC]', m); } }
-
-function listenCloud(){
-  if (!roomId) return;
-  if (unsubscribe) { unsubscribe(); unsubscribe = null; }
-  unsubscribe = db.collection('rooms').doc(roomId).onSnapshot(doc=>{
-    const d = doc.data();
-    if (!d || !d.state) return;
-    if (d.senderId === deviceId) return;
-    state = d.state; _save(); afterStateChangeAll();
-    logSync(`pull ok • updatedAt=${new Date(d.updatedAt).toLocaleTimeString()}`);
-  }, err=> logSync('pull error: ' + err.message));
-}
-
-async function pushCloud(){
-  if (!roomId) return;
-  try{
-    await db.collection('rooms').doc(roomId).set({
-      state, senderId: deviceId, updatedAt: Date.now()
-    }, { merge:true });
-    logSync('push ok ' + new Date().toLocaleTimeString());
-  }catch(e){ logSync('push error: ' + e.message); }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  startSyncCloudFirst();
-});
-
 // โหลดจากคลาวด์ก่อน ถ้าว่างค่อย seed
 async function startSyncCloudFirst(){
   if (!roomId) return;
