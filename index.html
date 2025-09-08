@@ -406,6 +406,12 @@
         <input id="npBirth" name="birth" type="date" class="input">
       </div>
 
+      <div class="col-span-2 md:col-span-1">
+        <label for="playerPhone" class="lbl">เบอร์โทร (ไม่บังคับ)</label>
+        <input id="playerPhone" name="phone" type="tel" inputmode="tel"
+         class="input" placeholder="08x-xxx-xxxx" />
+      </div>
+
       <div class="md:col-span-2 flex flex-wrap items-center gap-2 pt-2">
         <button id="btnAddNewPlayer"    type="button" class="btn btn-green">✅ เพิ่มนักกีฬา</button>
         <button id="btnClearNewPlayer"  type="button" class="btn btn-white">🧽 ล้างฟอร์ม</button>
@@ -738,35 +744,131 @@
     }
 
     $('#btnAddNewPlayer')?.addEventListener('click', ()=>{
-      const teamId=$('#npTeam').value; const team=state.teams.find(t=>t.id===teamId);
-      if(!team) return alert('เลือกทีม');
-      const name=$('#npName').value.trim(), pos=$('#npPos').value, num=$('#npNum').value;
-      const birth=$('#npBirth').value; const age=parseInt($('#npAge').value||calcAgeFromISO(birth)||0,10);
-      if(!name||!pos||!age) return alert('กรอกชื่อ ตำแหน่ง และวันเกิด/อายุ');
+  const teamId = $('#npTeam').value;
+  const team = state.teams.find(t=>t.id===teamId);
+  if(!team) return alert('เลือกทีม');
 
-      team.members.push({ id:nid('p'), name, pos, num, birth, age, photo: tempPlayerPhoto||'' });
-      save(); renderRosterGrid(); renderDashboard();
-      ['npName','npPos','npNum','npBirth','npAge'].forEach(k=>$('#'+k).value='');
-      tempPlayerPhoto=''; $('#preview').innerHTML='👤'; $('#npPhoto').value='';
-      log(`เพิ่มนักกีฬา ${name} ให้ทีม ${team.name}`);
-    });
+  // อ่านค่าฟอร์ม (ไม่บังคับว่าต้องมี)
+  const name  = $('#npName').value.trim();
+  const pos   = $('#npPos').value.trim();
+  const num   = $('#npNum').value.trim();
+  const birth = $('#npBirth').value.trim();
+  const age   = parseInt($('#npAge').value || (birth ? calcAgeFromISO(birth) : 0), 10);
+  const phone = $('#npPhone')?.value.trim() || '';   // <-- เพิ่มเบอร์โทร
 
-    $('#btnClearNewPlayer')?.addEventListener('click', ()=>{
-      ['npName','npPos','npNum','npBirth','npAge'].forEach(k=>$('#'+k).value='');
-      tempPlayerPhoto=''; $('#preview').innerHTML='👤'; $('#npPhoto').value='';
-    });
-    $('#btnCancelNewPlayer')?.addEventListener('click', ()=> $('#addPlayerForm').classList.add('hidden'));
+  team.members.push({
+    id: nid('p'),
+    name: name || '(ไม่มีชื่อ)',   // ถ้าไม่ใส่ชื่อ จะใส่ default
+    pos, num, birth,
+    age: isNaN(age) ? null : age,
+    phone,                          // <-- เก็บเบอร์โทร
+    photo: tempPlayerPhoto || ''
+  });
 
-    $('#btnDownloadRoster')?.addEventListener('click', ()=>{
-      const teamId=$('#selRosterTeam').value; const team=state.teams.find(t=>t.id===teamId);
-      if(!team) return alert('ไม่มีทีมที่เลือก');
-      const blob=new Blob([JSON.stringify({team:team.name,players:team.members},null,2)],{type:'application/json'});
-      const url=URL.createObjectURL(blob); const a=document.createElement('a');
-      a.href=url; a.download=`roster-${team.name}.json`; a.click(); URL.revokeObjectURL(url);
-    });
+  save();
+  renderRosterGrid();
+  renderDashboard();
 
-    $('#btnToggleAddPlayer')?.addEventListener('click', ()=> $('#addPlayerForm').classList.toggle('hidden'));
-    $('#selRosterTeam')?.addEventListener('change', renderRosterGrid);
+  // เคลียร์ฟอร์ม
+  ['npName','npPos','npNum','npBirth','npAge','npPhone'].forEach(k=>{
+    const el = $('#'+k);
+    if(el) el.value='';
+  });
+  tempPlayerPhoto='';
+  $('#preview').innerHTML='👤';
+  $('#npPhoto').value='';
+
+  log(`เพิ่มนักกีฬา ${name||'(ไม่มีชื่อ)'} ให้ทีม ${team.name}`);
+});
+
+
+    // ช่วย: ล้างฟอร์มเพิ่มนักกีฬา
+function clearNewPlayerForm() {
+  ['npName','npPos','npNum','npBirth','npAge','npPhone'].forEach(id=>{
+    const el = $('#'+id);
+    if (el) el.value = '';
+  });
+  tempPlayerPhoto = '';
+  if ($('#preview')) $('#preview').innerHTML = '👤';
+  if ($('#npPhoto')) $('#npPhoto').value = '';
+}
+
+// กันผูกซ้ำ (ถ้ายังไม่เคยผูก จะไม่มี data-bound)
+function bindOnce(el, type, handler) {
+  if (!el || el.dataset.bound === '1') return;
+  el.addEventListener(type, handler);
+  el.dataset.bound = '1';
+}
+
+// --- Add player ---
+bindOnce($('#btnAddNewPlayer'),'click', ()=>{
+  const teamId = $('#npTeam')?.value;
+  const team = state.teams.find(t=>t.id===teamId);
+  if(!team) return alert('เลือกทีม');
+
+  // อ่านค่าฟอร์ม (ไม่บังคับ)
+  const name  = $('#npName')?.value.trim() || '';
+  const pos   = $('#npPos')?.value.trim() || '';
+  const num   = $('#npNum')?.value.trim() || '';
+  const birth = $('#npBirth')?.value.trim() || '';
+  const phone = $('#npPhone')?.value.trim() || '';
+
+  // คำนวณอายุแบบไม่บังคับ
+  let ageInput = parseInt($('#npAge')?.value || '', 10);
+  if (Number.isNaN(ageInput)) {
+    ageInput = birth ? parseInt(calcAgeFromISO?.(birth) ?? '', 10) : NaN;
+  }
+  const age = Number.isNaN(ageInput) ? null : ageInput;
+
+  team.members.push({
+    id: nid('p'),
+    name: name || '(ไม่มีชื่อ)',
+    pos, num, birth, age,
+    phone,
+    photo: tempPlayerPhoto || ''
+  });
+
+  save();
+  renderRosterGrid();
+  renderDashboard?.();
+
+  clearNewPlayerForm();
+  log(`เพิ่มนักกีฬา ${name||'(ไม่มีชื่อ)'} ให้ทีม ${team.name}`);
+});
+
+// --- Clear form ---
+bindOnce($('#btnClearNewPlayer'),'click', clearNewPlayerForm);
+
+// --- Cancel add (ซ่อนฟอร์ม) ---
+bindOnce($('#btnCancelNewPlayer'),'click', ()=>{
+  $('#addPlayerForm')?.classList.add('hidden');
+});
+
+// --- Download roster ---
+bindOnce($('#btnDownloadRoster'),'click', ()=>{
+  const teamId = $('#selRosterTeam')?.value;
+  const team = state.teams.find(t=>t.id===teamId);
+  if(!team) return alert('ไม่มีทีมที่เลือก');
+  const blob = new Blob(
+    [JSON.stringify({team:team.name,players:team.members}, null, 2)],
+    {type:'application/json'}
+  );
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `roster-${team.name}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+// --- Toggle add form ---
+bindOnce($('#btnToggleAddPlayer'),'click', ()=>{
+  $('#addPlayerForm')?.classList.toggle('hidden');
+});
+
+// --- เปลี่ยนทีมในตารางรายชื่อ ---
+bindOnce($('#selRosterTeam'),'change', renderRosterGrid);
+
 
     // theme color (สำหรับหัวข้อทีม/ป้ายเบอร์)
     const colorInput = $('#teamColor');
