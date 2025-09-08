@@ -455,6 +455,64 @@
       while(box.children.length>100) box.removeChild(box.lastChild);
     }
 
+  function esc(s='') {
+  return String(s).replace(/[&<>"']/g, m => (
+    {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]
+  ));
+}
+
+function renderPlayerCard(p, team) {
+  // เช็คว่ามีค่าหรือไม่
+  const hasNum = p.num !== undefined && p.num !== null && String(p.num).trim() !== '';
+  const showAge = Number.isFinite(p.age) && p.age > 0;
+  const showPos = !!p.pos;
+  const showPhone = !!p.phone;
+
+  // เบอร์เสื้อมุมขวาบน
+  const numBadge = hasNum
+    ? `<span class="num-badge absolute top-1 right-1">#${esc(p.num)}</span>`
+    : '';
+
+  // chips (แสดงเฉพาะข้อมูลที่มี)
+  const chips = [];
+  if (showPos)   chips.push(`<span class="chip">ตำแหน่ง: ${esc(p.pos)}</span>`);
+  if (showAge)   chips.push(`<span class="chip">อายุ ${esc(p.age)}</span>`);
+  if (showPhone) chips.push(`<span class="chip">📞 ${esc(p.phone)}</span>`);
+  const chipRow = chips.length
+    ? `<div class="flex flex-wrap items-center gap-2 text-xs text-slate-600 mt-1">${chips.join('')}</div>`
+    : '';
+
+  // รูปนักกีฬา (fallback)
+  const photo = p.photo
+    ? `<img src="${esc(p.photo)}" alt="${esc(p.name||'นักกีฬา')}" class="h-16 w-16 rounded-xl object-cover">`
+    : `<div class="h-16 w-16 rounded-xl bg-slate-100 grid place-items-center text-slate-400">👤</div>`;
+
+  // โลโก้ทีมด้านล่าง
+  const teamLogo = team?.logo
+    ? `<div class="mt-2 flex justify-end"><img src="${esc(team.logo)}" alt="${esc(team.name||'team')}" class="h-6"></div>`
+    : '';
+
+  return `
+    <div class="player-card relative flex flex-col gap-2 rounded-2xl bg-white p-3 shadow">
+      ${numBadge}
+      <div class="flex items-center gap-3">
+        <div class="relative shrink-0">
+          ${photo}
+        </div>
+        <div class="min-w-0 grow">
+          <div class="font-bold truncate">${esc(p.name || '(ไม่มีชื่อ)')}</div>
+          ${chipRow}
+        </div>
+        <div class="ml-auto flex items-center gap-2">
+          <button class="btn btn-white" data-act="edit-player" data-id="${p.id}">แก้ไข</button>
+          <button class="btn btn-red"   data-act="del-player"  data-id="${p.id}">ลบ</button>
+        </div>
+      </div>
+      ${teamLogo}
+    </div>
+  `;
+}
+
     // ====== Tabs ======
     document.querySelectorAll('.tab').forEach(btn=>{
       btn.addEventListener('click', ()=>{
