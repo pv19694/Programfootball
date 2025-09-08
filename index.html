@@ -454,58 +454,60 @@
       // limit 100
       while(box.children.length>100) box.removeChild(box.lastChild);
     }
+    
+  
+    function renderPlayerCard(p, team) {
+  const has = (v) => v !== undefined && v !== null && String(v).trim() !== '';
+  const fmtDate = (iso) => {
+    if (!has(iso)) return '';
+    const [y,m,d] = iso.split('-');
+    return `${d}/${m}/${y}`;
+  };
 
-function renderPlayerCard(p, team) {
-  // เช็คว่ามีค่าหรือไม่
-  const hasNum = p.num !== undefined && p.num !== null && String(p.num).trim() !== '';
-  const showAge = Number.isFinite(p.age) && p.age > 0;
-  const showPos = !!p.pos;
-  const showPhone = !!p.phone;
-
-  // เบอร์เสื้อมุมขวาบน
-  const numBadge = hasNum
-    ? `<span class="num-badge absolute top-1 right-1">#${esc(p.num)}</span>`
-    : '';
-
-  // chips (แสดงเฉพาะข้อมูลที่มี)
   const chips = [];
-  if (showPos)   chips.push(`<span class="chip">ตำแหน่ง: ${esc(p.pos)}</span>`);
-  if (showAge)   chips.push(`<span class="chip">อายุ ${esc(p.age)}</span>`);
-  if (showPhone) chips.push(`<span class="chip">📞 ${esc(p.phone)}</span>`);
-  const chipRow = chips.length
-    ? `<div class="flex flex-wrap items-center gap-2 text-xs text-slate-600 mt-1">${chips.join('')}</div>`
+  if (has(p.pos))   chips.push(`<span class="chip">${p.pos}</span>`);
+  if (Number.isFinite(p.age) && p.age > 0) chips.push(`<span class="chip">อายุ ${p.age}</span>`);
+  if (has(p.birth)) chips.push(`<span class="chip">${fmtDate(p.birth)}</span>`);
+  if (has(p.phone)) chips.push(`<span class="chip">📞 ${p.phone}</span>`);
+
+  const numBadge = has(p.num)
+    ? `<span class="num-badge-static">#${String(p.num).trim()}</span>`
     : '';
 
-  // รูปนักกีฬา (fallback)
-  const photo = p.photo
-    ? `<img src="${esc(p.photo)}" alt="${esc(p.name||'นักกีฬา')}" class="h-16 w-16 rounded-xl object-cover">`
-    : `<div class="h-16 w-16 rounded-xl bg-slate-100 grid place-items-center text-slate-400">👤</div>`;
+  const photo = has(p.photo)
+    ? `<img src="${esc(p.photo)}" alt="${esc(p.name||'นักกีฬา')}" class="player-avatar object-cover">`
+    : `<div class="player-avatar grid place-items-center text-slate-400">👤</div>`;
 
-  // โลโก้ทีมด้านล่าง
   const teamLogo = team?.logo
-    ? `<div class="mt-2 flex justify-end"><img src="${esc(team.logo)}" alt="${esc(team.name||'team')}" class="h-6"></div>`
+    ? `<div class="mt-2 flex justify-end"><img src="${esc(team.logo)}" class="h-6" alt=""></div>`
     : '';
 
   return `
-    <div class="player-card relative flex flex-col gap-2 rounded-2xl bg-white p-3 shadow">
-      ${numBadge}
-      <div class="flex items-center gap-3">
-        <div class="relative shrink-0">
-          ${photo}
-        </div>
-        <div class="min-w-0 grow">
-          <div class="font-bold truncate">${esc(p.name || '(ไม่มีชื่อ)')}</div>
-          ${chipRow}
-        </div>
-        <div class="ml-auto flex items-center gap-2">
-          <button class="btn btn-white" data-act="edit-player" data-id="${p.id}">แก้ไข</button>
-          <button class="btn btn-red"   data-act="del-player"  data-id="${p.id}">ลบ</button>
-        </div>
+    <div class="player-card">
+      <div class="relative">
+        ${photo}
       </div>
-      ${teamLogo}
+      <div class="min-w-0 flex-1">
+        <div class="flex items-start justify-between gap-2">
+          <div class="font-bold whitespace-normal break-words leading-tight">
+            ${esc(p.name || '(ไม่มีชื่อ)')}
+          </div>
+          ${numBadge}
+        </div>
+        ${chips.length ? `
+          <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-600">
+            ${chips.join('')}
+          </div>` : ''}
+        ${teamLogo}
+      </div>
+      <div class="ml-auto flex items-center gap-2">
+        <button class="btn btn-white" data-act="edit-player" data-id="${p.id}">แก้ไข</button>
+        <button class="btn btn-red"   data-act="del-player"  data-id="${p.id}">ลบ</button>
+      </div>
     </div>
   `;
 }
+
 
     // ====== Tabs ======
     document.querySelectorAll('.tab').forEach(btn=>{
@@ -764,33 +766,19 @@ function renderPlayerCard(p, team) {
     function labelPos(pos){ return pos==='goalkeeper'? 'ผู้รักษาประตู' : pos==='defender'? 'กองหลัง' : pos==='midfielder'? 'กองกลาง' : 'กองหน้า'; }
 
     function renderRosterGrid(){
-      const teamId=$('#selRosterTeam').value;
-      const team=state.teams.find(t=>t.id===teamId);
-      if($('#rosterTeamName')) $('#rosterTeamName').textContent = team?.name || '-';
-      const grid=$('#rosterGrid');
-      const items = (team?.members || []).map(p => `
-  <div class="player-card">
-    <div class="relative">
-      <img src="${p.photo || ''}" alt="${esc(p.name)}" class="player-avatar object-cover">
-    </div>
-    <div class="min-w-0 flex-1">
-      <!-- ชื่อ + เบอร์เสื้อ (ย้ายมุมขวาบน) -->
-      <div class="flex items-start justify-between gap-2">
-        <div class="font-bold whitespace-normal break-words leading-tight">
-  ${esc(p.name)}
-</div>
-        <span class="num-badge-static">#${p.num || '-'}</span>
-      </div>
+  const teamId = $('#selRosterTeam').value;
+  const team   = state.teams.find(t=>t.id===teamId);
+  if ($('#rosterTeamName')) $('#rosterTeamName').textContent = team?.name || '-';
 
-      <!-- ข้อมูล 3 บรรทัด: ตำแหน่ง / อายุ / ว/ด/ป เกิด -->
-      <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-600">
-  <span class="chip">${labelPos(p.pos)}</span>
-  <span class="chip">อายุ ${p.age ?? '-'}</span>
-  <span class="chip">${(p.birth || '').split('-').reverse().join('/')}</span>
-</div>
-    </div>
-  </div>
-`).join('');
+  const grid = $('#rosterGrid');
+  if (!grid) return;
+
+  const items = (team?.members || [])
+    .map(p => renderPlayerCard(p, team))
+    .join('');
+
+  grid.innerHTML = items || `<div class="text-slate-400">ยังไม่มีรายชื่อ</div>`;
+}
 
       grid.innerHTML = items || `<div class="text-slate-400">ยังไม่มีรายชื่อ</div>`;
     }
