@@ -210,37 +210,6 @@
   });
 </script>
 
-
-<!-- สคริปต์สลับหน้า + ทำ active กับปุ่ม (ไม่แก้ URL) -->
-<script>
-  // ฟังก์ชันสลับหน้า
-  function showPage(id) {
-    // ซ่อนทุกหน้าให้สอดคล้องกับ CSS .page/.active
-    document.querySelectorAll('.page').forEach(p => {
-      p.classList.remove('active'); // display:none ตาม CSS
-      p.classList.add('hidden');    // เผื่อบางหน้ามี hidden อยู่แล้ว
-    });
-
-    // โชว์หน้าเป้าหมาย
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.classList.add('active');     // display:block ตาม CSS
-    el.classList.remove('hidden');
-
-    // ไฮไลต์ปุ่ม (ถ้ามีใช้ class .nav-btn และ data-target)
-    document.querySelectorAll('.nav-btn').forEach(b =>
-      b.classList.remove('ring-2','ring-offset-2','ring-purple-400')
-    );
-    const btn = document.querySelector(`.nav-btn[data-target="${id}"]`);
-    if (btn) btn.classList.add('ring-2','ring-offset-2','ring-purple-400');
-  }
-
-  // ป้องกันปุ่มในฟอร์มเผลอ submit
-  document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('nav button').forEach(b => b.type = 'button');
-  });
-</script>
-
 <!-- เพิ่ม CSS animation -->
 <style>
 @keyframes gradient-x {
