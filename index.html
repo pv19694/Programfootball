@@ -800,59 +800,74 @@ function bindOnce(el, type, handler) {
   el.dataset.bound = '1';
 }
 
-// --- Add player ---
-bindOnce($('#btnAddNewPlayer'),'click', ()=>{
-  const teamId = $('#npTeam')?.value;
-  const team = state.teams.find(t=>t.id===teamId);
-  if(!team) return alert('เลือกทีม');
-
-  // อ่านค่าฟอร์ม (ไม่บังคับ)
-  const name  = $('#npName')?.value.trim() || '';
-  const pos   = $('#npPos')?.value.trim() || '';
-  const num   = $('#npNum')?.value.trim() || '';
-  const birth = $('#npBirth')?.value.trim() || '';
-  const phone = $('#npPhone')?.value.trim() || '';
-
-  // คำนวณอายุแบบไม่บังคับ
-  let ageInput = parseInt($('#npAge')?.value || '', 10);
-  if (Number.isNaN(ageInput)) {
-    ageInput = birth ? parseInt(calcAgeFromISO?.(birth) ?? '', 10) : NaN;
-  }
-  const age = Number.isNaN(ageInput) ? null : ageInput;
-
-  team.members.push({
-    id: nid('p'),
-    name: name || '(ไม่มีชื่อ)',
-    pos, num, birth, age,
-    phone,
-    photo: tempPlayerPhoto || ''
+// เคลียร์ฟอร์ม
+function clearNewPlayerForm() {
+  ['npName','npPos','npNum','npBirth','npAge','npPhone'].forEach(id=>{
+    const el = $('#'+id);
+    if (el) el.value = '';
   });
+  tempPlayerPhoto = '';
+  if ($('#preview')) $('#preview').innerHTML = '👤';
+  if ($('#npPhoto')) $('#npPhoto').value = '';
+}
 
-  save();
-  renderRosterGrid();
-  renderDashboard?.();
+// กันผูกซ้ำ
+function bindOnce(el, type, handler) {
+  if (!el || el.dataset.bound === '1') return;
+  el.addEventListener(type, handler);
+  el.dataset.bound = '1';
+}
 
-  clearNewPlayerForm();
-  log(`เพิ่มนักกีฬา ${name||'(ไม่มีชื่อ)'} ให้ทีม ${team.name}`);
+// ✅ ใช้ submit เพียงจุดเดียว
+bindOnce($('#addPlayerForm'), 'submit', (e)=>{
+  e.preventDefault();
+
+  if (window._addingPlayer) return;
+  window._addingPlayer = true;
+
+  try {
+    const teamId = $('#npTeam')?.value;
+    const team = state.teams.find(t=>t.id===teamId);
+    if (!team) { alert('เลือกทีม'); return; }
+
+    const name  = $('#npName')?.value.trim() || '';
+    const pos   = $('#npPos')?.value.trim() || '';
+    const num   = $('#npNum')?.value.trim() || '';
+    const birth = $('#npBirth')?.value.trim() || '';
+    const phone = $('#npPhone')?.value.trim() || '';
+
+    let ageInput = parseInt($('#npAge')?.value || '', 10);
+    if (Number.isNaN(ageInput)) {
+      ageInput = birth ? parseInt(calcAgeFromISO?.(birth) ?? '', 10) : NaN;
+    }
+    const age = Number.isNaN(ageInput) ? null : ageInput;
+
+    team.members.push({
+      id: nid('p'),
+      name: name || '(ไม่มีชื่อ)',
+      pos, num, birth, age,
+      phone,
+      photo: tempPlayerPhoto || ''
+    });
+
+    save();
+    renderRosterGrid();
+    renderDashboard?.();
+    clearNewPlayerForm();
+    log(`เพิ่มนักกีฬา ${name||'(ไม่มีชื่อ)'} ให้ทีม ${team.name}`);
+  } finally {
+    setTimeout(()=>{ window._addingPlayer = false; }, 0);
+  }
 });
 
-// --- Clear form ---
+// ปุ่มอื่นๆ ของคุณ ใช้ต่อได้ตามเดิม
 bindOnce($('#btnClearNewPlayer'),'click', clearNewPlayerForm);
-
-// --- Cancel add (ซ่อนฟอร์ม) ---
-bindOnce($('#btnCancelNewPlayer'),'click', ()=>{
-  $('#addPlayerForm')?.classList.add('hidden');
-});
-
-// --- Download roster ---
+bindOnce($('#btnCancelNewPlayer'),'click', ()=> $('#addPlayerForm')?.classList.add('hidden'));
 bindOnce($('#btnDownloadRoster'),'click', ()=>{
   const teamId = $('#selRosterTeam')?.value;
   const team = state.teams.find(t=>t.id===teamId);
   if(!team) return alert('ไม่มีทีมที่เลือก');
-  const blob = new Blob(
-    [JSON.stringify({team:team.name,players:team.members}, null, 2)],
-    {type:'application/json'}
-  );
+  const blob = new Blob([JSON.stringify({team:team.name,players:team.members}, null, 2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -860,13 +875,7 @@ bindOnce($('#btnDownloadRoster'),'click', ()=>{
   a.click();
   URL.revokeObjectURL(url);
 });
-
-// --- Toggle add form ---
-bindOnce($('#btnToggleAddPlayer'),'click', ()=>{
-  $('#addPlayerForm')?.classList.toggle('hidden');
-});
-
-// --- เปลี่ยนทีมในตารางรายชื่อ ---
+bindOnce($('#btnToggleAddPlayer'),'click', ()=> $('#addPlayerForm')?.classList.toggle('hidden'));
 bindOnce($('#selRosterTeam'),'change', renderRosterGrid);
 
 
