@@ -140,82 +140,76 @@
   </div>
 </nav>
 
-<!-- สคริปต์ควบคุม (ชุดเดียว) -->
+<!-- สคริปต์ควบคุม (ก้อนเดียว) -->
 <script>
-  
-  // กันปุ่มในฟอร์มเผลอ submit
+  /* ===== helper: เรียกฟังก์ชันอย่างปลอดภัย ===== */
+  function callIfExists(name, ...args) {
+    if (typeof window[name] === 'function') window[name](...args);
+  }
+
+  /* ===== ฟังก์ชันที่จะถูกเรียกเมื่อเข้าแต่ละหน้า ===== */
+  const pageLoaders = {
+    // เลือกใช้ id ตามที่คุณมีจริงใน <section>
+    home:       () => callIfExists('renderDashboard'),
+    dashboard:  () => callIfExists('renderDashboard'),
+
+    score:      () => callIfExists('renderTable'),
+    table:      () => callIfExists('renderTable'),
+
+    match: () => {
+      callIfExists('renderTeamSelects');  // เติมรายชื่อทีมลง select
+      callIfExists('renderMatchLog');     // โหลดประวัติแมตช์
+    },
+
+    players: () => callIfExists('renderPlayers'),
+    teams:   () => callIfExists('renderTeams'),
+    list:    () => callIfExists('renderRoster'),
+    roster:  () => callIfExists('renderRoster'),
+  };
+
+  /* ===== สลับหน้า (ไม่แตะ URL) ===== */
+  function showPage(id) {
+    // ซ่อนทุกหน้า ให้สอดคล้องกับ CSS: .page{display:none} .page.active{display:block}
+    document.querySelectorAll('.page').forEach(p => {
+      p.classList.remove('active');   // => display:none
+      p.classList.add('hidden');
+    });
+
+    // โชว์หน้าเป้าหมาย
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.add('active');       // => display:block
+    el.classList.remove('hidden');
+
+    // ไฮไลต์ปุ่มเมนู
+    document.querySelectorAll('.nav-btn').forEach(b =>
+      b.classList.remove('ring-2','ring-offset-2','ring-purple-400')
+    );
+    const activeBtn = document.querySelector(`.nav-btn[data-target="${id}"]`);
+    if (activeBtn) activeBtn.classList.add('ring-2','ring-offset-2','ring-purple-400');
+
+    // เรียกตัวโหลดข้อมูลของหน้าที่เปิด (ถ้ามี)
+    if (pageLoaders[id]) pageLoaders[id]();
+  }
+
+  /* ===== ตั้งค่าเมื่อโหลดเสร็จ ===== */
   document.addEventListener('DOMContentLoaded', () => {
+    // กันปุ่มในฟอร์มเผลอ submit
     document.querySelectorAll('.nav-btn').forEach(btn => btn.type = 'button');
-    showPage('dashboard'); // หน้าแรก
+
+    // หน้าแรก (เลือกให้ตรงกับ id ของคุณ: 'home' หรือ 'dashboard')
+    showPage('dashboard');
   });
 
-  function showPage(id) {
-    // ซ่อนทุกหน้า (ให้สอดคล้องกับ CSS .page/.active)
-    document.querySelectorAll('.page').forEach(p => {
-      p.classList.remove('active'); // => display:none (ตาม CSS)
-      p.classList.add('hidden');
-    });
-
-    // โชว์หน้าเป้าหมาย
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.classList.add('active');     // => display:block
-    el.classList.remove('hidden');
-
-    // ไฮไลต์ปุ่ม
-    document.querySelectorAll('.nav-btn').forEach(b =>
-      b.classList.remove('ring-2','ring-offset-2','ring-purple-400')
-    );
-    const activeBtn = document.querySelector(`.nav-btn[data-target="${id}"]`);
-    if (activeBtn) activeBtn.classList.add('ring-2','ring-offset-2','ring-purple-400');
-  }
-
-  // เดลิเกตคลิกปุ่ม (ไม่แตะ URL)
+  /* ===== เดลิเกตคลิกปุ่มเมนู ===== */
   document.addEventListener('click', (e) => {
     const btn = e.target.closest('.nav-btn');
     if (!btn) return;
-    showPage(btn.dataset.target);
+    showPage(btn.dataset.target);   // data-target ต้องตรงกับ id ของ <section>
     e.preventDefault();
-  });
-
-  // กันปุ่มในฟอร์มเผลอ submit
-  document.querySelectorAll('.nav-btn').forEach(btn => btn.type = 'button');
-
-  function showPage(id) {
-    // ซ่อนทุกหน้าให้ตรงกับ CSS (.page/.active)
-    document.querySelectorAll('.page').forEach(p => {
-      p.classList.remove('active'); // => display:none (ตาม CSS)
-      p.classList.add('hidden');
-    });
-
-    // โชว์หน้าเป้าหมาย
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.classList.add('active');     // => display:block (ตาม CSS)
-    el.classList.remove('hidden');
-
-    // ไฮไลต์ปุ่มที่เลือก
-    document.querySelectorAll('.nav-btn').forEach(b =>
-      b.classList.remove('ring-2','ring-offset-2','ring-purple-400')
-    );
-    const activeBtn = document.querySelector(`.nav-btn[data-target="${id}"]`);
-    if (activeBtn) activeBtn.classList.add('ring-2','ring-offset-2','ring-purple-400');
-  }
-
-  // เดลิเกตคลิกปุ่ม (ไม่แตะ URL)
-  document.addEventListener('click', (e) => {
-    const btn = e.target.closest('.nav-btn');
-    if (!btn) return;
-    showPage(btn.dataset.target);
-    // กันลิงก์ # ถ้ามี
-    e.preventDefault();
-  });
-
-  // เปิดหน้าแรกตอนโหลด
-  window.addEventListener('DOMContentLoaded', () => {
-    showPage('home'); // เปลี่ยนเป็น 'dashboard' ถ้าหน้าแรกของคุณมี id=dashboard
   });
 </script>
+
 
 
 <!-- เนื้อหาแต่ละหน้า -->
