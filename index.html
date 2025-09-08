@@ -765,49 +765,49 @@
 
     function labelPos(pos){ return pos==='goalkeeper'? 'ผู้รักษาประตู' : pos==='defender'? 'กองหลัง' : pos==='midfielder'? 'กองกลาง' : 'กองหน้า'; }
 
-    function renderRosterGrid(){
+    // แปลงตำแหน่งนักเตะเป็นภาษาไทย
+function labelPos(pos){
+  return pos==='goalkeeper' ? 'ผู้รักษาประตู'
+       : pos==='defender'   ? 'กองหลัง'
+       : pos==='midfielder' ? 'กองกลาง'
+       : 'กองหน้า';
+}
+
+// เรนเดอร์การ์ดนักเตะแต่ละคน
+function renderPlayerCard(p, team){
+  return `
+    <div class="player-card rounded-lg shadow bg-white p-2">
+      <div class="relative mb-2">
+        <span class="absolute top-1 left-1 bg-slate-800 text-white text-xs px-2 py-0.5 rounded-full">#${p.num||'-'}</span>
+        <img src="${p.photo||''}" alt="${esc(p.name)}"
+             class="player-avatar w-full h-32 object-cover rounded">
+      </div>
+      <div class="font-bold truncate">${esc(p.name)}</div>
+      <div class="text-sm text-slate-500">${labelPos(p.pos)}</div>
+    </div>
+  `;
+}
+
+// ฟังก์ชันแสดงรายชื่อทีม
+function renderRosterGrid(){
   const teamId = $('#selRosterTeam').value;
-  const team   = state.teams.find(t=>t.id===teamId);
-  if ($('#rosterTeamName')) $('#rosterTeamName').textContent = team?.name || '-';
+  const team   = state.teams.find(t => t.id === teamId);
+
+  // ตั้งชื่อทีมด้านบน
+  if ($('#rosterTeamName'))
+    $('#rosterTeamName').textContent = team?.name || '-';
 
   const grid = $('#rosterGrid');
   if (!grid) return;
 
+  // สร้างการ์ดนักเตะ
   const items = (team?.members || [])
     .map(p => renderPlayerCard(p, team))
     .join('');
 
+  // ใส่ลงใน grid
   grid.innerHTML = items || `<div class="text-slate-400">ยังไม่มีรายชื่อ</div>`;
 }
-
-      grid.innerHTML = items || `<div class="text-slate-400">ยังไม่มีรายชื่อ</div>`;
-    }
-
-    $('#btnAddNewPlayer')?.addEventListener('click', ()=>{
-  const teamId = $('#npTeam').value;
-  const team = state.teams.find(t=>t.id===teamId);
-  if(!team) return alert('เลือกทีม');
-
-  // อ่านค่าฟอร์ม (ไม่บังคับว่าต้องมี)
-  const name  = $('#npName').value.trim();
-  const pos   = $('#npPos').value.trim();
-  const num   = $('#npNum').value.trim();
-  const birth = $('#npBirth').value.trim();
-  const age   = parseInt($('#npAge').value || (birth ? calcAgeFromISO(birth) : 0), 10);
-  const phone = $('#npPhone')?.value.trim() || '';   // <-- เพิ่มเบอร์โทร
-
-  team.members.push({
-    id: nid('p'),
-    name: name || '(ไม่มีชื่อ)',   // ถ้าไม่ใส่ชื่อ จะใส่ default
-    pos, num, birth,
-    age: isNaN(age) ? null : age,
-    phone,                          // <-- เก็บเบอร์โทร
-    photo: tempPlayerPhoto || ''
-  });
-
-  save();
-  renderRosterGrid();
-  renderDashboard();
 
   // clear ฟอร์ม
   ['npName','npPos','npNum','npBirth','npAge','npPhone'].forEach(k=>{
