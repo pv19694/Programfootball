@@ -450,12 +450,14 @@ document.addEventListener('DOMContentLoaded', () => {
           <button data-s="redCards" class="btn-stat btn-s">🟥 แดง</button>
         </div>
       </div>
-      <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-        <div class="panel"><h4>🏆 ดาวซัลโว</h4><div id="topGoals"></div></div>
-        <div class="panel"><h4>🎯 แอสซิสต์</h4><div id="topAssists"></div></div>
-        <div class="panel"><h4>🥅 คลีนชีท</h4><div id="topCS"></div></div>
-      </div>
-    </section>
+<div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4">
+  <div class="panel"><h4>🏆 ดาวซัลโว (ประตู)</h4><div id="topGoals"></div></div>
+  <div class="panel"><h4>🧤 ผู้รักษาประตูยอดเยี่ยม (เซฟ)</h4><div id="topSaves"></div></div>
+  <div class="panel"><h4>🟨 ใบเหลือง</h4><div id="topYellow"></div></div>
+  <div class="panel"><h4>🟥 ใบแดง</h4><div id="topRed"></div></div>
+</div>
+</section>
+
 
     <!-- Teams -->
     <section id="teams" class="page">
@@ -802,9 +804,11 @@ function topList(key){
   }).join('') || `<div class="text-slate-400">ยังไม่มีข้อมูล</div>`;
 }
 function renderTopStats(){
-  if($('#topGoals'))   $('#topGoals').innerHTML   = topList('goals');
-  if($('#topAssists')) $('#topAssists').innerHTML = topList('assists');
-  if($('#topCS'))      $('#topCS').innerHTML      = topList('cleanSheets');
+  const teamId = $('#selTeamForPlayer')?.value || '';
+  if($('#topGoals'))   $('#topGoals').innerHTML   = topList('goals', teamId);
+  if($('#topSaves'))   $('#topSaves').innerHTML   = topList('saves', teamId);         // 🆕
+  if($('#topYellow'))  $('#topYellow').innerHTML  = topList('yellowCards', teamId);  // 🆕
+  if($('#topRed'))     $('#topRed').innerHTML     = topList('redCards', teamId);     // 🆕
 }
 function wireStatsButtons(){
   $$('.btn-stat').forEach(b=>{
