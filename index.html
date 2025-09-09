@@ -108,25 +108,25 @@
 .btn-stat{
   display:inline-flex;
   align-items:center;
-  justify-content:center;
-  width: 44px; 
-  height: 44px;
-  border-radius: 9999px;          /* วงกลม */
+  gap:6px;                        /* เว้นระยะระหว่างไอคอนกับข้อความ */
+  padding:6px 14px;               /* ระยะขอบด้านใน */
+  border-radius: 0.75rem;         /* มนๆ แต่ไม่กลม */
   background: #fff;
   color: #374151;                 /* slate-700 */
-  font-size: 1.25rem;             /* ใหญ่พอ */
-  box-shadow: 0 3px 6px rgba(0,0,0,.1);
+  font-size: 0.9rem;              /* ฟอนต์เล็กลง */
+  line-height: 1.2;
+  box-shadow: 0 2px 6px rgba(0,0,0,.08);
   border: 1px solid rgba(0,0,0,.05);
   transition: all .15s ease;
   cursor:pointer;
 }
 .btn-stat:hover{
-  transform: translateY(-2px);
-  box-shadow: 0 5px 12px rgba(0,0,0,.15);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0,0,0,.12);
 }
 .btn-stat:active{
   transform: translateY(0);
-  box-shadow: 0 2px 4px rgba(0,0,0,.1);
+  box-shadow: 0 1px 3px rgba(0,0,0,.1);
 }
 
 
