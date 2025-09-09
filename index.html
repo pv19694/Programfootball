@@ -970,33 +970,38 @@ function renderRosterGrid(){
   const items = (team?.members || []).map(p => renderPlayerCard(p, team)).join('');
   grid.innerHTML = items || `<div class="text-slate-400">ยังไม่มีรายชื่อ</div>`;
 }
-function renderRosterHooks(){
+
+  function renderRosterHooks(){
   const grid = $('#rosterGrid'); if (!grid) return;
   if (grid.dataset.bound === '1') return;
-  grid.addEventListener('click', (e)=>{
-    const btn = e.target.closest('button[data-act]');
-    if (!btn) return;
-    const act = btn.dataset.act;
-    const id  = btn.dataset.id;
-    const teamId = $('#selRosterTeam')?.value;
-    const team = state.teams.find(t=>t.id===teamId);
-    if(!team) return;
 
-    if (act==='del-player') {
-      const p = team.members.find(m=>m.id===id);
-      if (!p) return;
-      if (!confirm(`ลบผู้เล่น "${p.name}" ?`)) return;
-      team.members = team.members.filter(m=>m.id!==id);
-      save(); renderRosterGrid(); renderDashboard();
-      log(`ลบนักกีฬา: ${p.name}`);
+  grid.addEventListener('click', (e)=>{
+    const btn = e.target.closest('[data-act]'); // ปุ่มบนการ์ด
+    if (!btn) return;
+
+    const act = btn.dataset.act;   // 'edit-player' | 'del-player'
+    const pid = btn.dataset.id;    // playerId จากการ์ด
+    const teamId = $('#selRosterTeam')?.value; // ทีมที่กำลังแสดงอยู่
+
+    if (act === 'edit-player') {
+      // <<< ตรงนี้แหละที่เรียกเข้าโหมดแก้ไข
+      enterEditPlayer(teamId, pid);
+      return;
     }
-    if (act==='edit-player') {
-      // TODO: เปิดฟอร์มแก้ไขตาม UI ของคุณ
-      log(`กดแก้ไขผู้เล่น id=${id}`);
+
+    if (act === 'del-player') {
+      const team = state.teams.find(t=>t.id===teamId);
+      const p = team?.members?.find(m=>m.id===pid);
+      if (!team || !p) return;
+      if (!confirm(`ลบผู้เล่น "${p.name}" ?`)) return;
+      team.members = team.members.filter(m=>m.id!==pid);
+      save(); renderRosterGrid?.(); renderDashboard?.();
     }
   });
+
   grid.dataset.bound = '1';
 }
+
 
 /* ---------- ฟอร์มเพิ่มนักกีฬา (เปิด/ปิดด้วยปุ่มสายรุ้ง) ---------- */
 function fillTeamsForNewPlayer() {
@@ -1033,24 +1038,52 @@ function wireAddPlayer(){
   const btn = $('#btnAddNewPlayer');
   if (!btn) { console.warn('btnAddNewPlayer not found'); return; }
   btn.type = 'button';
+  if (!btn.dataset.mode) btn.dataset.mode = 'add';
   if (btn.dataset.bound === '1') return;
 
   btn.addEventListener('click', (e)=>{
     e.preventDefault();
 
-    let teamId = $('#npTeam')?.value || $('#selRosterTeam')?.value || state.teams[0]?.id || '';
-    const team = state.teams.find(t=>t.id===teamId);
-    if(!team){ alert('กรุณาเพิ่ม/เลือกทีมก่อน'); return; }
-
+    const formTeamId = $('#npTeam')?.value || $('#selRosterTeam')?.value || state.teams[0]?.id || '';
     const name  = $('#npName')?.value?.trim() || '';
-    if(!name){ alert('กรุณากรอกชื่อนักกีฬา'); $('#npName')?.focus(); return; }
-
     const pos   = $('#npPos')?.value || '';
     const num   = $('#npNum')?.value?.trim() || '';
     const birth = $('#npBirth')?.value || '';
     const ageIn = $('#npAge')?.value || '';
     const phone = $('#npPhone')?.value?.trim() || '';
     const age   = (Number.isFinite(+ageIn) && +ageIn >= 0) ? +ageIn : (calcAgeFromISO?.(birth) ?? '');
+    if(!name){ alert('กรุณากรอกชื่อนักกีฬา'); $('#npName')?.focus(); return; }
+
+    // --- โหมดแก้ไข ---
+    if (btn.dataset.mode === 'edit' && editingPlayer){
+      const oldTeam = state.teams.find(t=>t.id===editingPlayer.teamId);
+      const newTeam = state.teams.find(t=>t.id===formTeamId);
+      if(!newTeam){ alert('กรุณาเลือกทีม'); return; }
+
+      let p = oldTeam?.members?.find(m=>m.id===editingPlayer.playerId);
+      if(!p){ alert('ไม่พบผู้เล่นเดิม'); exitEditMode(); return; }
+
+      // ถ้าย้ายทีม
+      if (oldTeam && newTeam && oldTeam.id !== newTeam.id){
+        oldTeam.members = (oldTeam.members||[]).filter(m=>m.id!==p.id);
+        p = { ...p };
+        newTeam.members = newTeam.members || [];
+        newTeam.members.push(p);
+      }
+
+      p.name  = name;  p.pos   = pos;  p.num   = num;
+      p.birth = birth; p.age   = age;  p.phone = phone;
+      p.photo = (typeof tempPlayerPhoto==='string' ? tempPlayerPhoto : '') || p.photo || '';
+
+      save();
+      renderRosterGrid?.(); renderDashboard?.();
+      closeAddPlayerForm?.(); clearNewPlayerForm?.(); exitEditMode();
+      return;
+    }
+
+    // --- โหมดเพิ่มใหม่ ---
+    const team = state.teams.find(t=>t.id===formTeamId);
+    if(!team){ alert('กรุณาเพิ่ม/เลือกทีมก่อน'); return; }
 
     const p = {
       id: nid('p'),
@@ -1062,29 +1095,29 @@ function wireAddPlayer(){
     team.members.push(p);
     save();
 
-    // รีเฟรช + ปิดฟอร์ม
     renderRosterGrid?.(); renderDashboard?.();
-    closeAddPlayerForm?.();
-    clearNewPlayerForm?.();
-
-    // ให้ roster เลือกทีมที่เพิ่งบันทึก (ถ้ายังว่าง)
-    const selRoster = $('#selRosterTeam');
-    if(selRoster && !selRoster.value) selRoster.value = team.id;
-
-    console.log('[ADD-PLAYER] เพิ่มนักกีฬา', p);
+    closeAddPlayerForm?.(); clearNewPlayerForm?.(); exitEditMode();
+    const selRoster = $('#selRosterTeam'); if(selRoster && !selRoster.value) selRoster.value = team.id;
   });
+
+  // ยกเลิก/ล้าง = ออกจากโหมดแก้ไขด้วย
+  $('#btnCancelNewPlayer')?.addEventListener('click', ()=> exitEditMode());
+  $('#btnClearNewPlayer')?.addEventListener('click', ()=> exitEditMode());
 
   btn.dataset.bound = '1';
 }
 
+
+  
 // ==== Edit mode (ผู้เล่น) ====
-let editingPlayer = null; 
+let editingPlayer = null; // { teamId, playerId }
 
 function enterEditPlayer(teamId, playerId){
   const team = state.teams.find(t=>t.id===teamId);
   const p    = team?.members?.find(m=>m.id===playerId);
   if(!team || !p) return;
 
+  // เปิดฟอร์ม + เติมค่า
   openAddPlayerForm?.();
 
   $('#npTeam')  && ($('#npTeam').value  = teamId);
@@ -1092,8 +1125,28 @@ function enterEditPlayer(teamId, playerId){
   $('#npPos')   && ($('#npPos').value   = p.pos  || '');
   $('#npNum')   && ($('#npNum').value   = p.num  || '');
   $('#npBirth') && ($('#npBirth').value = p.birth|| '');
-  $('#npAge')   && ($('#npAge').value   = (p.age??''));
+  $('#npAge')   && ($('#npAge').value   = (p.age ?? ''));
   $('#npPhone') && ($('#npPhone').value = p.phone|| '');
+
+  // รูปตัวอย่าง
+  tempPlayerPhoto = p.photo || '';
+  if($('#preview')){
+    $('#preview').innerHTML = p.photo
+      ? `<img src="${esc(p.photo)}" class="w-full h-full object-cover">`
+      : '👤';
+  }
+
+  // สลับปุ่มเป็นโหมด "แก้ไข"
+  const btn = $('#btnAddNewPlayer');
+  if(btn){ btn.textContent = '💾 บันทึกการแก้ไข'; btn.dataset.mode = 'edit'; }
+
+  editingPlayer = { teamId, playerId };
+}
+
+function exitEditMode(){
+  editingPlayer = null;
+  const btn = $('#btnAddNewPlayer');
+  if(btn){ btn.textContent = '✅ เพิ่มนักกีฬา'; btn.dataset.mode = 'add'; }
 }
     
 /* ---------- Boot ---------- */
