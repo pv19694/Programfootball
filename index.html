@@ -882,32 +882,43 @@ function renderPlayerCard(p, team) {
     return `${d}/${m}/${y}`;
   };
 
+  // สีประจำทีม (ใช้กับ badge เบอร์เสื้อ)
+  const accent = team?.color || '#16a34a';
+
+  // chips ข้อมูลเสริม
   const chips = [];
   if (has(p.pos))   chips.push(`<span class="chip">${labelPos(p.pos)}</span>`);
   if (Number.isFinite(p.age) && p.age > 0) chips.push(`<span class="chip">อายุ ${p.age}</span>`);
   if (has(p.birth)) chips.push(`<span class="chip">${fmtDate(p.birth)}</span>`);
   if (has(p.phone)) chips.push(`<span class="chip">📞 ${p.phone}</span>`);
 
-  // เบอร์เสื้อ
-  const numBadge = has(p.num) ? `<span class="num-badge-static">#${String(p.num).trim()}</span>` : '';
+  // เบอร์เสื้อ — ย้ายไป "ซ้ายบน" และลงสีตามทีม
+  const numBadge = has(p.num)
+    ? `<span class="num-badge-static"
+         style="background:${accent};color:#fff;border-color:${accent}">
+         #${String(p.num).trim()}
+       </span>`
+    : '';
 
-  // รูปผู้เล่น
+  // รูป
   const photo = has(p.photo)
     ? `<img src="${esc(p.photo)}" alt="${esc(p.name||'นักกีฬา')}" class="player-avatar object-cover">`
     : `<div class="player-avatar grid place-items-center text-slate-400">👤</div>`;
 
-  // โลโก้ทีม
+  // โลโก้ทีม (ถ้ามี)
   const teamLogo = team?.logo
     ? `<div class="mt-2 flex justify-end"><img src="${esc(team.logo)}" class="h-6" alt=""></div>`
     : '';
 
   return `
     <div class="player-card relative">
-      <!-- แถวบน: เบอร์เสื้อซ้าย, ปุ่มวงกลมขวา -->
-      <div class="absolute top-2 left-2">${numBadge}</div>
+      <!-- เบอร์เสื้อซ้ายบน (สีตามทีม) -->
+      ${numBadge ? `<div class="absolute top-2 left-2 z-10">${numBadge}</div>` : ''}
+
+      <!-- ปุ่มกลมมุมขวาบน -->
       <div class="absolute top-2 right-2 flex gap-2 z-10">
-        <button class="icon-dot gray" data-act="edit-player" data-id="${p.id}" title="แก้ไข"></button>
-        <button class="icon-dot red"  data-act="del-player"  data-id="${p.id}" title="ลบ"></button>
+        <button class="icon-dot gray" data-act="edit-player" data-id="${p.id}" title="แก้ไข" aria-label="แก้ไข"></button>
+        <button class="icon-dot red"  data-act="del-player"  data-id="${p.id}" title="ลบ"   aria-label="ลบ"></button>
       </div>
 
       <div class="relative">${photo}</div>
@@ -927,6 +938,7 @@ function renderPlayerCard(p, team) {
     </div>
   `;
 }
+
 
 function renderRosterGrid(){
   let teamId = $('#selRosterTeam')?.value || '';
