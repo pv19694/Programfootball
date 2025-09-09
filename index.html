@@ -674,52 +674,120 @@ function wireTeamLogoPickers(){
     r.readAsDataURL(f);
   });
 }
+   
 function wireTeamCRUD(){
+  // เพิ่มทีมใหม่
   $('#btnTeamAdd')?.addEventListener('click', ()=>{
     const name = $('#inpTeamName')?.value?.trim();
-    if(!name) return alert('ใส่ชื่อทีม');
-    if(state.teams.some(t=>t.name===name)) return alert('มีทีมนี้อยู่แล้ว');
-    state.teams.push({ id:nid('team'), name, logo: pendingLogoDataURL_Edit || '', members:[] });
+    if (!name) return alert('ใส่ชื่อทีม');
+    if (state.teams.some(t => t.name === name)) return alert('มีทีมนี้อยู่แล้ว');
+
+    // ใช้โลโก้ที่รออัปโหลด (ถ้ามี) ไม่งั้นเป็นค่าว่าง
+    const team = { id: nid('team'), name, logo: pendingLogoDataURL_Edit || '', members: [] };
+    state.teams.push(team);
     save();
-    if($('#inpTeamName')) $('#inpTeamName').value='';
-    pendingLogoDataURL_Edit=''; if($('#teamLogoInputEdit')) $('#teamLogoInputEdit').value='';
-    renderTeamSelects(); renderTeamEditPreview(null); renderDashboard(); renderTable(); ();
+
+    // เคลียร์ฟอร์มแก้ไขทีม
+    if ($('#inpTeamName')) $('#inpTeamName').value = '';
+    pendingLogoDataURL_Edit = '';
+    if ($('#teamLogoInputEdit')) $('#teamLogoInputEdit').value = '';
+
+    // เรนเดอร์/ซิงก์ส่วนต่าง ๆ
+    renderTeamSelects();
+    renderTeamEditPreview(null);
+    renderDashboard();
+    renderTable();
+    renderRosterHooks();
+
+    // ถ้ายังไม่ได้เลือกทีมในหน้า Roster ให้เลือกทีมที่เพิ่งเพิ่ม
+    if ($('#selRosterTeam') && !$('#selRosterTeam').value) {
+      $('#selRosterTeam').value = team.id;
+    }
+    // อัปเดต dropdown ผู้เล่น + กริดรายชื่อ
+    renderPlayerDropdowns?.();
+    renderRosterGrid?.();
+
     log(`เพิ่มทีมใหม่: ${name}`);
   });
 
+  // แก้ไขทีม
   $('#btnTeamUpdate')?.addEventListener('click', ()=>{
-    const id = $('#selEditTeam')?.value;
+    const id   = $('#selEditTeam')?.value;
     const name = $('#inpTeamName')?.value?.trim();
-    if(!id) return alert('เลือกทีม'); if(!name) return alert('ใส่ชื่อทีม');
-    const t = state.teams.find(x=>x.id===id); if(!t) return;
-    t.name = name; if(pendingLogoDataURL_Edit) t.logo = pendingLogoDataURL_Edit;
+    if (!id)   return alert('เลือกทีม');
+    if (!name) return alert('ใส่ชื่อทีม');
+
+    const t = state.teams.find(x => x.id === id);
+    if (!t) return;
+
+    t.name = name;
+    if (pendingLogoDataURL_Edit) t.logo = pendingLogoDataURL_Edit;
     save();
-    renderTeamSelects(); if($('#selEditTeam')) $('#selEditTeam').value = t.id; renderTeamEditPreview(t);
-    pendingLogoDataURL_Edit=''; if($('#teamLogoInputEdit')) $('#teamLogoInputEdit').value='';
-    renderDashboard(); renderTable(); ();
+
+    // คงสถานะการเลือกทีมไว้ และรีเฟรชพรีวิว
+    renderTeamSelects();
+    if ($('#selEditTeam')) $('#selEditTeam').value = t.id;
+    renderTeamEditPreview(t);
+
+    // ล้างสถานะไฟล์
+    pendingLogoDataURL_Edit = '';
+    if ($('#teamLogoInputEdit')) $('#teamLogoInputEdit').value = '';
+
+    // รีเฟรชทุกที่ที่ใช้ชื่อ/โลโก้ทีม
+    renderDashboard();
+    renderTable();
+    renderRosterHooks();
+    renderRosterGrid?.();
+    renderPlayerDropdowns?.();
+
     log(`แก้ไขทีม: ${name}`);
   });
 
+  // ลบทีม
   $('#btnTeamDelete')?.addEventListener('click', ()=>{
-    const id = $('#selEditTeam')?.value; if(!id) return alert('เลือกทีม');
-    const t = state.teams.find(x=>x.id===id); if(!t) return;
-    if(!confirm(`ยืนยันลบทีม "${t.name}" ?`)) return;
-    state.teams = state.teams.filter(x=>x.id!==id);
-    state.matches = state.matches.filter(m=> m.homeId!==id && m.awayId!==id );
+    const id = $('#selEditTeam')?.value;
+    if (!id) return alert('เลือกทีม');
+
+    const t = state.teams.find(x => x.id === id);
+    if (!t) return;
+
+    if (!confirm(`ยืนยันลบทีม "${t.name}" ?`)) return;
+
+    // ลบทีม + ลบแมตช์ที่เกี่ยวข้อง
+    state.teams   = state.teams.filter(x => x.id !== id);
+    state.matches = state.matches.filter(m => m.homeId !== id && m.awayId !== id);
     save();
-    if($('#inpTeamName')) $('#inpTeamName').value='';
-    pendingLogoDataURL_Edit=''; if($('#teamLogoInputEdit')) $('#teamLogoInputEdit').value='';
-    renderTeamSelects(); renderTeamEditPreview(null); renderDashboard(); renderTable(); renderMatchLog(); ();
+
+    // เคลียร์ฟอร์ม + พรีวิว
+    if ($('#inpTeamName')) $('#inpTeamName').value = '';
+    pendingLogoDataURL_Edit = '';
+    if ($('#teamLogoInputEdit')) $('#teamLogoInputEdit').value = '';
+    renderTeamEditPreview(null);
+
+    // รีเฟรช dropdown/ตาราง/ประวัติ ฯลฯ
+    renderTeamSelects();
+    renderDashboard();
+    renderTable();
+    renderMatchLog();
+    renderRosterHooks();
+
+    // อัปเดตส่วนผู้เล่นและกริด Roster (กันกรณีเลือกทีมที่ถูกลบอยู่)
+    renderPlayerDropdowns?.();
+    renderRosterGrid?.();
+
     log(`ลบทีม: ${t.name}`);
   });
 
+  // เมื่อเลือกทีมเพื่อแก้ไข
   $('#selEditTeam')?.addEventListener('change', e=>{
-    const t = state.teams.find(x=>x.id===e.target.value);
-    if($('#inpTeamName')) $('#inpTeamName').value = t?.name || '';
-    pendingLogoDataURL_Edit=''; renderTeamEditPreview(t||null);
-    if($('#teamLogoInputEdit')) $('#teamLogoInputEdit').value='';
+    const t = state.teams.find(x => x.id === e.target.value);
+    if ($('#inpTeamName')) $('#inpTeamName').value = t?.name || '';
+    pendingLogoDataURL_Edit = '';
+    renderTeamEditPreview(t || null);
+    if ($('#teamLogoInputEdit')) $('#teamLogoInputEdit').value = '';
   });
 }
+
 
 // ---- Roster (upload + add + grid + theme) ----
 let tempPlayerPhoto = '';
@@ -896,13 +964,22 @@ function wireAddPlayer(){
 
 
 document.addEventListener('DOMContentLoaded', ()=>{
-  // ...ของเดิมที่ตั้งค่า tab/load state ฯลฯ
+  // โหลด state จาก localStorage
   load?.();
 
-  renderTeamSelects?.();      // ให้ #npTeam มีตัวเลือกก่อน
-  wireAddPlayer();            // แล้วค่อยผูกปุ่มเพิ่มนักกีฬา
+  // ผูกแท็บ
+  wireTabs?.();
 
-  // ที่เหลือค่อยเรนเดอร์ต่าง ๆ
+  // ผูกอีเวนต์ต่าง ๆ
+  wireMatchControls?.();
+  wireStatsButtons?.();
+  wireTeamLogoPickers?.();
+  wireTeamCRUD?.();          // <== ต้องมี
+  wireRosterPhotoPickers?.();
+  wireAddPlayer?.();         // <== ปุ่มเพิ่มนักกีฬา
+
+  // เรนเดอร์ครั้งแรก
+  renderTeamSelects?.();     // ให้ #npTeam มีตัวเลือกก่อน
   renderPlayerDropdowns?.();
   renderTable?.();
   renderDashboard?.();
@@ -911,6 +988,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   renderTopStats?.();
   renderRosterHooks?.();
 });
+
 </script>
 </body>
 </html>
