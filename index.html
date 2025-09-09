@@ -69,6 +69,18 @@
 .icon-dot:hover{ transform:scale(1.08); }
 .icon-dot.gray{ background:#e5e7eb; } /* แก้ไข */
 .icon-dot.red { background:#ef4444; } /* ลบ   */
+  /* ขนาดโลโก้ทีมบนการ์ดผู้เล่น */
+.team-logo{
+  width: 40px;   /* ~ h-10 */
+  height: 40px;
+  border-radius: .5rem;     /* มุมโค้งกำลังดี */
+  object-fit: cover;
+  border: 1px solid rgba(0,0,0,.08);
+}
+@media (min-width: 768px){
+  .team-logo{ width: 48px; height: 48px; } /* ใหญ่ขึ้นบนหน้าจอใหญ่ */
+}
+
 </style>
 </head>
 <body class="bg-gradient-to-br from-green-50 to-blue-50 min-h-screen">
@@ -922,10 +934,11 @@ function renderPlayerCard(p, team) {
     ? `<img src="${esc(p.photo)}" alt="${esc(p.name||'นักกีฬา')}" class="player-avatar object-cover">`
     : `<div class="player-avatar grid place-items-center text-slate-400">👤</div>`;
 
-  // โลโก้ทีม (ถ้ามี)
   const teamLogo = team?.logo
-    ? `<div class="mt-2 flex justify-end"><img src="${esc(team.logo)}" class="h-6" alt=""></div>`
-    : '';
+  ? `<div class="mt-2 flex justify-end">
+       <img src="${esc(team.logo)}" class="team-logo" alt="">
+     </div>`
+  : '';
 
   return `
     <div class="player-card relative">
