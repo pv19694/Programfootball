@@ -404,7 +404,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
       </div>
     </section>
-    
+
         <!-- Roster -->
     <section id="roster" class="page">
       <div class="bg-white rounded-2xl shadow p-5 mb-4 flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
@@ -1077,6 +1077,25 @@ function wireAddPlayer(){
   btn.dataset.bound = '1';
 }
 
+// ==== Edit mode (ผู้เล่น) ====
+let editingPlayer = null; 
+
+function enterEditPlayer(teamId, playerId){
+  const team = state.teams.find(t=>t.id===teamId);
+  const p    = team?.members?.find(m=>m.id===playerId);
+  if(!team || !p) return;
+
+  openAddPlayerForm?.();
+
+  $('#npTeam')  && ($('#npTeam').value  = teamId);
+  $('#npName')  && ($('#npName').value  = p.name || '');
+  $('#npPos')   && ($('#npPos').value   = p.pos  || '');
+  $('#npNum')   && ($('#npNum').value   = p.num  || '');
+  $('#npBirth') && ($('#npBirth').value = p.birth|| '');
+  $('#npAge')   && ($('#npAge').value   = (p.age??''));
+  $('#npPhone') && ($('#npPhone').value = p.phone|| '');
+}
+    
 /* ---------- Boot ---------- */
 document.addEventListener('DOMContentLoaded', ()=>{
   load?.();
