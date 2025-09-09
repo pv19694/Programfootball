@@ -791,8 +791,14 @@ function renderPlayerDropdowns(){
   if(!team) { if($('#selPlayer')) $('#selPlayer').innerHTML=''; return; }
   if($('#selPlayer')) $('#selPlayer').innerHTML = (team.members||[]).map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');
 }
-function topList(key){
-  const arr = [...state.playersStats].sort((a,b)=> (b[key]||0)-(a[key]||0) ).slice(0,10);
+  
+function topList(key, teamId){
+  // กรองตาม teamId ถ้ามี
+  const arr = [...state.playersStats]
+    .filter(s => !teamId || s.teamId === teamId)
+    .sort((a,b)=> (b[key]||0)-(a[key]||0))
+    .slice(0,10);
+
   return arr.map((s,i)=>{
     const tname = state.teams.find(t=>t.id===s.teamId)?.name||'-';
     return `<div class="flex justify-between items-center py-1 ${i%2?'':'bg-slate-50'} rounded px-2">
@@ -801,11 +807,14 @@ function topList(key){
     </div>`;
   }).join('') || `<div class="text-slate-400">ยังไม่มีข้อมูล</div>`;
 }
+
 function renderTopStats(){
-  if($('#topGoals'))   $('#topGoals').innerHTML   = topList('goals');
-  if($('#topAssists')) $('#topAssists').innerHTML = topList('assists');
-  if($('#topCS'))      $('#topCS').innerHTML      = topList('cleanSheets');
+  const teamId = $('#selTeamForPlayer')?.value || ''; // ใช้ทีมที่เลือกในส่วนสถิติ
+  if($('#topGoals'))   $('#topGoals').innerHTML   = topList('goals', teamId);
+  if($('#topAssists')) $('#topAssists').innerHTML = topList('assists', teamId);
+  if($('#topCS'))      $('#topCS').innerHTML      = topList('cleanSheets', teamId);
 }
+  
 function wireStatsButtons(){
   $$('.btn-stat').forEach(b=>{
     b.addEventListener('click', ()=>{
@@ -821,8 +830,10 @@ function wireStatsButtons(){
       log(`อัปเดตสถิติ ${player.name}: ${key}+1`);
     });
   });
-  $('#selTeamForPlayer')?.addEventListener('change', renderPlayerDropdowns);
-}
+$('#selTeamForPlayer')?.addEventListener('change', ()=> {
+  renderPlayerDropdowns();
+  renderTopStats();
+});
 
 /* ---------- Teams (logo upload + CRUD) ---------- */
 function renderTeamEditPreview(team){
