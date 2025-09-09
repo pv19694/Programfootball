@@ -888,32 +888,33 @@ function renderPlayerCard(p, team) {
   if (has(p.birth)) chips.push(`<span class="chip">${fmtDate(p.birth)}</span>`);
   if (has(p.phone)) chips.push(`<span class="chip">📞 ${p.phone}</span>`);
 
+  // เบอร์เสื้อ
   const numBadge = has(p.num) ? `<span class="num-badge-static">#${String(p.num).trim()}</span>` : '';
 
+  // รูปผู้เล่น
   const photo = has(p.photo)
     ? `<img src="${esc(p.photo)}" alt="${esc(p.name||'นักกีฬา')}" class="player-avatar object-cover">`
     : `<div class="player-avatar grid place-items-center text-slate-400">👤</div>`;
 
+  // โลโก้ทีม
   const teamLogo = team?.logo
     ? `<div class="mt-2 flex justify-end"><img src="${esc(team.logo)}" class="h-6" alt=""></div>`
     : '';
 
   return `
     <div class="player-card relative">
-      <!-- ปุ่มมินิมอลมุมขวาบน -->
+      <!-- แถวบน: เบอร์เสื้อซ้าย, ปุ่มวงกลมขวา -->
+      <div class="absolute top-2 left-2">${numBadge}</div>
       <div class="absolute top-2 right-2 flex gap-2 z-10">
-        <button class="icon-dot gray" data-act="edit-player" data-id="${p.id}" title="แก้ไข" aria-label="แก้ไข"></button>
-        <button class="icon-dot red"  data-act="del-player"  data-id="${p.id}" title="ลบ"   aria-label="ลบ"></button>
+        <button class="icon-dot gray" data-act="edit-player" data-id="${p.id}" title="แก้ไข"></button>
+        <button class="icon-dot red"  data-act="del-player"  data-id="${p.id}" title="ลบ"></button>
       </div>
 
       <div class="relative">${photo}</div>
 
       <div class="min-w-0 flex-1 mt-1">
-        <div class="flex items-start justify-between gap-2">
-          <div class="font-bold whitespace-normal break-words leading-tight">
-            ${esc(p.name || '(ไม่มีชื่อ)')}
-          </div>
-          ${numBadge}
+        <div class="font-bold whitespace-normal break-words leading-tight">
+          ${esc(p.name || '(ไม่มีชื่อ)')}
         </div>
 
         ${chips.length ? `
