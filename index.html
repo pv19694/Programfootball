@@ -129,6 +129,32 @@
   box-shadow: 0 1px 3px rgba(0,0,0,.1);
 }
 
+/* ปุ่มบันทึกผล (มินิมอล) */
+.btn-save {
+  padding: 0.6rem 1.5rem;
+  border-radius: 0.75rem;          /* มน ๆ */
+  background: #10b981;             /* เขียวมินิมอล (tailwind emerald-500) */
+  color: #fff;
+  font-weight: 600;
+  font-size: 1rem;
+  box-shadow: 0 4px 10px rgba(0,0,0,.12);
+  transition: all .15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-save:hover {
+  background: #059669;             /* เขียวเข้มขึ้น */
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(0,0,0,.15);
+}
+
+.btn-save:active {
+  transform: translateY(0);
+  box-shadow: 0 3px 6px rgba(0,0,0,.1);
+}
+
 
 /* สถานะกำลังบันทึก */
 .btn-pro[data-loading="1"]{
@@ -421,13 +447,10 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="grid grid-cols-2 gap-3">
           <div><label class="lbl">สกอร์ทีม 1</label><input id="hg" type="number" min="0" max="20" value="0" class="inp text-center"></div>
           <div><label class="lbl">สกอร์ทีม 2</label><input id="ag" type="number" min="0" max="20" value="0" class="inp text-center"></div>
-        </div>
         <div class="flex flex-wrap gap-2 justify-center">
-          <button id="saveMatch" class="btn-main">✅ บันทึกผล</button>
-          <button id="incH" class="btn-s">🟧 +1 ทีม 1</button>
-          <button id="incA" class="btn-s">🟪 +1 ทีม 2</button>
-          <button id="setDraw" class="btn-s">⚖️ เสมอ</button>
+        <button id="saveMatch" class="btn-save">✅ บันทึกผล</button>
         </div>
+
       </div>
       <div class="bg-white rounded-2xl shadow p-5 mt-5">
         <h3 class="font-bold text-gray-800 mb-3">📜 ประวัติแมตช์</h3>
