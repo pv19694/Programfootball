@@ -1006,6 +1006,173 @@ document.addEventListener('DOMContentLoaded', ()=>{
   renderRosterHooks?.();
 });
 
+/* ========= Quick Add Player (fallback modal) ========= */
+
+// สร้าง modal ถ้ายังไม่มี
+function ensureQuickAddModal(){
+  if(document.getElementById('qapModal')) return;
+  const wrap = document.createElement('div');
+  wrap.id = 'qapModal';
+  wrap.style.cssText = 'position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.4);z-index:60;';
+  wrap.innerHTML = `
+    <div class="bg-white rounded-2xl shadow-xl w-[min(520px,92vw)] p-4">
+      <div class="flex items-center justify-between mb-3">
+        <div class="text-lg font-bold">เพิ่มนักกีฬา</div>
+        <button id="qapClose" class="px-2 py-1 rounded bg-slate-100">ปิด</button>
+      </div>
+      <div class="grid gap-3">
+        <label class="grid gap-1">
+          <span class="text-sm text-slate-600">ทีม</span>
+          <select id="qapTeam" class="border rounded px-3 py-2"></select>
+        </label>
+        <label class="grid gap-1">
+          <span class="text-sm text-slate-600">ชื่อ-สกุล</span>
+          <input id="qapName" class="border rounded px-3 py-2" placeholder="ชื่อนักกีฬา">
+        </label>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="grid gap-1">
+            <span class="text-sm text-slate-600">ตำแหน่ง</span>
+            <select id="qapPos" class="border rounded px-3 py-2">
+              <option value="">-</option>
+              <option value="goalkeeper">ผู้รักษาประตู</option>
+              <option value="defender">กองหลัง</option>
+              <option value="midfielder">กองกลาง</option>
+              <option value="forward">กองหน้า</option>
+            </select>
+          </label>
+          <label class="grid gap-1">
+            <span class="text-sm text-slate-600">เบอร์เสื้อ</span>
+            <input id="qapNum" class="border rounded px-3 py-2" placeholder="#">
+          </label>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="grid gap-1">
+            <span class="text-sm text-slate-600">วันเกิด</span>
+            <input id="qapBirth" type="date" class="border rounded px-3 py-2">
+          </label>
+          <label class="grid gap-1">
+            <span class="text-sm text-slate-600">เบอร์โทร</span>
+            <input id="qapPhone" class="border rounded px-3 py-2" placeholder="0xxxxxxxxx">
+          </label>
+        </div>
+        <div class="flex items-center justify-end gap-2 pt-2">
+          <button id="qapCancel" class="px-3 py-2 rounded border">ยกเลิก</button>
+          <button id="qapSave"   class="px-3 py-2 rounded bg-emerald-600 text-white">บันทึก</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(wrap);
+
+  const close = ()=>{ wrap.style.display='none'; };
+  document.getElementById('qapClose').onclick = close;
+  document.getElementById('qapCancel').onclick = close;
+
+  document.getElementById('qapSave').onclick = ()=>{
+    const teamId = document.getElementById('qapTeam').value || state.teams[0]?.id || '';
+    const team   = state.teams.find(t=>t.id===teamId);
+    if(!team){ alert('ยังไม่มีทีม'); return; }
+
+    const name  = document.getElementById('qapName').value.trim();
+    if(!name){ alert('กรุณากรอกชื่อนักกีฬา'); return; }
+
+    const pos   = document.getElementById('qapPos').value;
+    const num   = document.getElementById('qapNum').value.trim();
+    const birth = document.getElementById('qapBirth').value;
+    const phone = document.getElementById('qapPhone').value.trim();
+    const age   = (calcAgeFromISO?.(birth) ?? '');
+
+    const p = { id:nid('p'), name, pos, num, birth, age, phone, photo: '' };
+    team.members = team.members||[]; team.members.push(p);
+    save();
+    renderRosterGrid?.(); renderDashboard?.(); renderPlayerDropdowns?.();
+
+    // sync dropdown roster ถ้ายังไม่ได้เลือก
+    const selRoster = document.getElementById('selRosterTeam');
+    if(selRoster && !selRoster.value) selRoster.value = team.id;
+
+    wrap.style.display='none';
+    log(`QuickAdd: เพิ่มนักกีฬา ${name}`);
+  };
+}
+
+// เปิด modal และเติมรายชื่อทีม
+function openQuickAddPlayer(){
+  ensureQuickAddModal();
+  // เติมทีมทุกครั้ง (เผื่อเพิ่งเพิ่มทีม)
+  const sel = document.getElementById('qapTeam');
+  if(sel){
+    sel.innerHTML = state.teams.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('');
+    // default: ใช้ทีมที่เลือกใน roster หรือทีมแรก
+    sel.value = document.getElementById('selRosterTeam')?.value || state.teams[0]?.id || '';
+  }
+  // ล้างค่าเก่า
+  ['qapName','qapPos','qapNum','qapBirth','qapPhone'].forEach(id=>{
+    const el = document.getElementById(id); if(!el) return;
+    if(el.tagName==='SELECT') el.value = '';
+    else el.value = '';
+  });
+  document.getElementById('qapModal').style.display='flex';
+}
+
+/* ====== ปรับ wireAddPlayer เดิมให้รองรับ 3 กรณี ======
+   1) มีฟอร์มเดิม (#npName, #npTeam, ...) -> ใช้ฟอร์มเดิม
+   2) ไม่มีฟอร์ม -> เปิด Quick Add Modal
+   3) ปุ่มชื่อ/โครงสร้างไม่แน่ใจ -> จับทั้ง #btnAddNewPlayer, [data-act="add-player"] และปุ่มที่มีข้อความ "เพิ่มนักกีฬา"
+*/
+(function patchWireAdd(){
+  // ถอนตัวจับเดิม (ถ้ามี) ไม่บังคับ
+  // document.removeEventListener('click', ... ) // ข้ามไป
+
+  document.addEventListener('click', (ev)=>{
+    const t = ev.target;
+    const btn = t.closest('#btnAddNewPlayer, [data-act="add-player"]')
+             || (t.closest('button, a') && /เพิ่มนักกีฬา/.test(t.closest('button, a').textContent||'') ? t.closest('button, a') : null);
+    if(!btn) return;
+
+    ev.preventDefault();
+    btn.setAttribute('type','button');
+
+    const nameEl  = document.getElementById('npName');
+    const teamEl  = document.getElementById('npTeam');
+    // ถ้าไม่มีฟอร์ม -> เปิด modal
+    if(!nameEl || !teamEl){ openQuickAddPlayer(); return; }
+
+    // ---- โหมดฟอร์มเดิม ----
+    let teamId = teamEl.value || document.getElementById('selRosterTeam')?.value || state.teams[0]?.id || '';
+    const team = state.teams.find(t=>t.id===teamId);
+    if(!team){ alert('กรุณาเพิ่ม/เลือกทีมก่อน'); return; }
+
+    const name  = (nameEl.value||'').trim();
+    if(!name){ alert('กรุณากรอกชื่อนักกีฬา'); nameEl.focus(); return; }
+
+    const pos   = document.getElementById('npPos')?.value || '';
+    const num   = (document.getElementById('npNum')?.value||'').trim();
+    const birth = document.getElementById('npBirth')?.value || '';
+    const ageIn = document.getElementById('npAge')?.value || '';
+    const phone = (document.getElementById('npPhone')?.value||'').trim();
+    const age   = (Number.isFinite(+ageIn) && +ageIn>=0) ? +ageIn : (calcAgeFromISO?.(birth) ?? '');
+    const p = {
+      id: nid('p'),
+      name, pos, num: num||'', birth, age, phone,
+      photo: (typeof tempPlayerPhoto==='string'? tempPlayerPhoto:'') || ''
+    };
+
+    team.members = team.members||[];
+    team.members.push(p);
+    save();
+
+    clearNewPlayerForm?.();
+    renderRosterGrid?.();
+    renderDashboard?.();
+
+    const selRoster = document.getElementById('selRosterTeam');
+    if(selRoster && !selRoster.value) selRoster.value = team.id;
+
+    console.log('[ADD-PLAYER:FORM]', p);
+  }, { passive:false });
+})();
+  
 </script>
 </body>
 </html>
