@@ -850,6 +850,23 @@ function applyRosterColor(team){
   }
 }
 
+// เมื่อสลับทีมในหน้า Roster ให้รีเรนเดอร์ทุกอย่างที่เกี่ยวข้อง
+function wireRosterTeamSwitcher(){
+  const sel = document.getElementById('selRosterTeam');
+  if (!sel) return;
+  if (sel.dataset.bound === '1') return;
+
+  sel.addEventListener('change', ()=>{
+    renderRosterGrid?.();         // เปลี่ยนรายชื่อ + ชื่อหัวข้อทีม
+    renderRosterHooks?.();        // ให้ปุ่มบนการ์ดยังทำงาน
+    syncRosterColorFromTeam?.();  // ปรับสีหัวข้อให้ตรงกับสีทีม
+    fillTeamsForNewPlayer?.();    // ถ้าเปิดฟอร์มเพิ่มนักกีฬาอยู่ ให้ dropdown ในฟอร์มตรงด้วย
+  });
+
+  sel.dataset.bound = '1';
+}
+ 
+
 // ให้ตัวเลือกสี (#teamColor) แสดงสีของทีมที่เลือกใน roster
 function syncRosterColorFromTeam(){
   const teamId = $('#selRosterTeam')?.value;
@@ -1073,6 +1090,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   wireTeamCRUD?.();
   wireRosterPhotoPickers?.();
   wireAddPlayer?.();
+  wireRosterTeamSwitcher();  
 
   // เรนเดอร์เริ่มต้น
   renderTeamSelects?.();
