@@ -828,6 +828,25 @@ function wireRosterPhotoPickers(){
     if($('#npAge') && (a||a===0)) $('#npAge').value=a;
   });
 }
+
+// ตั้งสีหัวข้อรายชื่อทีมตามทีมที่เลือก
+function applyRosterColor(team){
+  const hex = team?.color || $('#teamColor')?.value || '#16a34a';
+  const hdr = document.querySelector('#roster .team-header');
+  if (hdr){
+    hdr.style.background = hex;
+    hdr.style.color = '#fff';
+  }
+}
+
+// ให้ตัวเลือกสี (#teamColor) แสดงสีของทีมที่เลือกใน roster
+function syncRosterColorFromTeam(){
+  const teamId = $('#selRosterTeam')?.value;
+  const t = state.teams.find(x=>x.id===teamId);
+  if ($('#teamColor')) $('#teamColor').value = t?.color || '#16a34a';
+  applyRosterColor(t);
+}
+
 function labelPos(pos){
   return pos==='goalkeeper' ? 'ผู้รักษาประตู'
        : pos==='defender'   ? 'กองหลัง'
@@ -895,6 +914,7 @@ function renderRosterGrid(){
   }
   const team = state.teams.find(t => t.id === teamId);
   if ($('#rosterTeamName')) $('#rosterTeamName').textContent = team?.name || '-';
+  applyRosterColor(team);
   const grid = $('#rosterGrid'); if (!grid) return;
   const items = (team?.members || []).map(p => renderPlayerCard(p, team)).join('');
   grid.innerHTML = items || `<div class="text-slate-400">ยังไม่มีรายชื่อ</div>`;
@@ -1026,16 +1046,32 @@ document.addEventListener('DOMContentLoaded', ()=>{
   renderTable?.();
   renderDashboard?.();
   renderMatchLog?.();
-  renderRosterGrid?.();
+  renderRosterGrid?.();    // <= ต้องมาก่อน sync สี
   renderTopStats?.();
   renderRosterHooks?.();
 
   // ตั้งค่า nav ป้องกัน submit
   $$('.nav-btn').forEach(btn => { if (btn.tagName === 'BUTTON') btn.type = 'button'; });
 
+  // --- สีทีม: ผูกอีเวนต์ + sync ครั้งแรก ---
+  // เปลี่ยนสีแบบเรียลไทม์และบันทึกลงทีม
+  $('#teamColor')?.addEventListener('input', (e)=>{
+    const teamId = $('#selRosterTeam')?.value;
+    const t = state.teams.find(x=>x.id===teamId);
+    if (t) { t.color = e.target.value; save(); }
+    applyRosterColor(t);
+  });
+
+  // เวลาเปลี่ยนทีม ให้ซิงก์สีที่ปุ่มเลือกสีและแถบ
+  $('#selRosterTeam')?.addEventListener('change', syncRosterColorFromTeam);
+
+  // ซิงก์สีครั้งแรกหลัง render เสร็จ
+  syncRosterColorFromTeam?.();
+
   // หน้าแรก
   showPage('dashboard'); // เปลี่ยนเป็น 'roster' ได้ตามต้องการ
 });
+
 </script>
 
 </body>
