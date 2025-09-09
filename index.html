@@ -909,59 +909,76 @@ function renderRosterHooks(){
   grid.dataset.bound = '1';
 }
 
-// ใช้แทน wireAddPlayer() เดิมของคุณ
+// ใช้แทน wireAddPlayer() เดิม
 function wireAddPlayer(){
-  const btn = $('#btnAddNewPlayer');
-  if (!btn) { console.warn('btnAddNewPlayer not found'); return; }
+  // ใช้ event delegation กันกรณีปุ่มเกิดทีหลังหรืออยู่ในแท็บที่สลับ
+  document.addEventListener('click', (ev)=>{
+    const btn = ev.target.closest('#btnAddNewPlayer');
+    if(!btn) return;
 
-  // กันผูกซ้ำ + กัน submit/รีเฟรช
-  btn.setAttribute('type','button');
-  if (btn.dataset.bound === '1') return;
+    ev.preventDefault();
+    btn.setAttribute('type','button'); // กัน submit/รีเฟรช
 
-  btn.addEventListener('click', (e)=>{
-    e.preventDefault();
+    // 1) ตรวจว่ามีฟอร์ม/ช่องจริงไหม ถ้าไม่มีให้ fallback เป็น prompt เพื่อให้เพิ่มได้ชัวร์
+    let nameEl  = document.getElementById('npName');
+    let teamEl  = document.getElementById('npTeam');
+    let posEl   = document.getElementById('npPos');
+    let numEl   = document.getElementById('npNum');
+    let birthEl = document.getElementById('npBirth');
+    let ageEl   = document.getElementById('npAge');
+    let phoneEl = document.getElementById('npPhone');
 
-    // ให้มี team เสมอ (ถ้าไม่ได้เลือก ใช้ทีมแรก)
-    let teamId = $('#npTeam')?.value || state.teams[0]?.id || '';
+    // ถ้าไม่มีฟอร์ม ให้ถามแบบ prompt ชั่วคราว (อย่างน้อยเพิ่มได้)
+    if(!nameEl || !teamEl){
+      const namePrompt = prompt('ชื่อนักกีฬา:');
+      if(!namePrompt) return;
+      const teamId = document.getElementById('selRosterTeam')?.value || state.teams[0]?.id;
+      const team   = state.teams.find(t=>t.id===teamId);
+      if(!team){ alert('ยังไม่มีทีม ให้เพิ่มทีมก่อน'); return; }
+      const p = { id:nid('p'), name:namePrompt.trim(), pos:'', num:'', birth:'', age:'', phone:'', photo:'' };
+      team.members = team.members||[]; team.members.push(p);
+      save(); renderRosterGrid?.(); renderDashboard?.();
+      console.log('[ADD-PLAYER:FALLBACK]', p);
+      return;
+    }
+
+    // 2) โหมดฟอร์มปกติ
+    let teamId = teamEl.value || document.getElementById('selRosterTeam')?.value || state.teams[0]?.id || '';
     const team = state.teams.find(t=>t.id===teamId);
     if(!team){ alert('กรุณาเพิ่ม/เลือกทีมก่อน'); return; }
 
-    const name  = $('#npName')?.value?.trim() || '';
-    const pos   = $('#npPos')?.value || '';
-    const num   = $('#npNum')?.value?.trim() || '';
-    const birth = $('#npBirth')?.value || '';
-    const ageIn = $('#npAge')?.value || '';
-    const phone = $('#npPhone')?.value?.trim() || '';
-    if(!name){ alert('กรุณากรอกชื่อนักกีฬา'); return; }
+    const name  = (nameEl.value||'').trim();
+    if(!name){ alert('กรุณากรอกชื่อนักกีฬา'); nameEl.focus(); return; }
 
-    const age = (Number.isFinite(+ageIn) && +ageIn >= 0)
-      ? +ageIn
-      : (calcAgeFromISO?.(birth) ?? '');
+    const pos   = posEl?.value || '';
+    const num   = (numEl?.value||'').trim();
+    const birth = birthEl?.value || '';
+    const ageIn = ageEl?.value || '';
+    const phone = (phoneEl?.value||'').trim();
+    const age   = (Number.isFinite(+ageIn) && +ageIn>=0) ? +ageIn : (calcAgeFromISO?.(birth) ?? '');
 
     const p = {
       id: nid('p'),
-      name, pos, num: num || '', birth, age,
-      phone, photo: (typeof tempPlayerPhoto==='string' ? tempPlayerPhoto : '') || ''
+      name, pos, num: num||'', birth, age, phone,
+      photo: (typeof tempPlayerPhoto==='string'? tempPlayerPhoto:'') || ''
     };
 
-    team.members = team.members || [];
+    team.members = team.members||[];
     team.members.push(p);
     save();
 
-    // เคลียร์ฟอร์ม + รีเรนเดอร์
-    if (typeof clearNewPlayerForm === 'function') clearNewPlayerForm();
-    if (typeof renderRosterGrid === 'function')  renderRosterGrid();
-    if (typeof renderDashboard === 'function')   renderDashboard();
+    // เคลียร์ฟอร์ม + เรนเดอร์ใหม่
+    clearNewPlayerForm?.();
+    renderRosterGrid?.();
+    renderDashboard?.();
 
-    // ให้ตัวเลือกทีม roster sync
-    if($('#selRosterTeam') && !$('#selRosterTeam').value) $('#selRosterTeam').value = team.id;
+    // ถ้า roster ยังไม่เลือกทีม ให้เซ็ตเป็นทีมที่พึ่งเพิ่ม
+    const selRoster = document.getElementById('selRosterTeam');
+    if(selRoster && !selRoster.value) selRoster.value = team.id;
 
-    console.log('[ADD-PLAYER] เพิ่มนักกีฬา', p);
-  });
-
-  btn.dataset.bound = '1';
+    console.log('[ADD-PLAYER]', p);
+  }, { passive:false });
 }
-
 
 document.addEventListener('DOMContentLoaded', ()=>{
   // โหลด state จาก localStorage
