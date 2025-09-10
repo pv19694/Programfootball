@@ -814,19 +814,37 @@ function computeTable(){
   });
   return Object.values(tmap).sort((a,b)=> b.PTS-a.PTS || b.GD-a.GD || b.GF-a.GF || a.name.localeCompare(b.name));
 }
+  
 function renderTable(){
-  const el = $('#tbl'); if(!el) return;
+  const el = document.getElementById('tbl'); if(!el) return;
+
   const rows = computeTable().map((r,i)=>{
+    const rank = i + 1;
+
+    // พื้นหลังตามอันดับ (ถ้าไม่ติด Top 3 ใช้แถบสลับสีเดิม)
+    const rowClass =
+      rank === 1 ? 'bg-amber-50' :
+      rank === 2 ? 'bg-slate-50' :
+      rank === 3 ? 'bg-orange-50' :
+                   'odd:bg-white even:bg-slate-50';
+
     const last5 = r.form.slice(-5).join(' ');
-    return `<tr class="odd:bg-white even:bg-slate-50">
-      <td class="font-bold">${i+1}</td>
-      <td class="text-left"><div class="flex items-center gap-2">
-        ${r.logo?`<img src="${r.logo}" class="w-6 h-6 rounded-full object-cover border">`:'<span>🏳️</span>'}
-        <span>${esc(r.name)}</span></div></td>
-      <td>${r.P}</td><td>${r.W}</td><td>${r.D}</td><td>${r.L}</td>
-      <td>${r.GF}</td><td>${r.GA}</td><td>${r.GD}</td><td class="font-bold">${r.PTS}</td>
-      <td class="text-xs">${last5}</td></tr>`;
+    return `
+      <tr class="${rowClass}">
+        <td class="font-bold">${rank}</td>
+        <td class="text-left">
+          <div class="flex items-center gap-2">
+            ${r.logo ? `<img src="${r.logo}" class="w-6 h-6 rounded-full object-cover border">` : '<span>🏳️</span>'}
+            <span>${esc(r.name)}</span>
+          </div>
+        </td>
+        <td>${r.P}</td><td>${r.W}</td><td>${r.D}</td><td>${r.L}</td>
+        <td>${r.GF}</td><td>${r.GA}</td><td>${r.GD}</td>
+        <td class="font-bold">${r.PTS}</td>
+        <td class="text-xs">${last5}</td>
+      </tr>`;
   }).join('');
+
   el.innerHTML = rows || `<tr><td colspan="11" class="py-6 text-slate-400">ยังไม่มีข้อมูล</td></tr>`;
 }
 
