@@ -424,33 +424,44 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 
-
     <!-- Players -->
-    <section id="players" class="page">
-      <div class="bg-white rounded-2xl shadow p-5 mb-5">
-        <h3 class="text-center font-bold text-gray-800 mb-4">📝 บันทึกสถิติผู้เล่น</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-          <div><label class="lbl">ทีม</label><select id="selTeamForPlayer" class="sel"></select></div>
-          <div><label class="lbl">ผู้เล่น</label><select id="selPlayer" class="sel"></select></div>
-        </div>
-        <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
-          <button data-s="goals" class="btn-stat btn-s">⚽ ประตู</button>
-          <button data-s="saves" class="btn-stat btn-s">🥅 เซฟ</button>
-          <button data-s="yellowCards" class="btn-stat btn-s">🟨 เหลือง</button>
-          <button data-s="redCards" class="btn-stat btn-s">🟥 แดง</button>
-        </div>
-      </div>
-<div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4">
-  <div class="panel"><h4>🏆 ดาวซัลโว (ประตู)</h4><div id="topGoals"></div></div>
-  <div class="panel"><h4>🧤 ผู้รักษาประตูยอดเยี่ยม (เซฟ)</h4><div id="topSaves"></div></div>
-  <div class="panel"><h4>🟨 ใบเหลือง</h4><div id="topYellow"></div></div>
-  <div class="panel"><h4>🟥 ใบแดง</h4><div id="topRed"></div></div>
-  <div class="panel lg:col-span-2">
-  <h4>📜 ประวัติสถิติ (แก้ไข/ลบ)</h4>
-  <div id="statsHistory"></div>
-</div>
+<section id="players" class="page">
+  <div class="bg-white rounded-2xl shadow p-5 mb-5">
 
-</div>
+    <!-- หัวข้อ + ปุ่มล้าง (ใหม่) -->
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="font-bold text-gray-800">📝 บันทึกสถิติผู้เล่น</h3>
+      <div class="flex items-center gap-2">
+        <button id="btnClearPlayerStats" class="btn-danger">🧹 ล้างสถิติทีมนี้</button>
+        <!-- ถ้าอยากมีปุ่มล้างทั้งหมดด้วย ให้เอาคอมเมนต์ออก -->
+        <!-- <button id="btnClearAllStats" class="btn btn-white">🧽 ล้างทั้งหมด</button> -->
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+      <div><label class="lbl">ทีม</label><select id="selTeamForPlayer" class="sel"></select></div>
+      <div><label class="lbl">ผู้เล่น</label><select id="selPlayer" class="sel"></select></div>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+      <button data-s="goals"        class="btn-stat btn-s">⚽ ประตู</button>
+      <button data-s="saves"        class="btn-stat btn-s">🥅 เซฟ</button>
+      <button data-s="yellowCards"  class="btn-stat btn-s">🟨 เหลือง</button>
+      <button data-s="redCards"     class="btn-stat btn-s">🟥 แดง</button>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4">
+    <div class="panel"><h4>🏆 ดาวซัลโว (ประตู)</h4><div id="topGoals"></div></div>
+    <div class="panel"><h4>🧤 ผู้รักษาประตูยอดเยี่ยม (เซฟ)</h4><div id="topSaves"></div></div>
+    <div class="panel"><h4>🟨 ใบเหลือง</h4><div id="topYellow"></div></div>
+    <div class="panel"><h4>🟥 ใบแดง</h4><div id="topRed"></div></div>
+
+    <div class="panel lg:col-span-2">
+      <h4>📜 ประวัติสถิติ (แก้ไข/ลบ)</h4>
+      <div id="statsHistory"></div>
+    </div>
+  </div>
 </section>
 
 
@@ -848,6 +859,48 @@ renderStatsHistory();
   });
   $('#selTeamForPlayer')?.addEventListener('change', renderPlayerDropdowns);
 }
+  // ปุ่ม "ล้างสถิติทีมนี้"
+function wireClearStatsButton(){
+  const btn = document.getElementById('btnClearPlayerStats');
+  if (!btn || btn.dataset.bound === '1') return;
+  btn.type = 'button';
+
+  btn.addEventListener('click', ()=>{
+    const teamId = document.getElementById('selTeamForPlayer')?.value;
+    if (!teamId) { alert('กรุณาเลือกทีมก่อน'); return; }
+
+    const t = state.teams.find(x=>x.id===teamId);
+    const name = t?.name || 'ทีมนี้';
+    if (!confirm(`ยืนยันล้างสถิติทั้งหมดของ "${name}" ?\n(รวมประวัติสถิติด้วย)`)) return;
+
+    // ล้างเฉพาะของทีมที่เลือก
+    state.playersStats  = state.playersStats.filter(s => s.teamId !== teamId);
+    state.playersEvents = state.playersEvents.filter(e => e.teamId !== teamId);
+
+    save();
+    renderTopStats?.();
+    renderStatsHistory?.();
+  });
+
+  btn.dataset.bound = '1';
+}
+
+// (ถ้าต้องการปุ่ม "ล้างทั้งหมด" ให้เอาคอมเมนต์ออก + เรียกใช้)
+function wireClearAllStatsButton(){
+  const btn = document.getElementById('btnClearAllStats');
+  if (!btn || btn.dataset.bound === '1') return;
+  btn.type = 'button';
+  btn.addEventListener('click', ()=>{
+    if (!confirm('ยืนยันล้างสถิติและประวัติผู้เล่นทั้งหมด?')) return;
+    state.playersStats = [];
+    state.playersEvents = [];
+    save();
+    renderTopStats?.();
+    renderStatsHistory?.();
+  });
+  btn.dataset.bound = '1';
+}
+
 // ===== Event helpers (ประวัติสถิติ) =====
 function labelStatType(t){
   return t==='goals' ? 'ประตู'
