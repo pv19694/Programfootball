@@ -277,139 +277,6 @@
   </div>
 </nav>
 
-<!-- สคริปต์ควบคุม (ก้อนเดียว) -->
-<script>
-  /* ===== helper: เรียกฟังก์ชันอย่างปลอดภัย ===== */
-  function callIfExists(name, ...args) {
-    if (typeof window[name] === 'function') window[name](...args);
-  }
-
-  /* ===== ฟังก์ชันที่จะถูกเรียกเมื่อเข้าแต่ละหน้า ===== */
-  const pageLoaders = {
-    // เลือกใช้ id ตามที่คุณมีจริงใน <section>
-    home:       () => callIfExists('renderDashboard'),
-    dashboard:  () => callIfExists('renderDashboard'),
-
-    score:      () => callIfExists('renderTable'),
-    table:      () => callIfExists('renderTable'),
-
-    match: () => {
-      callIfExists('renderTeamSelects');  // เติมรายชื่อทีมลง select
-      callIfExists('renderMatchLog');     // โหลดประวัติแมตช์
-    },
-
-    players: () => callIfExists('renderPlayers'),
-    teams:   () => callIfExists('renderTeams'),
-    list:    () => callIfExists('renderRoster'),
-    roster:  () => callIfExists('renderRoster'),
-  };
-
-  /* ===== สลับหน้า (ไม่แตะ URL) ===== */
-  function showPage(id) {
-    // ซ่อนทุกหน้า ให้สอดคล้องกับ CSS: .page{display:none} .page.active{display:block}
-    document.querySelectorAll('.page').forEach(p => {
-      p.classList.remove('active');   // => display:none
-      p.classList.add('hidden');
-    });
-
-    // โชว์หน้าเป้าหมาย
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.classList.add('active');       // => display:block
-    el.classList.remove('hidden');
-
-    // ไฮไลต์ปุ่มเมนู
-    document.querySelectorAll('.nav-btn').forEach(b =>
-      b.classList.remove('ring-2','ring-offset-2','ring-purple-400')
-    );
-    const activeBtn = document.querySelector(`.nav-btn[data-target="${id}"]`);
-    if (activeBtn) activeBtn.classList.add('ring-2','ring-offset-2','ring-purple-400');
-
-    // เรียกตัวโหลดข้อมูลของหน้าที่เปิด (ถ้ามี)
-    if (pageLoaders[id]) pageLoaders[id]();
-  }
-
-/* ===== Show/Hide ฟอร์มเพิ่มนักกีฬา (สำหรับปุ่มขอบสายรุ้ง) ===== */
-
-// เติม options ทีมให้กับ <select id="npTeam">
-function fillTeamsForNewPlayer() {
-  const sel = document.getElementById('npTeam');
-  if (!sel) return;
-  sel.innerHTML = state.teams.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join('');
-  // เลือกทีมให้ตรงกับที่เลือกใน roster ตอนนี้ หรือทีมแรก
-  const current = document.getElementById('selRosterTeam')?.value || state.teams[0]?.id || '';
-  if (current) sel.value = current;
-}
-
-// เปิดฟอร์ม
-function openAddPlayerForm() {
-  const box = document.getElementById('addPlayerForm');
-  if (!box) return;
-  fillTeamsForNewPlayer();
-  // ล้างค่าฟอร์มเดิม
-  if (typeof clearNewPlayerForm === 'function') clearNewPlayerForm();
-  // แสดง
-  box.classList.remove('hidden');
-  // โฟกัสช่องชื่อ
-  setTimeout(()=> document.getElementById('npName')?.focus(), 0);
-  // ให้ปุ่มเลือกรูปทำงาน
-  if (typeof wireRosterPhotoPickers === 'function') wireRosterPhotoPickers();
-}
-
-// ปิดฟอร์ม
-function closeAddPlayerForm() {
-  document.getElementById('addPlayerForm')?.classList.add('hidden');
-}
-
-// ผูกปุ่มทั้งหมดที่เกี่ยวกับฟอร์ม
-function wireRosterFormToggle() {
-  // ปุ่มสายรุ้ง “เพิ่มนักกีฬา”
-  document.getElementById('btnToggleAddPlayer')?.addEventListener('click', (e)=>{
-    e.preventDefault();
-    // toggle: ถ้าซ่อนไว้อยู่ก็เปิด ถ้าเปิดอยู่ก็ปิด
-    const box = document.getElementById('addPlayerForm');
-    if (!box || box.classList.contains('hidden')) openAddPlayerForm();
-    else closeAddPlayerForm();
-  });
-
-  // ปุ่ม “ยกเลิก” และ “ล้างฟอร์ม”
-  document.getElementById('btnCancelNewPlayer')?.addEventListener('click', (e)=>{ e.preventDefault(); closeAddPlayerForm(); });
-  document.getElementById('btnClearNewPlayer')?.addEventListener('click', (e)=>{ e.preventDefault(); clearNewPlayerForm?.(); });
-
-  // เมื่อมีการเปลี่ยนทีมด้านบน ให้ sync มาที่ฟอร์มด้วย (เผื่อเปิดฟอร์มทีหลัง)
-  document.getElementById('selRosterTeam')?.addEventListener('change', ()=>{
-    if (!document.getElementById('addPlayerForm')?.classList.contains('hidden')) {
-      fillTeamsForNewPlayer();
-    }
-  });
-}
-
-// แนะนำให้เรียกปิดฟอร์มหลังบันทึกสำเร็จใน wireAddPlayer() ของคุณ:
-//   closeAddPlayerForm();
-
-
-  /* ===== ตั้งค่าเมื่อโหลดเสร็จ ===== */
-document.addEventListener('DOMContentLoaded', () => {
-  // ป้องกันปุ่มที่เป็น navigation ไม่ให้ submit ฟอร์ม
-  document.querySelectorAll('.nav-btn').forEach(btn => {
-    if (btn.tagName === 'BUTTON') {
-      btn.type = 'button';
-    }
-  });
-});
-
-    // หน้าแรก (เลือกให้ตรงกับ id ของคุณ: 'home' หรือ 'dashboard')
-    showPage('dashboard');
-  });
-
-  /* ===== เดลิเกตคลิกปุ่มเมนู ===== */
-  document.addEventListener('click', (e) => {
-    const btn = e.target.closest('.nav-btn');
-    if (!btn) return;
-    showPage(btn.dataset.target);   // data-target ต้องตรงกับ id ของ <section>
-    e.preventDefault();
-  });
-</script>
 
 <!-- เพิ่ม CSS animation -->
 <style>
@@ -753,14 +620,16 @@ function load(){
         state.teams        = Array.isArray(obj.teams)? obj.teams : [];
         state.matches      = Array.isArray(obj.matches)? obj.matches : [];
         state.playersStats = Array.isArray(obj.playersStats)? obj.playersStats : [];
+
+        // ✅ เพิ่มอันนี้ไว้ “ใน” load()
+        state.playersEvents = Array.isArray(obj.playersEvents) ? obj.playersEvents : [];
       }
+    } else {
+      state.playersEvents = [];
     }
-  } catch(e){ console.warn('load failed', e); }
-}
-  if(obj.playersEvents && Array.isArray(obj.playersEvents)){
-  state.playersEvents = obj.playersEvents;
-} else {
-  state.playersEvents = [];
+  } catch(e){
+    console.warn('load failed', e);
+  }
 }
   
 function save(){
@@ -774,8 +643,23 @@ const pageLoaders = {
   table(){ renderTable?.(); },
   teams(){ renderTeamSelects?.(); renderTeamEditPreview?.(null); },
   roster(){ renderTeamSelects?.(); renderRosterGrid?.(); renderRosterHooks?.(); },
+
+  // 👇 เพิ่มสองอันนี้
+  players(){
+    renderTeamSelects?.();
+    renderPlayerDropdowns?.();
+    renderTopStats?.();
+    renderStatsHistory?.();
+    wireStatsHistoryActions?.();
+  },
+
+  match(){
+    renderTeamSelects?.();
+    renderMatchLog?.();
+  },
 };
 
+  
 function showPage(id){
   // ซ่อน/โชว์หน้า
   $$('.page').forEach(sec=>{
