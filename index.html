@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -849,156 +850,37 @@ function renderDashboard(){
   }
 }
 
-/* ---------- Match log + controls (with edit/delete) ---------- */
-let editingMatchId = null;
-
+/* ---------- Match log + controls ---------- */
 function renderMatchLog(){
   const box = $('#matchLog'); if(!box) return;
-
-  // เตรียม options ทีม
-  const teamOpts = (state.teams || [])
-    .map(t => `<option value="${t.id}">${esc(t.name)}</option>`)
-    .join('');
-
-  const html = [...(state.matches || [])].reverse().map(m=>{
+  const html = [...state.matches].reverse().map(m=>{
     const h = state.teams.find(t=>t.id===m.homeId)?.name||'—';
     const a = state.teams.find(t=>t.id===m.awayId)?.name||'—';
     const ts = new Date(m.date||Date.now()).toLocaleString();
-
-    const isEditing = (editingMatchId === m.id);
-
-    if (!isEditing){
-      // โหมดแสดงผลปกติ + ปุ่มแก้ไข/ลบ
-      return `
-      <div class="flex justify-between items-center bg-slate-50 rounded-lg px-3 py-2 gap-2" data-id="${m.id}">
-        <span class="text-sm truncate">${esc(h)} vs ${esc(a)} • <span class="font-bold">${m.hg}:${m.ag}</span></span>
-        <div class="flex items-center gap-2 shrink-0">
-          <span class="text-xs text-slate-500">${ts}</span>
-          <button type="button" class="px-2 py-1 rounded bg-white border hover:bg-slate-50 text-xs" data-act="edit">แก้ไข</button>
-          <button type="button" class="px-2 py-1 rounded bg-white border hover:bg-rose-50 text-xs" data-act="delete">ลบ</button>
-        </div>
-      </div>`;
-    } else {
-      // โหมดแก้ไข inline
-      return `
-      <div class="bg-white rounded-lg border px-3 py-3 space-y-2" data-id="${m.id}">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-          <label class="flex items-center gap-2 text-sm">
-            <span class="w-16 text-slate-600 shrink-0">ทีม 1</span>
-            <select class="sel" data-field="homeId">
-              <option value="">-</option>${teamOpts}
-            </select>
-          </label>
-          <label class="flex items-center gap-2 text-sm">
-            <span class="w-16 text-slate-600 shrink-0">ทีม 2</span>
-            <select class="sel" data-field="awayId">
-              <option value="">-</option>${teamOpts}
-            </select>
-          </label>
-        </div>
-        <div class="grid grid-cols-2 gap-2">
-          <label class="flex items-center gap-2 text-sm">
-            <span class="w-16 text-slate-600 shrink-0">สกอร์ 1</span>
-            <input type="number" min="0" max="99" class="inp text-center" data-field="hg">
-          </label>
-          <label class="flex items-center gap-2 text-sm">
-            <span class="w-16 text-slate-600 shrink-0">สกอร์ 2</span>
-            <input type="number" min="0" max="99" class="inp text-center" data-field="ag">
-          </label>
-        </div>
-        <div class="flex justify-end gap-2 pt-1">
-          <button type="button" class="px-3 py-1.5 rounded bg-white border hover:bg-slate-50 text-sm" data-act="cancel">ยกเลิก</button>
-          <button type="button" class="px-3 py-1.5 rounded text-white text-sm" style="background:#10b981" data-act="save">บันทึก</button>
-        </div>
-      </div>`;
-    }
+    return `<div class="flex justify-between items-center bg-slate-50 rounded-lg px-3 py-2">
+      <span class="text-sm">${esc(h)} vs ${esc(a)} • <span class="font-bold">${m.hg}:${m.ag}</span></span>
+      <span class="text-xs text-slate-500">${ts}</span>
+    </div>`;
   }).join('');
-
   box.innerHTML = html || `<div class="text-slate-400">ยังไม่มีประวัติ</div>`;
-
-  // set ค่าเริ่มต้นให้ฟอร์ม (เมื่อเข้าโหมดแก้ไข)
-  if (editingMatchId){
-    const row = box.querySelector(`[data-id="${editingMatchId}"]`);
-    const m = (state.matches||[]).find(x=>x.id===editingMatchId);
-    if (row && m){
-      row.querySelector('[data-field="homeId"]').value = m.homeId || '';
-      row.querySelector('[data-field="awayId"]').value = m.awayId || '';
-      row.querySelector('[data-field="hg"]').value     = m.hg ?? 0;
-      row.querySelector('[data-field="ag"]').value     = m.ag ?? 0;
-    }
-  }
 }
+function wireMatchControls(){
+  $('#incH')?.addEventListener('click', ()=> { const el=$('#hg'); if(el) el.value = (+el.value||0)+1; });
+  $('#incA')?.addEventListener('click', ()=> { const el=$('#ag'); if(el) el.value = (+el.value||0)+1; });
+  $('#setDraw')?.addEventListener('click', ()=> { if($('#hg')) $('#hg').value = 1; if($('#ag')) $('#ag').value = 1; });
 
-/* ---------- actions: edit / save / cancel / delete ---------- */
-function wireMatchLogActions(){
-  const box = $('#matchLog'); if(!box) return;
-
-  box.addEventListener('click', (ev)=>{
-    const btn = ev.target.closest('[data-act]');
-    if (!btn) return;
-
-    const act = btn.dataset.act;
-    const row = btn.closest('[data-id]');
-    const id  = row?.dataset.id;
-    if (!id) return;
-
-    if (act === 'edit'){
-      editingMatchId = id;
-      renderMatchLog();
-      return;
-    }
-
-    if (act === 'cancel'){
-      editingMatchId = null;
-      renderMatchLog();
-      return;
-    }
-
-    if (act === 'save'){
-      const m = state.matches.find(x=>x.id===id);
-      if (!m) return;
-
-      const homeId = row.querySelector('[data-field="homeId"]').value;
-      const awayId = row.querySelector('[data-field="awayId"]').value;
-      const hg = Number(row.querySelector('[data-field="hg"]').value || 0);
-      const ag = Number(row.querySelector('[data-field="ag"]').value || 0);
-
-      if (!homeId || !awayId) { alert('กรุณาเลือกทีมให้ครบ'); return; }
-      if (homeId === awayId) { alert('ห้ามเลือกทีมซ้ำกัน'); return; }
-
-      // อัปเดตค่า
-      m.homeId = homeId;
-      m.awayId = awayId;
-      m.hg = hg;
-      m.ag = ag;
-
-      // เซฟ + รีเฟรชส่วนอื่นของระบบคุณ
-      if (typeof save === 'function') save();
-      if (typeof renderTable === 'function') renderTable();
-      if (typeof renderDashboard === 'function') renderDashboard();
-
-      editingMatchId = null;
-      renderMatchLog();
-      return;
-    }
-
-    if (act === 'delete'){
-      if (!confirm('ลบรายการนี้หรือไม่?')) return;
-
-      const idx = state.matches.findIndex(x=>x.id===id);
-      if (idx !== -1) state.matches.splice(idx,1);
-
-      if (typeof save === 'function') save();
-      if (typeof renderTable === 'function') renderTable();
-      if (typeof renderDashboard === 'function') renderDashboard();
-
-      if (editingMatchId === id) editingMatchId = null;
-      renderMatchLog();
-      return;
-    }
+  $('#saveMatch')?.addEventListener('click', ()=>{
+    const homeId = $('#selHome')?.value, awayId = $('#selAway')?.value;
+    const hg = +($('#hg')?.value||0), ag = +($('#ag')?.value||0);
+    if(!homeId||!awayId||homeId===awayId) return alert('เลือกทีมเหย้า/เยือนให้ถูกต้อง');
+    const m = { id:nid('m'), homeId, awayId, hg, ag, date: Date.now() };
+    state.matches.push(m);
+    save(); renderTable(); renderDashboard(); renderMatchLog();
+    log(`บันทึกผล ${state.teams.find(t=>t.id===homeId)?.name} ${hg}:${ag} ${state.teams.find(t=>t.id===awayId)?.name}`);
+    if($('#hg')) $('#hg').value = 0; if($('#ag')) $('#ag').value = 0;
   });
 }
-  
+
 /* ---------- Player stats ---------- */
 function ensurePlayerStat(playerId, name, teamId){
   let s = state.playersStats.find(x=>x.playerId===playerId);
@@ -1466,7 +1348,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
   wireRosterPhotoPickers?.();
   wireAddPlayer?.();
   wireRosterTeamSwitcher();  
-  wireMatchLogActions();
 
   // เรนเดอร์เริ่มต้น
   renderTeamSelects?.();
@@ -1504,5 +1385,3 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
 </body>
 </html>
-
-
