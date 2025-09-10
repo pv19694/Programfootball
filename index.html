@@ -172,6 +172,29 @@
 }
 @keyframes spin{ to{ transform:rotate(360deg);} }
 
+/* ===== ปุ่มแก้ไข/ลบ ในประวัติสถิติ ===== */
+.hist-row{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:.75rem; padding:.4rem .6rem; border-radius:.5rem;
+}
+.hist-row:nth-child(odd){ background:#f8fafc; } /* สลับบรรทัดสีอ่อน */
+.hist-main{ display:flex; gap:.5rem; align-items:center; min-width:0; }
+.hist-time{ font-size:.72rem; color:#64748b; white-space:nowrap; }
+
+.hist-actions{ display:flex; gap:.35rem; }
+.hist-btn{
+  border:1px solid rgba(0,0,0,.06); background:#fff; padding:.25rem .45rem;
+  border-radius:.5rem; font-size:.8rem; cursor:pointer;
+  box-shadow:0 1px 3px rgba(0,0,0,.08);
+  transition:transform .12s ease, box-shadow .12s ease;
+}
+.hist-btn:hover{
+  transform:translateY(-1px);
+  box-shadow:0 3px 8px rgba(0,0,0,.12);
+}
+.hist-btn.red{ color:#b91c1c; }
+.hist-type{ font-weight:700; }
+  
 </style>
 </head>
 <body class="bg-gradient-to-br from-green-50 to-blue-50 min-h-screen">
@@ -555,6 +578,11 @@ document.addEventListener('DOMContentLoaded', () => {
   <div class="panel"><h4>🧤 ผู้รักษาประตูยอดเยี่ยม (เซฟ)</h4><div id="topSaves"></div></div>
   <div class="panel"><h4>🟨 ใบเหลือง</h4><div id="topYellow"></div></div>
   <div class="panel"><h4>🟥 ใบแดง</h4><div id="topRed"></div></div>
+  <div class="panel lg:col-span-2">
+  <h4>📜 ประวัติสถิติ (แก้ไข/ลบ)</h4>
+  <div id="statsHistory"></div>
+</div>
+
 </div>
 </section>
 
@@ -714,7 +742,7 @@ function calcAgeFromISO(iso){
 }
 
 /* ---------- State + persistence ---------- */
-let state = { teams:[], matches:[], playersStats:[] };
+let state = { teams:[], matches:[], playersStats:[], playersEvents:[] };
 
 function load(){
   try {
@@ -729,6 +757,12 @@ function load(){
     }
   } catch(e){ console.warn('load failed', e); }
 }
+  if(obj.playersEvents && Array.isArray(obj.playersEvents)){
+  state.playersEvents = obj.playersEvents;
+} else {
+  state.playersEvents = [];
+}
+  
 function save(){
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
   catch(e){ console.warn('save failed', e); }
@@ -921,11 +955,92 @@ function wireStatsButtons(){
       const key = b.getAttribute('data-s'); // goals, assists, ...
       const stat = ensurePlayerStat(pid, player.name, teamId);
       stat[key] = (stat[key]||0)+1;
+      // หลัง stat[key]++
+addStatEvent({playerId: pid, teamId, type: key});
+renderStatsHistory();
       save(); renderTopStats();
       log(`อัปเดตสถิติ ${player.name}: ${key}+1`);
     });
   });
   $('#selTeamForPlayer')?.addEventListener('change', renderPlayerDropdowns);
+}
+// ===== Event helpers (ประวัติสถิติ) =====
+function labelStatType(t){
+  return t==='goals' ? 'ประตู'
+       : t==='saves' ? 'เซฟ'
+       : t==='yellowCards' ? 'ใบเหลือง'
+       : t==='redCards' ? 'ใบแดง'
+       : t;
+}
+
+function addStatEvent({playerId, teamId, type}){
+  const ev = { id: nid('ev'), playerId, teamId, type, ts: Date.now() };
+  state.playersEvents.push(ev);
+  return ev;
+}
+
+function deleteStatEvent(evId){
+  const idx = state.playersEvents.findIndex(e=>e.id===evId);
+  if (idx<0) return;
+  const ev = state.playersEvents[idx];
+  const stat = state.playersStats.find(s=>s.playerId===ev.playerId);
+  if (stat && stat[ev.type]>0) stat[ev.type]--;
+  state.playersEvents.splice(idx,1);
+  save(); renderTopStats(); renderStatsHistory();
+}
+
+function editStatEvent(evId,newType){
+  const ev = state.playersEvents.find(e=>e.id===evId);
+  if (!ev) return;
+  const stat = state.playersStats.find(s=>s.playerId===ev.playerId);
+  if (stat){
+    if (stat[ev.type]>0) stat[ev.type]--;
+    stat[newType] = (stat[newType]||0)+1;
+  }
+  ev.type=newType;
+  save(); renderTopStats(); renderStatsHistory();
+}
+
+function renderStatsHistory(limit=30){
+  const box=document.getElementById('statsHistory');
+  if (!box) return;
+  const rows=[...state.playersEvents]
+    .sort((a,b)=>b.ts-a.ts)
+    .slice(0,limit)
+    .map(ev=>{
+      const player=state.teams.flatMap(t=>t.members||[]).find(p=>p.id===ev.playerId);
+      const team=state.teams.find(t=>t.id===ev.teamId);
+      const name=player?.name||'(ไม่มีชื่อ)';
+      const tname=team?.name||'-';
+      const time=new Date(ev.ts).toLocaleString();
+      return `<div class="hist-row" data-evid="${ev.id}">
+        <div class="hist-main">
+          <span class="hist-type">• ${labelStatType(ev.type)}</span>
+          <span class="truncate">${esc(name)} <span class="text-xs text-slate-500">(${esc(tname)})</span></span>
+        </div>
+        <div class="hist-actions">
+          <span class="hist-time">${time}</span>
+          <button class="hist-btn" data-act="edit">✏️</button>
+          <button class="hist-btn red" data-act="del">✖️</button>
+        </div>
+      </div>`;
+    }).join('');
+  box.innerHTML=rows||`<div class="text-slate-400">ยังไม่มีประวัติ</div>`;
+}
+function wireStatsHistoryActions(){
+  const box=document.getElementById('statsHistory');
+  if (!box||box.dataset.bound==='1') return;
+  box.addEventListener('click',(e)=>{
+    const btn=e.target.closest('.hist-btn'); if(!btn) return;
+    const row=e.target.closest('.hist-row'); if(!row) return;
+    const evId=row.getAttribute('data-evid');
+    if(btn.dataset.act==='del'){ if(confirm('ลบ?')) deleteStatEvent(evId); }
+    if(btn.dataset.act==='edit'){
+      const newType=prompt('แก้เป็นอะไร? (goals/saves/yellowCards/redCards)','goals');
+      if(newType) editStatEvent(evId,newType.trim());
+    }
+  });
+  box.dataset.bound='1';
 }
 
 /* ---------- Teams (logo upload + CRUD) ---------- */
@@ -1333,7 +1448,8 @@ function exitEditMode(){
   const btn = $('#btnAddNewPlayer');
   if(btn){ btn.textContent = '✅ เพิ่มนักกีฬา'; btn.dataset.mode = 'add'; }
 }
-    
+
+
 /* ---------- Boot ---------- */
 document.addEventListener('DOMContentLoaded', ()=>{
   load?.();
@@ -1348,6 +1464,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   wireRosterPhotoPickers?.();
   wireAddPlayer?.();
   wireRosterTeamSwitcher();  
+  wireStatsHistoryActions();
 
   // เรนเดอร์เริ่มต้น
   renderTeamSelects?.();
@@ -1358,6 +1475,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   renderRosterGrid?.();    // <= ต้องมาก่อน sync สี
   renderTopStats?.();
   renderRosterHooks?.();
+  renderStatsHistory();
 
   // ตั้งค่า nav ป้องกัน submit
   $$('.nav-btn').forEach(btn => { if (btn.tagName === 'BUTTON') btn.type = 'button'; });
