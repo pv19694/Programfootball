@@ -662,6 +662,7 @@ const pageLoaders = {
     renderTopStats?.();
     renderStatsHistory?.();
     wireStatsHistoryActions?.();
+    wireClearStatsButton?.();
   },
 
   match(){
@@ -857,7 +858,11 @@ renderStatsHistory();
       log(`อัปเดตสถิติ ${player.name}: ${key}+1`);
     });
   });
-  $('#selTeamForPlayer')?.addEventListener('change', renderPlayerDropdowns);
+  $('#selTeamForPlayer')?.addEventListener('change', () => {
+  renderPlayerDropdowns();   // เปลี่ยนตัวเลือกผู้เล่นตามทีม
+  renderTopStats?.();        // รีเฟรชอันดับ/สรุป
+  renderStatsHistory?.();    // รีเฟรชประวัติสถิติ
+});
 }
   // ปุ่ม "ล้างสถิติทีมนี้"
 function wireClearStatsButton(){
@@ -1396,6 +1401,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   wireRosterFormToggle?.();
   wireMatchControls?.();
   wireStatsButtons?.();
+  wireClearStatsButton?.();
   wireTeamLogoPickers?.();
   wireTeamCRUD?.();
   wireRosterPhotoPickers?.();
