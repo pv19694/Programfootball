@@ -437,34 +437,50 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>
     </section>
 
-    <!-- Match -->
-    <section id="match" class="page">
-      <div class="bg-white rounded-2xl shadow p-5 max-w-3xl mx-auto space-y-4">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div><label class="lbl">ทีม 1</label><select id="selHome" class="sel"></select></div>
-          <div><label class="lbl">ทีม 2</label><select id="selAway" class="sel"></select></div>
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-  <div>
-    <label class="lbl">สกอร์ทีม 1</label>
-    <input id="hg" type="number" min="0" max="20" value="0" class="inp text-center">
-  </div>
-  <div>
-    <label class="lbl">สกอร์ทีม 2</label>
-    <input id="ag" type="number" min="0" max="20" value="0" class="inp text-center">
-  </div>
-</div>
+    <!-- ====== บันทึกผล ====== -->
+<section id="record" class="page">
+  <div class="bg-white rounded-2xl shadow p-5 max-w-3xl mx-auto space-y-4">
 
-<!-- ปุ่มบันทึกผล อยู่ตรงกลาง -->
-<div class="flex justify-center mt-4">
-  <button class="btn-save" id="btnSaveMatch">บันทึกผล</button>
-</div>
+    <!-- เลือกทีม -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div>
+        <label class="lbl">ทีม 1</label>
+        <select id="selHome" class="sel"></select>
+      </div>
+      <div>
+        <label class="lbl">ทีม 2</label>
+        <select id="selAway" class="sel"></select>
+      </div>
+    </div>
 
-<!-- ประวัติแมตช์ -->
-<div id="matchHistory" class="mt-4">
-  ...
-</div>
-    </section>
+    <!-- สกอร์ -->
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="lbl">สกอร์ทีม 1</label>
+        <input id="hg" type="number" min="0" max="20" value="0" class="inp text-center">
+      </div>
+      <div>
+        <label class="lbl">สกอร์ทีม 2</label>
+        <input id="ag" type="number" min="0" max="20" value="0" class="inp text-center">
+      </div>
+    </div>
+
+    <!-- ปุ่มบันทึกผล (กึ่งกลาง) -->
+    <div class="flex justify-center mt-4">
+      <button class="btn-save" id="btnSaveMatch">บันทึกผล</button>
+    </div>
+
+    <!-- ประวัติแมตช์ -->
+    <div class="space-y-2">
+      <div class="flex items-center gap-2 text-slate-600">
+        <span>📜</span><span class="font-semibold">ประวัติแมตช์</span>
+      </div>
+      <div id="matchHistory" class="mt-2"></div>
+    </div>
+
+  </div>
+</section>
+
 
     <!-- Players -->
     <section id="players" class="page">
