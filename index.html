@@ -468,7 +468,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     <!-- ปุ่มบันทึกผล (กึ่งกลางแน่นอน) -->
     <div class="w-full flex justify-center mt-4">
-      <button class="btn-save" id="btnSaveMatch">บันทึกผล</button>
+      <button type="button" class="btn-save" id="btnSaveMatch">บันทึกผล</button>
     </div>
 
     <!-- ประวัติแมตช์ -->
@@ -481,6 +481,56 @@ document.addEventListener('DOMContentLoaded', () => {
 
   </div>
 </section>
+
+<!-- ผูก event ให้ปุ่มบันทึกผล (เฉพาะส่วนนี้) -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('btnSaveMatch');
+  if (!btn) return;
+
+  btn.addEventListener('click', () => {
+    const selHome = document.getElementById('selHome');
+    const selAway = document.getElementById('selAway');
+    const hgEl = document.getElementById('hg');
+    const agEl = document.getElementById('ag');
+
+    const homeId = selHome?.value || '';
+    const awayId = selAway?.value || '';
+    const hg = Number(hgEl?.value || 0);
+    const ag = Number(agEl?.value || 0);
+
+    if (!homeId || !awayId) return alert('กรุณาเลือกทีมให้ครบ');
+    if (homeId === awayId) return alert('ห้ามเลือกทีมซ้ำกัน');
+
+    // ใช้ state เดิมถ้ามีอยู่แล้ว (ไม่ยุ่งกับโค้ดอื่น)
+    window.state = window.state || { teams: [], matches: [], playersStats: [] };
+    state.matches = Array.isArray(state.matches) ? state.matches : [];
+
+    const match = { id: crypto.randomUUID?.() || String(Date.now()), homeId, awayId, hg, ag, ts: Date.now() };
+    state.matches.push(match);
+
+    // เซฟถ้ามีฟังก์ชันเดิมอยู่
+    if (typeof saveState === 'function') saveState();
+    // อัปเดตตารางคะแนนถ้ามีฟังก์ชันเดิมอยู่
+    if (typeof renderStandings === 'function') renderStandings();
+
+    // แสดงในประวัติทันที (กันพลาดกรณีไม่มีฟังก์ชันเดิม)
+    const box = document.getElementById('matchHistory');
+    if (box) {
+      const t1 = (state.teams||[]).find(t=>t.id===homeId)?.name || 'ทีม 1';
+      const t2 = (state.teams||[]).find(t=>t.id===awayId)?.name || 'ทีม 2';
+      const row = document.createElement('div');
+      row.className = 'rounded border px-3 py-2 text-sm flex items-center justify-between';
+      row.innerHTML = `<div>${t1} vs ${t2} • ${hg}:${ag}</div>
+                       <div class="text-xs text-slate-500">${new Date(match.ts).toLocaleString()}</div>`;
+      box.prepend(row);
+    }
+
+    // รีเซ็ตสกอร์เล็กน้อย
+    hgEl.value = 0; agEl.value = 0;
+  });
+});
+</script>
 
 
 
