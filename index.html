@@ -373,13 +373,87 @@
   </div>
 </section>
 
-<!-- ผูก event ให้ปุ่มบันทึกผล (เฉพาะส่วนนี้) -->
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-  const btn = document.getElementById('btnSaveMatch');
-  if (!btn) return;
+let editingMatchId = null; // null = เพิ่มใหม่, มีค่า = แก้ไข
 
-  btn.addEventListener('click', () => {
+function setMatchForm(m){
+  const selHome = document.getElementById('selHome');
+  const selAway = document.getElementById('selAway');
+  const hgEl    = document.getElementById('hg');
+  const agEl    = document.getElementById('ag');
+  if(!selHome || !selAway || !hgEl || !agEl) return;
+  if(!m) return;
+
+  selHome.value = m.homeId || '';
+  selAway.value = m.awayId || '';
+  hgEl.value    = m.hg ?? 0;
+  agEl.value    = m.ag ?? 0;
+}
+
+function renderMatchHistory(){
+  const box = document.getElementById('matchHistory');
+  if(!box) return;
+
+  const rows = [...(state.matches||[])]
+    .sort((a,b)=> b.ts-a.ts)
+    .map(m=>{
+      const t1 = (state.teams||[]).find(t=>t.id===m.homeId)?.name || 'ทีม 1';
+      const t2 = (state.teams||[]).find(t=>t.id===m.awayId)?.name || 'ทีม 2';
+      const time = new Date(m.ts||Date.now()).toLocaleString();
+      return `
+        <div class="rounded border px-3 py-2 text-sm flex items-center justify-between" data-mid="${m.id}">
+          <div>${t1} vs ${t2} • <b>${m.hg}:${m.ag}</b></div>
+          <div class="flex items-center gap-2 text-xs text-slate-500">
+            <span>${time}</span>
+            <button class="hist-btn" data-act="edit" title="แก้ไข">✏️</button>
+            <button class="hist-btn red" data-act="del" title="ลบ">✖️</button>
+          </div>
+        </div>`;
+    }).join('');
+
+  box.innerHTML = rows || `<div class="text-slate-400">ยังไม่มีประวัติ</div>`;
+}
+
+function wireMatchHistoryActions(){
+  const box = document.getElementById('matchHistory');
+  if(!box || box.dataset.bound==='1') return;
+
+  box.addEventListener('click', (e)=>{
+    const btn = e.target.closest('button[data-act]');
+    if(!btn) return;
+
+    const row = e.target.closest('[data-mid]');
+    const id  = row?.getAttribute('data-mid');
+    const m   = (state.matches||[]).find(x=>x.id===id);
+    if(!m) return;
+
+    if(btn.dataset.act==='edit'){
+      // เข้าโหมดแก้ไข
+      editingMatchId = id;
+      setMatchForm(m);
+      const saveBtn = document.getElementById('btnSaveMatch');
+      if(saveBtn) saveBtn.textContent = 'อัปเดตผล';
+      return;
+    }
+
+    if(btn.dataset.act==='del'){
+      if(!confirm('ลบผลการแข่งขันนี้?')) return;
+      state.matches = (state.matches||[]).filter(x=>x.id!==id);
+      save();               // มีอยู่แล้วในสคริปต์หลักของคุณ
+      renderTable?.();      // คำนวณตารางคะแนนใหม่
+      renderDashboard?.();  // อัปเดตสถิติหน้าแรก
+      renderMatchHistory(); // รีเฟรชรายการ
+    }
+  });
+
+  box.dataset.bound = '1';
+}
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  const btn = document.getElementById('btnSaveMatch');
+  if(!btn) return;
+
+  btn.addEventListener('click', ()=>{
     const selHome = document.getElementById('selHome');
     const selAway = document.getElementById('selAway');
     const hgEl = document.getElementById('hg');
@@ -390,37 +464,50 @@ document.addEventListener('DOMContentLoaded', () => {
     const hg = Number(hgEl?.value || 0);
     const ag = Number(agEl?.value || 0);
 
-    if (!homeId || !awayId) return alert('กรุณาเลือกทีมให้ครบ');
-    if (homeId === awayId) return alert('ห้ามเลือกทีมซ้ำกัน');
+    if(!homeId || !awayId) return alert('กรุณาเลือกทีมให้ครบ');
+    if(homeId === awayId) return alert('ห้ามเลือกทีมซ้ำกัน');
 
-    // ใช้ state เดิมถ้ามีอยู่แล้ว (ไม่ยุ่งกับโค้ดอื่น)
+    // โหมดแก้ไข
+    if(editingMatchId){
+      const m = (state.matches||[]).find(x=>x.id===editingMatchId);
+      if(m){
+        m.homeId = homeId;
+        m.awayId = awayId;
+        m.hg = hg;
+        m.ag = ag;
+        m.ts = Date.now();
+        save();
+        renderTable?.();
+        renderDashboard?.();
+        renderMatchHistory();
+      }
+      editingMatchId = null;
+      btn.textContent = 'บันทึกผล';
+      hgEl.value = 0; agEl.value = 0;
+      return;
+    }
+
+    // โหมดเพิ่มใหม่
     window.state = window.state || { teams: [], matches: [], playersStats: [] };
     state.matches = Array.isArray(state.matches) ? state.matches : [];
-
     const match = { id: crypto.randomUUID?.() || String(Date.now()), homeId, awayId, hg, ag, ts: Date.now() };
     state.matches.push(match);
 
-    // เซฟถ้ามีฟังก์ชันเดิมอยู่
-    if (typeof saveState === 'function') saveState();
-    // อัปเดตตารางคะแนนถ้ามีฟังก์ชันเดิมอยู่
-    if (typeof renderStandings === 'function') renderStandings();
+    save();
+    renderTable?.();
+    renderDashboard?.();
+    renderMatchHistory();
 
-    // แสดงในประวัติทันที (กันพลาดกรณีไม่มีฟังก์ชันเดิม)
-    const box = document.getElementById('matchHistory');
-    if (box) {
-      const t1 = (state.teams||[]).find(t=>t.id===homeId)?.name || 'ทีม 1';
-      const t2 = (state.teams||[]).find(t=>t.id===awayId)?.name || 'ทีม 2';
-      const row = document.createElement('div');
-      row.className = 'rounded border px-3 py-2 text-sm flex items-center justify-between';
-      row.innerHTML = `<div>${t1} vs ${t2} • ${hg}:${ag}</div>
-                       <div class="text-xs text-slate-500">${new Date(match.ts).toLocaleString()}</div>`;
-      box.prepend(row);
-    }
-
-    // รีเซ็ตสกอร์เล็กน้อย
     hgEl.value = 0; agEl.value = 0;
   });
+
+  // แสดงรายการเมื่อเปิดหน้า + ผูกปุ่มแก้/ลบ
+  renderMatchHistory();
+  wireMatchHistoryActions();
 });
+
+// เพื่อให้โค้ดส่วนอื่นที่เรียก renderMatchLog() เดิมยังใช้ได้
+function renderMatchLog(){ renderMatchHistory(); }
 </script>
 
 
