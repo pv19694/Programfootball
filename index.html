@@ -710,6 +710,80 @@ function renderMatchLog(){ renderMatchHistory(); }
     </section>
   </main>
 
+<script>
+// ----- Firebase init -----
+const firebaseConfig = {
+  // TODO: ใส่ค่าจาก Firebase Console ของโปรเจกต์คุณ
+  apiKey: "...",
+  authDomain: "...",
+  projectId: "...",
+  // (อื่น ๆ ที่ console ให้มา)
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+firebase.auth().signInAnonymously().catch(console.warn);
+try { firebase.firestore().enablePersistence({ synchronizeTabs:true }); } catch(e){ console.warn(e.message); }
+
+// เลือก “สมุดงาน/ลีก” จากพารามิเตอร์ URL (เปิดลิงก์เดียวกันก็ซิงก์กัน)
+// เช่น https://.../index.html?league=jakhong
+const LEAGUE_ID = new URLSearchParams(location.search).get('league') || 'default';
+const docRef = db.collection('leagues').doc(LEAGUE_ID);
+
+// ใช้รีวิชันกันลูปอัปเดต
+let cloudRev = 0;
+
+function sanitizeState(s){
+  const o = s && typeof s==='object' ? s : {};
+  return {
+    teams: Array.isArray(o.teams) ? o.teams : [],
+    matches: Array.isArray(o.matches) ? o.matches : [],
+    playersStats: Array.isArray(o.playersStats) ? o.playersStats : [],
+    playersEvents: Array.isArray(o.playersEvents) ? o.playersEvents : []
+  };
+}
+
+// เรนเดอร์ทุกส่วนหลังได้รับข้อมูลใหม่
+function renderEverything(){
+  renderTeamSelects?.();
+  renderPlayerDropdowns?.();
+  renderTable?.();
+  renderDashboard?.();
+  renderMatchLog?.();
+  renderRosterGrid?.();
+  renderTopStats?.();
+  renderRosterHooks?.();
+  renderStatsHistory?.();
+  renderActivities?.();
+  renderTeamContacts?.();
+  syncRosterColorFromTeam?.();
+}
+
+// เปิด realtime listener
+function startCloudSync(){
+  // ดึงครั้งแรก (ถ้ามี) แล้วเปิด onSnapshot
+  docRef.get().then(snap=>{
+    if (snap.exists){
+      const d = snap.data()||{};
+      cloudRev = d._rev || 0;
+      state = sanitizeState(d.state);
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e){}
+      renderEverything();
+    }
+  });
+
+  docRef.onSnapshot(snap=>{
+    const d = snap.data();
+    if (!d) return;
+    if ((d._rev||0) <= cloudRev) return; // ข้ามอัปเดตของตัวเอง
+    cloudRev = d._rev||0;
+    state = sanitizeState(d.state);
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e){}
+    renderEverything();
+  });
+}
+</script>
+
+  
   <!-- Script -->
 <script>
 /* =========================
@@ -761,9 +835,19 @@ function load(){
   }
 }
   
+// save() ใหม่: เก็บทั้ง localStorage และ Firestore
 function save(){
+  // 1) เก็บไว้ในเครื่องเหมือนเดิม
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
   catch(e){ console.warn('save failed', e); }
+
+  // 2) ซิงก์ขึ้น Cloud (ต้องมี window.docRef จากบล็อก Firebase init)
+  if (window.docRef){
+    window.docRef.set(
+      { state, updatedAt: firebase.firestore.FieldValue.serverTimestamp() },
+      { merge: true }
+    ).catch(err => console.warn('cloud save failed', err));
+  }
 }
 
 /* ---------- Navigation (เมนู .nav-btn + สลับหน้า) ---------- */
