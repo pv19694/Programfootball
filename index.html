@@ -962,6 +962,7 @@ function wireStatsButtons(){
 addStatEvent({playerId: pid, teamId, type: key});
 renderStatsHistory();
       save(); renderTopStats();
+      
       log(`อัปเดตสถิติ ${player.name}: ${key}+1`);
     });
   });
@@ -969,6 +970,7 @@ renderStatsHistory();
   renderPlayerDropdowns();   // เปลี่ยนตัวเลือกผู้เล่นตามทีม
   renderTopStats?.();        // รีเฟรชอันดับ/สรุป
   renderStatsHistory?.();    // รีเฟรชประวัติสถิติ
+  renderActivities?.(); 
 });
 }
   // ปุ่ม "ล้างสถิติทีมนี้"
@@ -1022,6 +1024,79 @@ function labelStatType(t){
        : t;
 }
 
+// ===== Helpers =====
+function teamName(id){
+  return (state.teams||[]).find(t=>t.id===id)?.name || '-';
+}
+function playerName(id){
+  for (const t of (state.teams||[])){
+    const p = (t.members||[]).find(m=>m.id===id);
+    if (p) return p.name;
+  }
+  return '(ไม่มีชื่อ)';
+}
+
+function renderActivities(limit = 12){
+  const box = document.getElementById('activities');
+  if (!box) return;
+
+  // ดึงเหตุการณ์จากแมตช์
+  const matchActs = (state.matches || []).map(m => ({
+    ts: m.ts || m.date || 0,
+    html: `<b>${esc(teamName(m.homeId))}</b> ${m.hg}:${m.ag} <b>${esc(teamName(m.awayId))}</b>`
+  }));
+
+  // ดึงเหตุการณ์จากสถิติผู้เล่น
+  const statActs = (state.playersEvents || []).map(e => ({
+    ts: e.ts || 0,
+    html: `${esc(playerName(e.playerId))} • ${esc(labelStatType(e.type))}
+           <span class="text-xs text-slate-500">(${esc(teamName(e.teamId))})</span>`
+  }));
+
+  const acts = [...matchActs, ...statActs]
+    .sort((a,b)=> b.ts - a.ts)
+    .slice(0, limit);
+
+  box.innerHTML = acts.length
+    ? acts.map(a => `
+        <div class="flex items-center justify-between rounded-lg bg-white/60 px-3 py-2">
+          <div class="text-sm">${a.html}</div>
+          <div class="text-xs text-slate-500">${new Date(a.ts).toLocaleString()}</div>
+        </div>
+      `).join('')
+    : `<div class="text-slate-400">ยังไม่มีกิจกรรม</div>`;
+}
+
+// ===== Dashboard: กิจกรรมล่าสุด =====
+function renderActivities(limit=12){
+  const box = document.getElementById('activities');
+  if(!box) return;
+
+  // แปลง matches และ playersEvents เป็น activity เดียวกัน
+  const matchActs = (state.matches||[]).map(m=>({
+    ts: m.ts || m.date || 0,
+    html: `<b>${esc(teamName(m.homeId))}</b> ${m.hg}:${m.ag} <b>${esc(teamName(m.awayId))}</b>`
+  }));
+
+  const statActs = (state.playersEvents||[]).map(e=>({
+    ts: e.ts || 0,
+    html: `${esc(playerName(e.playerId))} • ${esc(labelStatType(e.type))}
+           <span class="text-xs text-slate-500">(${esc(teamName(e.teamId))})</span>`
+  }));
+
+  const acts = [...matchActs, ...statActs]
+    .sort((a,b)=> b.ts - a.ts)
+    .slice(0, limit);
+
+  box.innerHTML = acts.length
+    ? acts.map(a=>`
+        <div class="flex items-center justify-between rounded-lg bg-white/60 px-3 py-2">
+          <div class="text-sm">${a.html}</div>
+          <div class="text-xs text-slate-500">${new Date(a.ts).toLocaleString()}</div>
+        </div>`).join('')
+    : `<div class="text-slate-400">ยังไม่มีกิจกรรม</div>`;
+}
+  
 function addStatEvent({playerId, teamId, type}){
   const ev = { id: nid('ev'), playerId, teamId, type, ts: Date.now() };
   state.playersEvents.push(ev);
@@ -1526,6 +1601,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   renderTopStats?.();
   renderRosterHooks?.();
   renderStatsHistory();
+  renderActivities();
 
   // ตั้งค่า nav ป้องกัน submit
   $$('.nav-btn').forEach(btn => { if (btn.tagName === 'BUTTON') btn.type = 'button'; });
