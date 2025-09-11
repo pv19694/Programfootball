@@ -947,33 +947,43 @@ function renderTopStats(){
   if($('#topYellow'))  $('#topYellow').innerHTML  = topList('yellowCards', teamId);  // 🆕
   if($('#topRed'))     $('#topRed').innerHTML     = topList('redCards', teamId);     // 🆕
 }
+  
 function wireStatsButtons(){
   $$('.btn-stat').forEach(b=>{
     b.addEventListener('click', ()=>{
       const teamId = $('#selTeamForPlayer')?.value;
       const pid = $('#selPlayer')?.value;
       if(!teamId||!pid) return alert('เลือกทีมและผู้เล่น');
+
       const player = state.teams.find(t=>t.id===teamId)?.members?.find(m=>m.id===pid);
       if(!player) return alert('ไม่พบผู้เล่น');
-      const key = b.getAttribute('data-s'); // goals, assists, ...
+
+      const key  = b.getAttribute('data-s'); // goals, saves, yellowCards, redCards
       const stat = ensurePlayerStat(pid, player.name, teamId);
-      stat[key] = (stat[key]||0)+1;
-      // หลัง stat[key]++
-addStatEvent({playerId: pid, teamId, type: key});
-renderStatsHistory();
-      save(); renderTopStats();
-      
+      stat[key] = (stat[key]||0) + 1;
+
+      // บันทึก event ไว้แสดงในกิจกรรม
+      addStatEvent({ playerId: pid, teamId, type: key });
+
+      // อัปเดตทุกจอที่เกี่ยวข้อง
+      renderStatsHistory();
+      save();
+      renderTopStats?.();
+      renderActivities?.();   // ✅ อัปเดต “กิจกรรมล่าสุด”
+
       log(`อัปเดตสถิติ ${player.name}: ${key}+1`);
     });
   });
+
   $('#selTeamForPlayer')?.addEventListener('change', () => {
-  renderPlayerDropdowns();   // เปลี่ยนตัวเลือกผู้เล่นตามทีม
-  renderTopStats?.();        // รีเฟรชอันดับ/สรุป
-  renderStatsHistory?.();    // รีเฟรชประวัติสถิติ
-  renderActivities?.(); 
-});
+    renderPlayerDropdowns();   // เปลี่ยนตัวเลือกผู้เล่นตามทีม
+    renderTopStats?.();        // รีเฟรชอันดับ/สรุป
+    renderStatsHistory?.();    // รีเฟรชประวัติสถิติ
+    renderActivities?.();      // ✅ ให้กล่องกิจกรรมรีเฟรชด้วย
+  });
 }
-  // ปุ่ม "ล้างสถิติทีมนี้"
+
+// ปุ่ม "ล้างสถิติทีมนี้"
 function wireClearStatsButton(){
   const btn = document.getElementById('btnClearPlayerStats');
   if (!btn || btn.dataset.bound === '1') return;
@@ -994,6 +1004,7 @@ function wireClearStatsButton(){
     save();
     renderTopStats?.();
     renderStatsHistory?.();
+    renderActivities?.();    // ✅ หลังล้างให้กิจกรรมอัปเดต
   });
 
   btn.dataset.bound = '1';
@@ -1011,6 +1022,7 @@ function wireClearAllStatsButton(){
     save();
     renderTopStats?.();
     renderStatsHistory?.();
+    renderActivities?.();     // ✅
   });
   btn.dataset.bound = '1';
 }
@@ -1067,6 +1079,7 @@ function renderActivities(limit = 12){
     : `<div class="text-slate-400">ยังไม่มีกิจกรรม</div>`;
 }
 
+
 // ===== Dashboard: กิจกรรมล่าสุด =====
 function renderActivities(limit=12){
   const box = document.getElementById('activities');
@@ -1122,7 +1135,7 @@ function editStatEvent(evId,newType){
     stat[newType] = (stat[newType]||0)+1;
   }
   ev.type=newType;
-  save(); renderTopStats(); renderStatsHistory();
+  save(); renderTopStats(); renderStatsHistory(); renderActivities?.(); 
 }
 
 function renderStatsHistory(limit=30){
@@ -1419,7 +1432,7 @@ function renderRosterGrid(){
       if (!team || !p) return;
       if (!confirm(`ลบผู้เล่น "${p.name}" ?`)) return;
       team.members = team.members.filter(m=>m.id!==pid);
-      save(); renderRosterGrid?.(); renderDashboard?.();
+      save(); renderRosterGrid?.(); renderDashboard?.(); renderActivities?.(); 
     }
   });
 
