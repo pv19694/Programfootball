@@ -881,13 +881,6 @@ function renderTable(){
   el.innerHTML = rows || `<tr><td colspan="11" class="py-6 text-slate-400">ยังไม่มีข้อมูล</td></tr>`;
 }
 
-/* ---------- Dashboard ---------- */
-function renderDashboard(){
-  if($('#statTeams'))   $('#statTeams').textContent   = state.teams.length;
-  if($('#statMatches')) $('#statMatches').textContent = state.matches.length;
-  if($('#statMembers')) $('#statMembers').textContent = state.teams.reduce((s,t)=> s + (t.members?.length||0), 0);
-  if($('#statWeek'))    $('#statWeek').textContent    = 1;
-
 function telHref(s){ return 'tel:' + String(s||'').replace(/[^\d+]/g,''); }
 
 function renderTeamContacts(){
@@ -917,7 +910,13 @@ function renderTeamContacts(){
 
   box.innerHTML = html || `<div class="text-slate-400">ยังไม่มีทีม</div>`;
 }
-
+  
+/* ---------- Dashboard ---------- */
+function renderDashboard(){
+  if($('#statTeams'))   $('#statTeams').textContent   = state.teams.length;
+  if($('#statMatches')) $('#statMatches').textContent = state.matches.length;
+  if($('#statMembers')) $('#statMembers').textContent = state.teams.reduce((s,t)=> s + (t.members?.length||0), 0);
+  if($('#statWeek'))    $('#statWeek').textContent    = 1;
   
   // Top Teams
   const table = computeTable();
