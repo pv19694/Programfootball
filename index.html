@@ -728,7 +728,8 @@ try { firebase.firestore().enablePersistence({ synchronizeTabs:true }); } catch(
 // เช่น https://.../index.html?league=jakhong
 const LEAGUE_ID = new URLSearchParams(location.search).get('league') || 'default';
 const docRef = db.collection('leagues').doc(LEAGUE_ID);
-
+window.docRef = docRef;
+  
 // ใช้รีวิชันกันลูปอัปเดต
 let cloudRev = 0;
 
@@ -837,16 +838,22 @@ function load(){
   
 // save() ใหม่: เก็บทั้ง localStorage และ Firestore
 function save(){
-  // 1) เก็บไว้ในเครื่องเหมือนเดิม
+  // 1) เก็บในเครื่องเหมือนเดิม
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
   catch(e){ console.warn('save failed', e); }
 
-  // 2) ซิงก์ขึ้น Cloud (ต้องมี window.docRef จากบล็อก Firebase init)
+  // 2) ขึ้น Cloud ถ้า docRef พร้อม
   if (window.docRef){
+    const nextRev = (window.cloudRev || 0) + 1;
     window.docRef.set(
-      { state, updatedAt: firebase.firestore.FieldValue.serverTimestamp() },
+      {
+        state,
+        _rev: nextRev,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      },
       { merge: true }
-    ).catch(err => console.warn('cloud save failed', err));
+    ).then(()=>{ window.cloudRev = nextRev; })
+     .catch(err => console.warn('cloud save failed', err));
   }
 }
 
@@ -1897,6 +1904,12 @@ document.addEventListener('DOMContentLoaded', ()=>{
   renderStatsHistory();
   renderActivities();
   renderTeamContacts?.();
+  
+  document.addEventListener('DOMContentLoaded', ()=>{
+  // ... โค้ดเดิมทั้งหมดของคุณ ...
+  startCloudSync();   // <<< ต้องเรียกเพื่อเปิด realtime listener
+});
+
   
   // ตั้งค่า nav ป้องกัน submit
   $$('.nav-btn').forEach(btn => { if (btn.tagName === 'BUTTON') btn.type = 'button'; });
