@@ -726,7 +726,8 @@ try { firebase.firestore().enablePersistence({ synchronizeTabs:true }); } catch(
 
 // เลือก “สมุดงาน/ลีก” จากพารามิเตอร์ URL (เปิดลิงก์เดียวกันก็ซิงก์กัน)
 // เช่น https://.../index.html?league=jakhong
-const LEAGUE_ID = new URLSearchParams(location.search).get('league') || 'default';
+const qs = new URLSearchParams(location.search);
+const LEAGUE_ID = qs.get('league') || qs.get('room') || 'default';
 const docRef = db.collection('leagues').doc(LEAGUE_ID);
 window.docRef = docRef;
   
