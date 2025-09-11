@@ -819,15 +819,17 @@ function renderTable(){
   const el = document.getElementById('tbl'); if(!el) return;
 
   const rows = computeTable().map((r,i)=>{
-    const rank = i + 1;
+  const rank = i + 1;
 
-    // สี + เส้นขอบซ้ายให้เห็นชัด
-    const rowClass =
-      rank === 1 ? 'bg-amber-50  border-l-4 border-amber-400'  :
-      rank === 2 ? 'bg-sky-50    border-l-4 border-sky-400'    : // เปลี่ยนจาก slate เป็น sky
-      rank === 3 ? 'bg-orange-50 border-l-4 border-orange-400' :
-                   'odd:bg-white even:bg-slate-50';
-
+  const rowClass =
+    rank === 1
+      ? 'bg-amber-50 border-l-4 border-amber-400'         // 🥇 Gold
+    : rank === 2
+      ? 'bg-[#C0C0C0]/20 border-l-4 border-[#C0C0C0]'      // 🥈 Silver
+    : rank === 3
+      ? 'bg-[#CD7F32]/15 border-l-4 border-[#CD7F32]'      // 🥉 Bronze
+    : 'odd:bg-white even:bg-slate-50';
+    
     const last5 = r.form.slice(-5).join(' ');
     return `
       <tr class="${rowClass}">
