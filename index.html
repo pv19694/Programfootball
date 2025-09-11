@@ -301,7 +301,7 @@
         <div class="card"><div class="t">สัปดาห์ปัจจุบัน</div><div id="statWeek" class="v"></div></div>
         <div class="bg-white rounded-2xl shadow p-5 mt-5">
         <h3 class="font-bold text-gray-800 mb-3">📞 เบอร์ติดต่อผู้จัดการทีม</h3>
-        <div id="teamContacts" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2"></div>
+        <div id="teamContacts" class="grid grid-cols-1 gap-2"></div>
 </div>
 
       </div>
@@ -891,20 +891,23 @@ function renderTeamContacts(){
     const logo = t.logo
       ? `<img src="${t.logo}" class="w-7 h-7 rounded-full object-cover border" alt="">`
       : `<div class="w-7 h-7 rounded-full grid place-items-center bg-slate-100">🏳️</div>`;
+
     const m  = (t.managerName||'').trim();
     const ph = (t.managerPhone||'').trim();
-    const phoneHtml = ph ? `<a href="${telHref(ph)}" class="chip">📞 ${esc(ph)}</a>` : `<span class="chip">—</span>`;
+    const phoneHtml = ph
+      ? `<a href="${telHref(ph)}" class="chip inline-flex items-center">📞 ${esc(ph)}</a>`
+      : `<span class="chip">—</span>`;
 
     return `
-      <div class="flex items-center justify-between rounded-lg border px-3 py-2">
-        <div class="flex items-center gap-2 min-w-0">
+      <div class="rounded-lg border p-3">
+        <div class="flex flex-wrap items-center gap-2">
           ${logo}
-          <div class="min-w-0">
-            <div class="font-semibold truncate">${esc(t.name||'-')}</div>
-            <div class="text-xs text-slate-500 truncate">${esc(m||'ไม่มีชื่อผู้จัดการ')}</div>
+          <div class="min-w-0 flex-1">
+            <div class="font-semibold break-words">${esc(t.name||'-')}</div>
+            <div class="text-xs text-slate-500 break-words">${esc(m||'ไม่มีชื่อผู้จัดการ')}</div>
           </div>
+          <div class="w-full sm:w-auto sm:ml-auto mt-1 sm:mt-0">${phoneHtml}</div>
         </div>
-        <div class="shrink-0">${phoneHtml}</div>
       </div>`;
   }).join('');
 
