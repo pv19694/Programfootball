@@ -312,6 +312,7 @@
         <h3 class="font-bold text-gray-800 mb-3">📊 กิจกรรมล่าสุด</h3>
         <div id="activities" class="space-y-2 max-h-64 overflow-y-auto" aria-live="polite"></div>
       </div>
+      
     </section>
     <!-- Table -->
     <section id="table" class="page">
@@ -553,32 +554,57 @@ function renderMatchLog(){ renderMatchHistory(); }
 
 
     <!-- Teams -->
-    <section id="teams" class="page">
-      <div class="bg-white rounded-2xl shadow p-5 mb-5">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
-          <div><label class="lbl">เลือกทีม</label><select id="selEditTeam" class="sel"></select></div>
-          <div><label class="lbl">ชื่อทีม</label><input id="inpTeamName" class="inp" placeholder="ใส่ชื่อทีม"></div>
-          <div>
-            <label class="lbl">โลโก้ทีม</label>
-            <div class="flex items-center gap-3">
-              <div id="teamLogoPreviewEdit" class="w-14 h-14 rounded-full overflow-hidden border-2 border-gray-200 bg-gradient-to-b from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold">🏳️</div>
-              <input id="teamLogoInputEdit" type="file" accept="image/*" class="hidden">
-              <button id="btnChooseTeamLogoEdit" class="btn-s">📷 เลือกรูป</button>
-              <button id="btnClearTeamLogoEdit" class="btn-danger">🧹 ลบรูป</button>
-            </div>
-          </div>
-        </div>
-        <div class="flex gap-2 justify-center mt-3">
-          <button id="btnTeamUpdate" class="btn-pro">
-  <span class="ico">💾</span>
-  <span class="label">บันทึกการแก้ไข</span>
-  <span class="spinner" style="display:none"></span>
-</button>
-          <button id="btnTeamAdd" class="btn-s">➕ เพิ่มทีมใหม่</button>
-          <button id="btnTeamDelete" class="btn-danger">🗑️ ลบทีม</button>
+<section id="teams" class="page">
+  <div class="bg-white rounded-2xl shadow p-5 mb-5">
+
+    <!-- แถวแรก: เลือกทีม / ชื่อทีม / โลโก้ -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
+      <div>
+        <label class="lbl">เลือกทีม</label>
+        <select id="selEditTeam" class="sel"></select>
+      </div>
+
+      <div>
+        <label class="lbl">ชื่อทีม</label>
+        <input id="inpTeamName" class="inp" placeholder="ใส่ชื่อทีม">
+      </div>
+
+      <div>
+        <label class="lbl">โลโก้ทีม</label>
+        <div class="flex items-center gap-3">
+          <div id="teamLogoPreviewEdit" class="w-14 h-14 rounded-full overflow-hidden border-2 border-gray-200 bg-gradient-to-b from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold">🏳️</div>
+          <input id="teamLogoInputEdit" type="file" accept="image/*" class="hidden">
+          <button id="btnChooseTeamLogoEdit" class="btn-s">📷 เลือกรูป</button>
+          <button id="btnClearTeamLogoEdit" class="btn-danger">🧹 ลบรูป</button>
         </div>
       </div>
-    </section>
+    </div>
+
+    <!-- แถวใหม่: ผู้จัดการทีม / เบอร์โทร -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 mt-3">
+      <div>
+        <label class="lbl">ผู้จัดการทีม</label>
+        <input id="inpManagerName" class="inp" placeholder="เช่น คุณเอกชัย">
+      </div>
+      <div>
+        <label class="lbl">เบอร์โทรผู้จัดการ</label>
+        <input id="inpManagerPhone" class="inp" inputmode="tel" placeholder="08x-xxx-xxxx">
+      </div>
+    </div>
+
+    <div class="flex gap-2 justify-center mt-3">
+      <button id="btnTeamUpdate" class="btn-pro">
+        <span class="ico">💾</span>
+        <span class="label">บันทึกการแก้ไข</span>
+        <span class="spinner" style="display:none"></span>
+      </button>
+      <button id="btnTeamAdd" class="btn-s">➕ เพิ่มทีมใหม่</button>
+      <button id="btnTeamDelete" class="btn-danger">🗑️ ลบทีม</button>
+    </div>
+
+  </div>
+</section>
+
 
         <!-- Roster -->
     <section id="roster" class="page">
