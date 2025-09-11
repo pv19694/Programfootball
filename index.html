@@ -1706,6 +1706,60 @@ function exitEditMode(){
   if(btn){ btn.textContent = '✅ เพิ่มนักกีฬา'; btn.dataset.mode = 'add'; }
 }
 
+  function wireGlobalClearButton(){
+  const btn = document.getElementById('btnClear');
+  if (!btn || btn.dataset.bound === '1') return;
+  btn.type = 'button';
+
+  btn.addEventListener('click', ()=>{
+    if (!confirm(
+      'ยืนยันล้างข้อมูลทั้งหมด?\n' +
+      '— ทีม, โลโก้, ผู้เล่น, ผลการแข่งขัน, สถิติผู้เล่น และกิจกรรม —'
+    )) return;
+
+    // รีเซ็ต state ในหน่วยความจำ
+    state = { teams: [], matches: [], playersStats: [], playersEvents: [] };
+
+    // ลบจาก localStorage
+    try { localStorage.removeItem(STORAGE_KEY); } catch(e){}
+
+    // เคลียร์ตัวแปรชั่วคราว/ฟอร์มที่เกี่ยวข้อง
+    try {
+      pendingLogoDataURL_Edit = '';
+      tempPlayerPhoto = '';
+      editingMatchId = null;
+      editingPlayer  = null;
+
+      [
+        'inpTeamName','inpManagerName','inpManagerPhone',
+        'npName','npNum','npAge','npBirth','npPhone'
+      ].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+
+      const selEditTeam = document.getElementById('selEditTeam');
+      if (selEditTeam) selEditTeam.innerHTML = '<option value="">-- เลือกทีม --</option>';
+    } catch(e){}
+
+    // รีเรนเดอร์ทุกจุดของ UI
+    renderTeamSelects?.();
+    renderPlayerDropdowns?.();
+    renderDashboard?.();
+    renderTable?.();
+    renderMatchLog?.();
+    renderRosterGrid?.();
+    renderTopStats?.();
+    renderRosterHooks?.();
+    renderStatsHistory?.();
+    renderActivities?.();
+    renderTeamContacts?.();
+
+    // กลับไปหน้าแรกและแจ้งผล
+    showPage?.('dashboard');
+    alert('ล้างข้อมูลเรียบร้อย ✅');
+  });
+
+  btn.dataset.bound = '1';
+}
+
 
 /* ---------- Boot ---------- */
 document.addEventListener('DOMContentLoaded', ()=>{
@@ -1723,7 +1777,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
   wireAddPlayer?.();
   wireRosterTeamSwitcher();  
   wireStatsHistoryActions();
-
+  wireGlobalClearButton(); 
+  
   // เรนเดอร์เริ่มต้น
   renderTeamSelects?.();
   renderPlayerDropdowns?.();
