@@ -913,13 +913,35 @@ function renderTeamContacts(){
 
   box.innerHTML = html || `<div class="text-slate-400">ยังไม่มีทีม</div>`;
 }
+
+// สัปดาห์ปัจจุบันแบบนับจาก "แมตช์แรก" (บล็อกละ 7 วัน เริ่มนับที่ 1)
+function weekFromFirstMatch(now = Date.now()){
+  const matches = Array.isArray(state.matches) ? state.matches : [];
+  if (!matches.length) return 1; // ยังไม่มีแมตช์ → แสดง 1
+
+  // หาวัน/เวลาแมตช์ที่เก่าสุด (รองรับทั้ง ts และ date)
+  const firstTs = Math.min(
+    ...matches
+      .map(m => m.ts || m.date || 0)
+      .filter(Boolean)
+  );
+  if (!isFinite(firstTs)) return 1;
+
+  const start = new Date(firstTs);
+  start.setHours(0,0,0,0); // ปัดเป็นเที่ยงคืนของวันแรก
+
+  const msPerWeek = 7 * 24 * 60 * 60 * 1000;
+  const weeks = Math.floor((now - start.getTime()) / msPerWeek) + 1;
+  return Math.max(1, weeks);
+}
+
   
 /* ---------- Dashboard ---------- */
 function renderDashboard(){
   if($('#statTeams'))   $('#statTeams').textContent   = state.teams.length;
   if($('#statMatches')) $('#statMatches').textContent = state.matches.length;
   if($('#statMembers')) $('#statMembers').textContent = state.teams.reduce((s,t)=> s + (t.members?.length||0), 0);
-  if($('#statWeek'))    $('#statWeek').textContent    = 1;
+  if($('#statWeek')) $('#statWeek').textContent = weekFromFirstMatch();
   
   // Top Teams
   const table = computeTable();
