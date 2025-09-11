@@ -821,11 +821,11 @@ function renderTable(){
   const rows = computeTable().map((r,i)=>{
     const rank = i + 1;
 
-    // พื้นหลังตามอันดับ (ถ้าไม่ติด Top 3 ใช้แถบสลับสีเดิม)
+    // สี + เส้นขอบซ้ายให้เห็นชัด
     const rowClass =
-      rank === 1 ? 'bg-amber-50' :
-      rank === 2 ? 'bg-slate-50' :
-      rank === 3 ? 'bg-orange-50' :
+      rank === 1 ? 'bg-amber-50  border-l-4 border-amber-400'  :
+      rank === 2 ? 'bg-sky-50    border-l-4 border-sky-400'    : // เปลี่ยนจาก slate เป็น sky
+      rank === 3 ? 'bg-orange-50 border-l-4 border-orange-400' :
                    'odd:bg-white even:bg-slate-50';
 
     const last5 = r.form.slice(-5).join(' ');
