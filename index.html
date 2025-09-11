@@ -1265,54 +1265,110 @@ function wireTeamLogoPickers(){
     r.readAsDataURL(f);
   });
 }
-function wireTeamCRUD(){
+
+  function wireTeamCRUD(){
+  // ดึงค่าผู้จัดการ/เบอร์จากอินพุต
+  const getMgr = () => ({
+    name:  $('#inpManagerName')?.value?.trim() || '',
+    phone: $('#inpManagerPhone')?.value?.trim() || ''
+  });
+
+  // เพิ่มทีมใหม่
   $('#btnTeamAdd')?.addEventListener('click', ()=>{
     const name = $('#inpTeamName')?.value?.trim();
     if(!name) return alert('ใส่ชื่อทีม');
     if(state.teams.some(t=>t.name===name)) return alert('มีทีมนี้อยู่แล้ว');
-    const team = { id:nid('team'), name, logo: pendingLogoDataURL_Edit || '', members:[] };
+
+    const { name: mname, phone: mphone } = getMgr();
+
+    const team = {
+      id: nid('team'),
+      name,
+      logo: pendingLogoDataURL_Edit || '',
+      managerName:  mname,
+      managerPhone: mphone,
+      members: []
+    };
+
     state.teams.push(team);
     save();
-    if($('#inpTeamName')) $('#inpTeamName').value='';
-    pendingLogoDataURL_Edit=''; if($('#teamLogoInputEdit')) $('#teamLogoInputEdit').value='';
-    renderTeamSelects(); renderTeamEditPreview(null); renderDashboard(); renderTable(); renderRosterHooks();
+
+    // ล้างฟอร์ม
+    if($('#inpTeamName'))     $('#inpTeamName').value = '';
+    if($('#inpManagerName'))  $('#inpManagerName').value = '';
+    if($('#inpManagerPhone')) $('#inpManagerPhone').value = '';
+    pendingLogoDataURL_Edit = '';
+    if($('#teamLogoInputEdit')) $('#teamLogoInputEdit').value = '';
+
+    renderTeamSelects(); renderTeamEditPreview(null);
+    renderDashboard(); renderTable(); renderRosterHooks();
     if ($('#selRosterTeam') && !$('#selRosterTeam').value) $('#selRosterTeam').value = team.id;
     renderPlayerDropdowns?.(); renderRosterGrid?.();
+    renderTeamContacts?.(); // 👈 อัปเดตกล่องเบอร์ติดต่อ
     log(`เพิ่มทีมใหม่: ${name}`);
   });
 
+  // บันทึกการแก้ไขทีม
   $('#btnTeamUpdate')?.addEventListener('click', ()=>{
-    const id = $('#selEditTeam')?.value;
+    const id   = $('#selEditTeam')?.value;
     const name = $('#inpTeamName')?.value?.trim();
-    if(!id) return alert('เลือกทีม'); if(!name) return alert('ใส่ชื่อทีม');
+    if(!id) return alert('เลือกทีม');
+    if(!name) return alert('ใส่ชื่อทีม');
+
     const t = state.teams.find(x=>x.id===id); if(!t) return;
-    t.name = name; if(pendingLogoDataURL_Edit) t.logo = pendingLogoDataURL_Edit;
+    const { name: mname, phone: mphone } = getMgr();
+
+    t.name = name;
+    if(pendingLogoDataURL_Edit) t.logo = pendingLogoDataURL_Edit;
+    t.managerName  = mname;
+    t.managerPhone = mphone;
+
     save();
-    renderTeamSelects(); if($('#selEditTeam')) $('#selEditTeam').value = t.id; renderTeamEditPreview(t);
-    pendingLogoDataURL_Edit=''; if($('#teamLogoInputEdit')) $('#teamLogoInputEdit').value='';
-    renderDashboard(); renderTable(); renderRosterHooks(); renderRosterGrid?.(); renderPlayerDropdowns?.();
+
+    renderTeamSelects();
+    if($('#selEditTeam')) $('#selEditTeam').value = t.id;
+    renderTeamEditPreview(t);
+    pendingLogoDataURL_Edit = '';
+    if($('#teamLogoInputEdit')) $('#teamLogoInputEdit').value = '';
+
+    renderDashboard(); renderTable(); renderRosterHooks();
+    renderRosterGrid?.(); renderPlayerDropdowns?.();
+    renderTeamContacts?.(); // 👈
     log(`แก้ไขทีม: ${name}`);
   });
 
+  // ลบทีม
   $('#btnTeamDelete')?.addEventListener('click', ()=>{
     const id = $('#selEditTeam')?.value; if(!id) return alert('เลือกทีม');
-    const t = state.teams.find(x=>x.id===id); if(!t) return;
+    const t  = state.teams.find(x=>x.id===id); if(!t) return;
     if(!confirm(`ยืนยันลบทีม "${t.name}" ?`)) return;
-    state.teams = state.teams.filter(x=>x.id!==id);
+
+    state.teams   = state.teams.filter(x=>x.id!==id);
     state.matches = state.matches.filter(m=> m.homeId!==id && m.awayId!==id );
     save();
-    if($('#inpTeamName')) $('#inpTeamName').value='';
-    pendingLogoDataURL_Edit=''; if($('#teamLogoInputEdit')) $('#teamLogoInputEdit').value='';
-    renderTeamSelects(); renderTeamEditPreview(null); renderDashboard(); renderTable(); renderMatchLog(); renderRosterHooks();
+
+    if($('#inpTeamName'))     $('#inpTeamName').value = '';
+    if($('#inpManagerName'))  $('#inpManagerName').value = '';
+    if($('#inpManagerPhone')) $('#inpManagerPhone').value = '';
+    pendingLogoDataURL_Edit = '';
+    if($('#teamLogoInputEdit')) $('#teamLogoInputEdit').value = '';
+
+    renderTeamSelects(); renderTeamEditPreview(null);
+    renderDashboard(); renderTable(); renderMatchLog(); renderRosterHooks();
     renderPlayerDropdowns?.(); renderRosterGrid?.();
+    renderTeamContacts?.(); // 👈
     log(`ลบทีม: ${t.name}`);
   });
 
+  // เวลาเลือกทีม ให้เติมค่าลงฟอร์ม
   $('#selEditTeam')?.addEventListener('change', e=>{
     const t = state.teams.find(x=>x.id===e.target.value);
-    if($('#inpTeamName')) $('#inpTeamName').value = t?.name || '';
-    pendingLogoDataURL_Edit=''; renderTeamEditPreview(t||null);
-    if($('#teamLogoInputEdit')) $('#teamLogoInputEdit').value='';
+    if($('#inpTeamName'))     $('#inpTeamName').value     = t?.name || '';
+    if($('#inpManagerName'))  $('#inpManagerName').value  = t?.managerName  || '';
+    if($('#inpManagerPhone')) $('#inpManagerPhone').value = t?.managerPhone || '';
+    pendingLogoDataURL_Edit = '';
+    renderTeamEditPreview(t||null);
+    if($('#teamLogoInputEdit')) $('#teamLogoInputEdit').value = '';
   });
 }
 
@@ -1677,7 +1733,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
   renderRosterHooks?.();
   renderStatsHistory();
   renderActivities();
-
+  renderTeamContacts?.();
+  
   // ตั้งค่า nav ป้องกัน submit
   $$('.nav-btn').forEach(btn => { if (btn.tagName === 'BUTTON') btn.type = 'button'; });
 
