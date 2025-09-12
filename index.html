@@ -713,49 +713,47 @@ function renderMatchLog(){ renderMatchHistory(); }
 
   <!-- Script -->
   <script>
-// อ่าน room จาก URL ?room=jakhong (ถ้าไม่ใส่ room จะทำงานแบบโลคอลเดิม)
-const ROOM_ID = new URLSearchParams(location.search).get('room') || '';
+// อ่าน room จาก URL ?room=jakhong (ถ้าไม่ใส่ room จะทำงานแบบโลคอล)
+const ROOM_ID      = new URLSearchParams(location.search).get('room') || '';
 const SYNC_ENABLED = !!ROOM_ID;
 
 // ---- Firebase (Compat) ----
-// ✅ ใช้ค่าจริงของคุณ
 const firebaseConfig = {
-  apiKey: "AIzaSyDRhbcfmYVWV0rjwZYyIVFFoqDdMjipXMk",      // <- สะกดให้เป็น apiKey (K ใหญ่) ไม่ใช่ apikey
+  apiKey: "AIzaSyDRhbcfmYVWV0rjwZYyIVFFoqDdMjipXMk",
   authDomain: "footballprogram-93b7d.firebaseapp.com",
   projectId: "footballprogram-93b7d",
-  storageBucket: "footballprogram-93b7d.appspot.com",      // ใช้ .appspot.com ก็ได้ (เท่ากับที่ console รุ่นเก่าโชว์)
+  storageBucket: "footballprogram-93b7d.appspot.com",
   messagingSenderId: "242565780267",
   appId: "1:242565780267:web:f5ccc63cec293be2de6b6e",
   measurementId: "G-78P27Z4J87"
 };
 
-// ✅ ป้องกัน initialize ซ้ำ
-const app = firebase.apps?.length ? firebase.app() : firebase.initializeApp(firebaseConfig);
-// ✅ สร้างตัวแปร db ใช้ร่วมทั้งไฟล์
-const db  = firebase.firestore();
+// ตัวแปรที่ส่วนอื่นใช้งาน
+let app = null;
+let db  = null;
+let roomRef = null;
+let roomUnsub = null;
+let lastWriteAt = 0;
 
-// (ถ้าคุณใช้ Anonymous auth สำหรับ rules)
-if (firebase.auth) {
-  firebase.auth().signInAnonymously().catch(()=>{});
-}
+// init ให้เรียบร้อยครั้งเดียว
+if (window.firebase && firebase.initializeApp) {
+  try {
+    app = firebase.apps?.length ? firebase.app() : firebase.initializeApp(firebaseConfig);
+    db  = firebase.firestore();
 
-      roomRef = db.collection('rooms').doc(ROOM_ID);
-    } catch(e){ console.warn('Firebase init failed', e); }
-  } else {
-    console.warn('Firebase SDK not loaded — fallback to localStorage only.');
+    // ถ้าใช้ Anonymous auth ตาม rules
+    if (firebase.auth) {
+      firebase.auth().signInAnonymously().catch(()=>{});
+    }
+
+    // ชี้เอกสารใน Firestore เมื่อมี ROOM_ID
+    roomRef = SYNC_ENABLED ? db.collection('rooms').doc(ROOM_ID) : null;
+
+  } catch (e) {
+    console.warn('Firebase init failed', e);
   }
-}
-
-// กันค่าแปลกๆจากคลาวด์
-function sanitizeState(raw){
-  const base = { teams:[], matches:[], playersStats:[], playersEvents:[] };
-  if (!raw || typeof raw!=='object') return base;
-  return {
-    teams: Array.isArray(raw.teams) ? raw.teams : [],
-    matches: Array.isArray(raw.matches) ? raw.matches : [],
-    playersStats: Array.isArray(raw.playersStats) ? raw.playersStats : [],
-    playersEvents: Array.isArray(raw.playersEvents) ? raw.playersEvents : [],
-  };
+} else {
+  console.warn('Firebase SDK not loaded — fallback to localStorage only.');
 }
 
 // render ใหม่ทุกจุดที่มีในโค้ดเดิม โดยไม่แตะ logic ข้างใน
@@ -814,7 +812,7 @@ const cloudSave = async ()=>{
     await roomRef.set({ state, updatedAt: lastWriteAt, version: 1 }, { merge: true });
   } catch(e){ console.warn('cloudSave failed', e); }
 };
-const cloudSaveDebounced = debounce(cloudSave, 400);
+    
   
 /* =========================
    Football CE — Single Script (Clean, Full)
