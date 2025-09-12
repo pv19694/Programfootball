@@ -1905,12 +1905,19 @@ document.addEventListener('DOMContentLoaded', ()=>{
   renderStatsHistory();
   renderActivities();
   renderTeamContacts?.();
+  syncRosterColorFromTeam?.();
   
-  document.addEventListener('DOMContentLoaded', ()=>{
-  // ... โค้ดเดิมทั้งหมดของคุณ ...
-  startCloudSync();   // <<< ต้องเรียกเพื่อเปิด realtime listener
-});
+    // ✅ เปิด realtime Firestore ตรงนี้ ครั้งเดียวพอ
+  startCloudSync?.();
 
+  showPage('dashboard');
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
   
   // ตั้งค่า nav ป้องกัน submit
   $$('.nav-btn').forEach(btn => { if (btn.tagName === 'BUTTON') btn.type = 'button'; });
