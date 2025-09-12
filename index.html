@@ -742,9 +742,17 @@ if (window.firebase && firebase.initializeApp) {
     db  = firebase.firestore();
 
     // ถ้าใช้ Anonymous auth ตาม rules
-    if (firebase.auth) {
-      firebase.auth().signInAnonymously().catch(()=>{});
-    }
+if (firebase.auth) {
+  // 1) ล็อกอินแบบไม่ระบุตัวตน
+  firebase.auth().signInAnonymously()
+    .catch(err => console.warn('anon sign-in failed', err));
+
+  // 2) เริ่มซิ้งก์ “หลัง” ล็อกอินสำเร็จเท่านั้น
+  firebase.auth().onAuthStateChanged((user) => {
+    console.log('[AUTH]', user ? 'signed-in' : 'signed-out');
+    if (user && SYNC_ENABLED && roomRef) startRealtimeSync();
+  });
+}
 
     // ชี้เอกสารใน Firestore เมื่อมี ROOM_ID
     roomRef = SYNC_ENABLED ? db.collection('rooms').doc(ROOM_ID) : null;
@@ -776,6 +784,7 @@ function rerenderAll(){
 // ==== Cloud Sync (ไม่ยุ่งกับ load()/save() เดิม แค่ “พ่วง”) ====
 async function startRealtimeSync(){
   if (!SYNC_ENABLED || !roomRef) return;
+  if (roomUnsub) return; 
 
   // สร้าง doc ครั้งแรกถ้ายังไม่มี (ใช้ state ปัจจุบันในเครื่องเป็น seed)
   try{
