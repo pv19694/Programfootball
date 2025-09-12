@@ -804,6 +804,13 @@ async function startRealtimeSync(){
   }, (err)=> console.warn('onSnapshot error', err));
 }
 
+// helper: debounce (ต้องมาก่อนการเรียกใช้ debounce)
+const debounce = (fn, ms = 250) => {
+  let t;
+  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+};
+
+    
 const cloudSave = async ()=>{
   if (!SYNC_ENABLED || !roomRef) return;
   try {
@@ -811,6 +818,7 @@ const cloudSave = async ()=>{
     // เขียน state ทั้งก้อน (ง่ายสุด, ไม่กระทบโค้ดคำนวณ/ตารางเดิม)
     await roomRef.set({ state, updatedAt: lastWriteAt, version: 1 }, { merge: true });
   } catch(e){ console.warn('cloudSave failed', e); }
+  const cloudSaveDebounced = debounce(cloudSave, 400);
 };
     
   
@@ -866,6 +874,7 @@ function load(){
 function save(){
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
   catch(e){ console.warn('save failed', e); }
+  cloudSaveDebounced?.();
 }
 
 /* ---------- Navigation (เมนู .nav-btn + สลับหน้า) ---------- */
@@ -1889,6 +1898,8 @@ function exitEditMode(){
 document.addEventListener('DOMContentLoaded', ()=>{
   load?.();
 
+if (SYNC_ENABLED && roomRef) startRealtimeSync();
+  
   // เมนู + ฮุคต่างๆ
   wireNavigation();
   wireRosterFormToggle?.();
@@ -1915,7 +1926,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   renderStatsHistory();
   renderActivities();
   renderTeamContacts?.();
-  
+
   // ตั้งค่า nav ป้องกัน submit
   $$('.nav-btn').forEach(btn => { if (btn.tagName === 'BUTTON') btn.type = 'button'; });
 
