@@ -735,32 +735,28 @@ let roomRef = null;
 let roomUnsub = null;
 let lastWriteAt = 0;
 
-// init ให้เรียบร้อยครั้งเดียว
 if (window.firebase && firebase.initializeApp) {
   try {
     app = firebase.apps?.length ? firebase.app() : firebase.initializeApp(firebaseConfig);
     db  = firebase.firestore();
-    
-// ✅ ตั้ง roomRef ก่อน
-roomRef = SYNC_ENABLED ? db.collection('rooms').doc(ROOM_ID) : null;
 
-    // ถ้าใช้ Anonymous auth ตาม rules
-if (firebase.auth) {
-  // 1) ล็อกอินแบบไม่ระบุตัวตน
-  firebase.auth().signInAnonymously()
-    .catch(err => console.warn('anon sign-in failed', err));
-
-  // 2) เริ่มซิ้งก์ “หลัง” ล็อกอินสำเร็จเท่านั้น
-  firebase.auth().onAuthStateChanged((user) => {
-  console.log('[AUTH]', user ? 'signed-in' : 'signed-out');
-  if (user && SYNC_ENABLED && roomRef) {
-    if (roomUnsub) { roomUnsub(); roomUnsub = null; }  // เคลียร์ listener เก่า
-    startRealtimeSync();
-  }
-});
-
-    // ชี้เอกสารใน Firestore เมื่อมี ROOM_ID
+    // ตั้ง roomRef ก่อนใช้งาน
     roomRef = SYNC_ENABLED ? db.collection('rooms').doc(ROOM_ID) : null;
+
+    // ใช้ Anonymous auth ตาม rules
+    if (firebase.auth) {
+      firebase.auth().signInAnonymously()
+        .catch(err => console.warn('anon sign-in failed', err));
+
+      // เริ่มซิงก์ "หลัง" ล็อกอินเท่านั้น
+      firebase.auth().onAuthStateChanged((user) => {
+        console.log('[AUTH]', user ? 'signed-in' : 'signed-out');
+        if (user && SYNC_ENABLED && roomRef) {
+          if (roomUnsub) { roomUnsub(); roomUnsub = null; }
+          startRealtimeSync();
+        }
+      });
+    } // ✅ ปิด if(firebase.auth) ให้เรียบร้อย
 
   } catch (e) {
     console.warn('Firebase init failed', e);
