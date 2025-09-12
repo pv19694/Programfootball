@@ -1876,11 +1876,11 @@ function exitEditMode(){
 
 
 /* ---------- Boot ---------- */
-document.addEventListener('DOMContentLoaded', ()=>{
+function init(){
   load?.();
 
-  // เมนู + ฮุคต่างๆ
-  wireNavigation();
+  // wires
+  wireNavigation?.();
   wireRosterFormToggle?.();
   wireMatchControls?.();
   wireStatsButtons?.();
@@ -1889,35 +1889,49 @@ document.addEventListener('DOMContentLoaded', ()=>{
   wireTeamCRUD?.();
   wireRosterPhotoPickers?.();
   wireAddPlayer?.();
-  wireRosterTeamSwitcher();  
-  wireStatsHistoryActions();
-  wireGlobalClearButton(); 
-  
-  // เรนเดอร์เริ่มต้น
+  wireRosterTeamSwitcher?.();
+  wireStatsHistoryActions?.();
+  wireGlobalClearButton?.();
+
+  // first render
   renderTeamSelects?.();
   renderPlayerDropdowns?.();
   renderTable?.();
   renderDashboard?.();
   renderMatchLog?.();
-  renderRosterGrid?.();    // <= ต้องมาก่อน sync สี
+  renderRosterGrid?.();     // ก่อน sync สี
   renderTopStats?.();
   renderRosterHooks?.();
-  renderStatsHistory();
-  renderActivities();
+  renderStatsHistory?.();
+  renderActivities?.();
   renderTeamContacts?.();
   syncRosterColorFromTeam?.();
-  
-    // ✅ เปิด realtime Firestore ตรงนี้ ครั้งเดียวพอ
+
+  // ตั้งค่า nav ป้องกัน submit
+  $$('.nav-btn').forEach(btn => { if (btn.tagName === 'BUTTON') btn.type = 'button'; });
+
+  // ผูกสีทีม + ซิงก์สี
+  $('#teamColor')?.addEventListener('input', (e)=>{
+    const teamId = $('#selRosterTeam')?.value;
+    const t = state.teams.find(x=>x.id===teamId);
+    if (t) { t.color = e.target.value; save(); }
+    applyRosterColor(t);
+  });
+  $('#selRosterTeam')?.addEventListener('change', syncRosterColorFromTeam);
+
+  // ✅ เปิด realtime Firestore ตรงนี้ครั้งเดียว
   startCloudSync?.();
 
   showPage('dashboard');
 }
 
+// รอ DOM พร้อมแล้วค่อยเรียก init (ไม่ซ้ำซ้อน)
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', init);
 } else {
   init();
 }
+
   
   // ตั้งค่า nav ป้องกัน submit
   $$('.nav-btn').forEach(btn => { if (btn.tagName === 'BUTTON') btn.type = 'button'; });
