@@ -740,6 +740,9 @@ if (window.firebase && firebase.initializeApp) {
   try {
     app = firebase.apps?.length ? firebase.app() : firebase.initializeApp(firebaseConfig);
     db  = firebase.firestore();
+    
+// ✅ ตั้ง roomRef ก่อน
+roomRef = SYNC_ENABLED ? db.collection('rooms').doc(ROOM_ID) : null;
 
     // ถ้าใช้ Anonymous auth ตาม rules
 if (firebase.auth) {
@@ -749,10 +752,12 @@ if (firebase.auth) {
 
   // 2) เริ่มซิ้งก์ “หลัง” ล็อกอินสำเร็จเท่านั้น
   firebase.auth().onAuthStateChanged((user) => {
-    console.log('[AUTH]', user ? 'signed-in' : 'signed-out');
-    if (user && SYNC_ENABLED && roomRef) startRealtimeSync();
-  });
-}
+  console.log('[AUTH]', user ? 'signed-in' : 'signed-out');
+  if (user && SYNC_ENABLED && roomRef) {
+    if (roomUnsub) { roomUnsub(); roomUnsub = null; }  // เคลียร์ listener เก่า
+    startRealtimeSync();
+  }
+});
 
     // ชี้เอกสารใน Firestore เมื่อมี ROOM_ID
     roomRef = SYNC_ENABLED ? db.collection('rooms').doc(ROOM_ID) : null;
@@ -813,22 +818,21 @@ async function startRealtimeSync(){
   }, (err)=> console.warn('onSnapshot error', err));
 }
 
-// helper: debounce (ต้องมาก่อนการเรียกใช้ debounce)
+// helper: debounce
 const debounce = (fn, ms = 250) => {
-  let t;
-  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+  let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
 };
 
-    
-const cloudSave = async ()=>{
+const cloudSave = async () => {
   if (!SYNC_ENABLED || !roomRef) return;
   try {
     lastWriteAt = Date.now();
-    // เขียน state ทั้งก้อน (ง่ายสุด, ไม่กระทบโค้ดคำนวณ/ตารางเดิม)
     await roomRef.set({ state, updatedAt: lastWriteAt, version: 1 }, { merge: true });
-  } catch(e){ console.warn('cloudSave failed', e); }
-  const cloudSaveDebounced = debounce(cloudSave, 400);
+  } catch (e) { console.warn('cloudSave failed', e); }
 };
+
+// ✅ ประกาศนอกฟังก์ชัน
+const cloudSaveDebounced = debounce(cloudSave, 400);
     
   
 /* =========================
@@ -1906,8 +1910,6 @@ function exitEditMode(){
 /* ---------- Boot ---------- */
 document.addEventListener('DOMContentLoaded', ()=>{
   load?.();
-
-if (SYNC_ENABLED && roomRef) startRealtimeSync();
   
   // เมนู + ฮุคต่างๆ
   wireNavigation();
