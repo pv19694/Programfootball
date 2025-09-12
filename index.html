@@ -713,6 +713,111 @@ function renderMatchLog(){ renderMatchHistory(); }
 
   <!-- Script -->
 <script>
+
+  <script>
+// อ่าน room จาก URL ?room=jakhong (ถ้าไม่ใส่ room จะทำงานแบบโลคอลเดิม)
+const ROOM_ID = new URLSearchParams(location.search).get('room') || '';
+const SYNC_ENABLED = !!ROOM_ID;
+
+// ---- Firebase (Compat) ----
+// ✅ ใช้ค่าจริงของคุณ
+const firebaseConfig = {
+  apiKey: "AIzaSyDRhbcfmYVWV0rjwZYyIVFFoqDdMjipXMk",      // <- สะกดให้เป็น apiKey (K ใหญ่) ไม่ใช่ apikey
+  authDomain: "footballprogram-93b7d.firebaseapp.com",
+  projectId: "footballprogram-93b7d",
+  storageBucket: "footballprogram-93b7d.appspot.com",      // ใช้ .appspot.com ก็ได้ (เท่ากับที่ console รุ่นเก่าโชว์)
+  messagingSenderId: "242565780267",
+  appId: "1:242565780267:web:f5ccc63cec293be2de6b6e",
+  measurementId: "G-78P27Z4J87"
+};
+
+// ✅ ป้องกัน initialize ซ้ำ
+const app = firebase.apps?.length ? firebase.app() : firebase.initializeApp(firebaseConfig);
+// ✅ สร้างตัวแปร db ใช้ร่วมทั้งไฟล์
+const db  = firebase.firestore();
+
+// (ถ้าคุณใช้ Anonymous auth สำหรับ rules)
+if (firebase.auth) {
+  firebase.auth().signInAnonymously().catch(()=>{});
+}
+
+      roomRef = db.collection('rooms').doc(ROOM_ID);
+    } catch(e){ console.warn('Firebase init failed', e); }
+  } else {
+    console.warn('Firebase SDK not loaded — fallback to localStorage only.');
+  }
+}
+
+// กันค่าแปลกๆจากคลาวด์
+function sanitizeState(raw){
+  const base = { teams:[], matches:[], playersStats:[], playersEvents:[] };
+  if (!raw || typeof raw!=='object') return base;
+  return {
+    teams: Array.isArray(raw.teams) ? raw.teams : [],
+    matches: Array.isArray(raw.matches) ? raw.matches : [],
+    playersStats: Array.isArray(raw.playersStats) ? raw.playersStats : [],
+    playersEvents: Array.isArray(raw.playersEvents) ? raw.playersEvents : [],
+  };
+}
+
+// render ใหม่ทุกจุดที่มีในโค้ดเดิม โดยไม่แตะ logic ข้างใน
+function rerenderAll(){
+  try{
+    renderTeamSelects?.();
+    renderPlayerDropdowns?.();
+    renderDashboard?.();
+    renderTable?.();
+    renderMatchLog?.();
+    renderRosterGrid?.();
+    renderTopStats?.();
+    renderRosterHooks?.();
+    renderStatsHistory?.();
+    renderActivities?.();
+    renderTeamContacts?.();
+  }catch(e){ console.warn('rerenderAll warn', e); }
+}
+
+// ==== Cloud Sync (ไม่ยุ่งกับ load()/save() เดิม แค่ “พ่วง”) ====
+async function startRealtimeSync(){
+  if (!SYNC_ENABLED || !roomRef) return;
+
+  // สร้าง doc ครั้งแรกถ้ายังไม่มี (ใช้ state ปัจจุบันในเครื่องเป็น seed)
+  try{
+    const snap = await roomRef.get();
+    if (!snap.exists) {
+      lastWriteAt = Date.now();
+      await roomRef.set({ state, updatedAt: lastWriteAt, version: 1 }, { merge: true });
+    }
+  }catch(e){ console.warn('initial write failed', e); }
+
+  // subscribe realtime
+  roomUnsub = roomRef.onSnapshot((doc)=>{
+    const data = doc.data();
+    if (!data) return;
+
+    const remoteTs = Number(data.updatedAt || 0);
+    // ถ้าคืออัปเดตที่เราเพิ่งเขียนเอง ก็ข้าม (กันลูป)
+    if (remoteTs && remoteTs <= lastWriteAt) return;
+
+    // รับจากคลาวด์เป็น “source of truth”
+    state = sanitizeState(data.state);
+    // mirror ลง localStorage เดิม (ไม่แตะฟังก์ชัน save เดิม เพื่อเลี่ยง trigger ซิงก์ซ้ำ)
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e){}
+
+    rerenderAll();
+  }, (err)=> console.warn('onSnapshot error', err));
+}
+
+const cloudSave = async ()=>{
+  if (!SYNC_ENABLED || !roomRef) return;
+  try {
+    lastWriteAt = Date.now();
+    // เขียน state ทั้งก้อน (ง่ายสุด, ไม่กระทบโค้ดคำนวณ/ตารางเดิม)
+    await roomRef.set({ state, updatedAt: lastWriteAt, version: 1 }, { merge: true });
+  } catch(e){ console.warn('cloudSave failed', e); }
+};
+const cloudSaveDebounced = debounce(cloudSave, 400);
+  
 /* =========================
    Football CE — Single Script (Clean, Full)
 ========================= */
