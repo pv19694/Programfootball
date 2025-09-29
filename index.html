@@ -642,10 +642,7 @@ function renderMatchLog(){ renderMatchHistory(); }
     <!-- ซ้าย: รูปตัวอย่าง + ปุ่มเลือกรูป -->
     <div class="flex flex-col items-center gap-3">
       <div id="preview" class="avatar">👤</div>
-      <input id="npPhoto"
-       type="file"
-       accept="image/jpeg,image/png,image/webp"
-       class="hidden">
+     <input id="npPhoto" type="file" accept="image/*" class="hidden">
       <div class="flex gap-2">
         <button id="btnPickPhoto"  type="button" class="btn btn-ghost">📷 เลือกรูป</button>
         <button id="btnClearPhoto" type="button" class="btn btn-red">🧹 ลบรูป</button>
@@ -1529,26 +1526,16 @@ function wireRosterPhotoPickers(){
   });
   
   $('#npPhoto')?.addEventListener('change', e=>{
-  const f = e.target.files?.[0]; 
+  const f = e.target.files?.[0];
   if (!f) return;
 
+  // รับทุกรูปภาพ (รวม HEIC/HEIF) แต่กันไฟล์อื่น/ไฟล์ใหญ่เกิน
   const mime = (f.type || '').toLowerCase();
-
-  // กัน HEIC/HEIF ซึ่ง <img> แสดงไม่ได้
-  if (mime.includes('heic') || mime.includes('heif')) {
-    alert('ไฟล์ภาพจากกล้องเป็น HEIC ซึ่งเว็บแอปแสดงไม่ได้\n' +
-          'กรุณาเลือกไฟล์แบบ JPG/PNG/WebP หรือไปที่ การตั้งค่า > กล้อง > รูปแบบ > เลือก “เข้ากันได้มากกว่า (Most Compatible)”');
-    e.target.value = '';
-    return;
-  }
-
   if (!mime.startsWith('image/')) {
     alert('กรุณาเลือกรูปภาพ');
     e.target.value = '';
     return;
   }
-
-  // จำกัดขนาด (กัน localStorage เต็มเร็ว)
   if (f.size > 5 * 1024 * 1024) {
     alert('ไฟล์เกิน 5MB กรุณาเลือกรูปที่เล็กลง');
     e.target.value = '';
@@ -1564,6 +1551,7 @@ function wireRosterPhotoPickers(){
   };
   r.readAsDataURL(f);
 });
+
 
   
   $('#npBirth')?.addEventListener('input', ()=>{
