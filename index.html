@@ -642,7 +642,11 @@ function renderMatchLog(){ renderMatchHistory(); }
     <!-- ซ้าย: รูปตัวอย่าง + ปุ่มเลือกรูป -->
     <div class="flex flex-col items-center gap-3">
       <div id="preview" class="avatar">👤</div>
-      <input id="npPhoto" type="file" accept="image/*" class="hidden">
+      <input id="npPhoto"
+       type="file"
+       accept="image/jpeg,image/png,image/webp"
+       capture="environment"
+       class="hidden">
       <div class="flex gap-2">
         <button id="btnPickPhoto"  type="button" class="btn btn-ghost">📷 เลือกรูป</button>
         <button id="btnClearPhoto" type="button" class="btn btn-red">🧹 ลบรูป</button>
