@@ -641,7 +641,11 @@ function renderMatchLog(){ renderMatchHistory(); }
     <!-- ซ้าย: รูปตัวอย่าง + ปุ่มเลือกรูป -->
     <div class="flex flex-col items-center gap-3">
       <div id="preview" class="avatar">👤</div>
-      <input id="npPhoto" type="file" accept="image/*" class="hidden">
+      <input id="npPhoto"
+       type="file"
+       accept="image/jpeg,image/png,image/webp"
+       capture="environment"
+       class="hidden">
       <div class="flex gap-2">
         <button id="btnPickPhoto"  type="button" class="btn btn-ghost">📷 เลือกรูป</button>
         <button id="btnClearPhoto" type="button" class="btn btn-red">🧹 ลบรูป</button>
@@ -1518,24 +1522,110 @@ function wireTeamLogoPickers(){
 
 /* ---------- Roster (upload + add + grid + actions) ---------- */
 let tempPlayerPhoto = '';
+
 function wireRosterPhotoPickers(){
+  // เปิดกล่องเลือกไฟล์
   $('#btnPickPhoto')?.addEventListener('click', ()=> $('#npPhoto')?.click());
+
+  // เคลียร์รูป
   $('#btnClearPhoto')?.addEventListener('click', ()=>{
-    tempPlayerPhoto=''; if($('#preview')) $('#preview').innerHTML='👤'; if($('#npPhoto')) $('#npPhoto').value='';
+    tempPlayerPhoto = '';
+    if($('#preview')) $('#preview').innerHTML = '👤';
+    if($('#npPhoto'))  $('#npPhoto').value = '';
   });
-  $('#npPhoto')?.addEventListener('change', e=>{
-    const f=e.target.files?.[0]; if(!f) return;
-    if(!f.type.startsWith('image/')){ alert('กรุณาเลือกรูปภาพ'); e.target.value=''; return; }
-    if(f.size>5*1024*1024){ alert('ไฟล์เกิน 5MB'); e.target.value=''; return; }
-    const r=new FileReader();
-    r.onload=ev=>{ tempPlayerPhoto=ev.target.result; if($('#preview')) $('#preview').innerHTML=`<img src="${tempPlayerPhoto}" class="w-full h-full object-cover">`; };
-    r.readAsDataURL(f);
+
+  // พรีวิว + แปลงภาพให้เป็น JPEG เสมอ (กัน HEIC)
+  $('#npPhoto')?.addEventListener('change', async (e)=>{
+    const f = e.target.files?.[0];
+    if(!f) return;
+
+    // กันไฟล์ใหญ่เกิน
+    if(f.size > 8 * 1024 * 1024){
+      alert('ไฟล์ใหญ่เกิน 8MB กรุณาเลือกไฟล์เล็กกว่านี้');
+      e.target.value = '';
+      return;
+    }
+
+    // iOS บางครั้งคืน mime แปลก ๆ ให้ normalize ชนิดไฟล์ที่รองรับจริง
+    const okTypes = ['image/jpeg','image/png','image/webp'];
+    const mime = (f.type || '').toLowerCase();
+
+    // ใช้ object URL เพื่อพรีวิวให้ไว/เสถียรใน iOS
+    const objectUrl = URL.createObjectURL(f);
+
+    try{
+      // พยายามโหลดภาพจาก object URL
+      const img = await loadImage(objectUrl);
+
+      // แปลงเป็น JPEG (บีบอัดเล็กน้อย) กัน HEIC + ลดขนาด
+      const dataUrl = await imageToJpegDataUrl(img, {maxW: 1600, maxH: 1600, quality: 0.85});
+
+      tempPlayerPhoto = dataUrl;
+      if($('#preview')) $('#preview').innerHTML = `<img src="${tempPlayerPhoto}" class="w-full h-full object-cover">`;
+    }catch(err){
+      // ถ้าล้มเหลว และชนิดไฟล์ไม่ใช่ที่รองรับ → แจ้งผู้ใช้
+      if (!okTypes.includes(mime)) {
+        alert('ไฟล์ภาพนี้อาจเป็น HEIC/HEIF ซึ่งเว็บแอปไม่รองรับ กรุณาเลือกไฟล์ JPG/PNG/WebP หรือไปที่กล้อง > Formats > Most Compatible');
+      } else {
+        alert('ไม่สามารถแสดงรูปได้ ลองเลือกไฟล์ใหม่อีกครั้ง');
+      }
+      console.warn('preview error:', err);
+      // fallback ลอง FileReader ดูเป็นกรณีสุดท้าย
+      try{
+        const fr = new FileReader();
+        fr.onload = ev=>{
+          tempPlayerPhoto = String(ev.target.result||'');
+          if($('#preview')) $('#preview').innerHTML = `<img src="${tempPlayerPhoto}" class="w-full h-full object-cover">`;
+        };
+        fr.readAsDataURL(f);
+      }catch(e2){}
+    }finally{
+      URL.revokeObjectURL(objectUrl);
+    }
   });
+
+  // Auto-calc อายุเหมือนเดิม
   $('#npBirth')?.addEventListener('input', ()=>{
     const iso=$('#npBirth')?.value;
     const a=calcAgeFromISO(iso);
     if($('#npAge') && (a||a===0)) $('#npAge').value=a;
   });
+}
+
+// utils: โหลดรูปจาก URL/ObjectURL
+function loadImage(src){
+  return new Promise((resolve, reject)=>{
+    const img = new Image();
+    // สำคัญกับ iOS เวลาใช้ blob URL
+    img.onload = ()=> resolve(img);
+    img.onerror = (e)=> reject(e);
+    img.src = src;
+  });
+}
+
+// utils: วาดลง canvas → JPEG dataURL (ย่อภาพ + แก้ปัญหาเบื้องต้น)
+function imageToJpegDataUrl(img, {maxW=1600, maxH=1600, quality=0.9}={}){
+  const w = img.naturalWidth  || img.width;
+  const h = img.naturalHeight || img.height;
+  let tw = w, th = h;
+
+  // ย่อด้านยาวให้ไม่เกินขนาดที่กำหนด
+  if (w > maxW || h > maxH){
+    const r = Math.min(maxW / w, maxH / h);
+    tw = Math.round(w * r);
+    th = Math.round(h * r);
+  }
+
+  const canvas = document.createElement('canvas');
+  canvas.width  = tw;
+  canvas.height = th;
+  const ctx = canvas.getContext('2d');
+
+  // iOS orientation เบื้องต้นฝากไว้ที่ CSS image-orientation:from-image
+  // ถ้าอยากหมุนตาม EXIF จริง ๆ ต้องอ่าน EXIF แล้วหมุน canvas (ต้องใช้ไลบรารีเพิ่ม)
+
+  ctx.drawImage(img, 0, 0, tw, th);
+  return Promise.resolve(canvas.toDataURL('image/jpeg', quality));
 }
 
 // ตั้งสีหัวข้อรายชื่อทีมตามทีมที่เลือก
