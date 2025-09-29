@@ -1522,36 +1522,66 @@ let tempPlayerPhoto = '';
 function wireRosterPhotoPickers(){
   $('#btnPickPhoto')?.addEventListener('click', ()=> $('#npPhoto')?.click());
   $('#btnClearPhoto')?.addEventListener('click', ()=>{
-    tempPlayerPhoto=''; if($('#preview')) $('#preview').innerHTML='👤'; if($('#npPhoto')) $('#npPhoto').value='';
+    tempPlayerPhoto=''; 
+    if($('#preview')) $('#preview').innerHTML='👤'; 
+    if($('#npPhoto')) $('#npPhoto').value='';
   });
-  
-  $('#npPhoto')?.addEventListener('change', e=>{
-  const f = e.target.files?.[0];
-  if (!f) return;
 
-  // รับทุกรูปภาพ (รวม HEIC/HEIF) แต่กันไฟล์อื่น/ไฟล์ใหญ่เกิน
-  const mime = (f.type || '').toLowerCase();
-  if (!mime.startsWith('image/')) {
-    alert('กรุณาเลือกรูปภาพ');
-    e.target.value = '';
-    return;
-  }
-  if (f.size > 5 * 1024 * 1024) {
-    alert('ไฟล์เกิน 5MB กรุณาเลือกรูปที่เล็กลง');
-    e.target.value = '';
-    return;
-  }
+  // ใช้ handler ใหม่แทนของเดิม
+  function handlePlayerPhotoChange(e){
+    const input = e.currentTarget || e.target;
+    const f = input?.files && input.files[0];
+    if (!f) return;
 
-  const r = new FileReader();
-  r.onload = ev => {
-    tempPlayerPhoto = ev.target.result;
-    if ($('#preview')) {
-      $('#preview').innerHTML = `<img src="${tempPlayerPhoto}" class="w-full h-full object-cover">`;
+    // กันไฟล์อื่น/ไฟล์ใหญ่เกิน
+    const mime = (f.type || '').toLowerCase();
+    if (!mime.startsWith('image/')) {
+      alert('กรุณาเลือกรูปภาพ');
+      input.value = '';
+      return;
     }
-  };
-  r.readAsDataURL(f);
-});
+    if (f.size > 10 * 1024 * 1024) {
+      alert('ไฟล์เกิน 10MB กรุณาเลือกรูปที่เล็กลง');
+      input.value = '';
+      return;
+    }
 
+    const url = URL.createObjectURL(f);
+    const img = new Image();
+    img.onload = () => {
+      try { URL.revokeObjectURL(url); } catch(e){}
+      const maxSide = 1500;
+      let w = img.naturalWidth, h = img.naturalHeight;
+      if (w > h && w > maxSide) { h = Math.round(h * maxSide / w); w = maxSide; }
+      else if (h >= w && h > maxSide) { w = Math.round(w * maxSide / h); h = maxSide; }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+
+      // แปลงออกมาเป็น JPEG เสมอ
+      tempPlayerPhoto = canvas.toDataURL('image/jpeg', 0.85);
+
+      if ($('#preview')) {
+        $('#preview').innerHTML = `<img src="${tempPlayerPhoto}" class="w-full h-full object-cover">`;
+      }
+    };
+    img.onerror = () => {
+      alert('ไม่สามารถอ่านไฟล์ภาพนี้ได้ กรุณาเลือก JPG/PNG หรือไปตั้งค่ากล้องเป็น “เข้ากันได้มากกว่า (Most Compatible)”');
+      input.value = '';
+    };
+    img.src = url;
+  }
+
+  const np = document.getElementById('npPhoto');
+  if (np) {
+    np.removeEventListener?.('change', handlePlayerPhotoChange);
+    np.removeEventListener?.('input', handlePlayerPhotoChange);
+    np.addEventListener('change', handlePlayerPhotoChange, { passive: true });
+    np.addEventListener('input',  handlePlayerPhotoChange, { passive: true });
+  }
+}
 
   
   $('#npBirth')?.addEventListener('input', ()=>{
