@@ -1516,26 +1516,72 @@ function wireTeamLogoPickers(){
 
 /* ---------- Roster (upload + add + grid + actions) ---------- */
 let tempPlayerPhoto = '';
-function wireRosterPhotoPickers(){
-  $('#btnPickPhoto')?.addEventListener('click', ()=> $('#npPhoto')?.click());
-  $('#btnClearPhoto')?.addEventListener('click', ()=>{
-    tempPlayerPhoto=''; if($('#preview')) $('#preview').innerHTML='👤'; if($('#npPhoto')) $('#npPhoto').value='';
-  });
-  $('#npPhoto')?.addEventListener('change', e=>{
-    const f=e.target.files?.[0]; if(!f) return;
-    if(!f.type.startsWith('image/')){ alert('กรุณาเลือกรูปภาพ'); e.target.value=''; return; }
-    if(f.size>5*1024*1024){ alert('ไฟล์เกิน 5MB'); e.target.value=''; return; }
-    const r=new FileReader();
-    r.onload=ev=>{ tempPlayerPhoto=ev.target.result; if($('#preview')) $('#preview').innerHTML=`<img src="${tempPlayerPhoto}" class="w-full h-full object-cover">`; };
-    r.readAsDataURL(f);
-  });
-  $('#npBirth')?.addEventListener('input', ()=>{
-    const iso=$('#npBirth')?.value;
-    const a=calcAgeFromISO(iso);
-    if($('#npAge') && (a||a===0)) $('#npAge').value=a;
-  });
-}
 
+function wireRosterPhotoPickers(){
+    // 1. อ้างถึง Element ที่เกี่ยวข้อง
+    const btn = $('#btnPickPhoto');
+    const input = $('#npPhoto');
+    const preview = $('#preview'); 
+    const btnClear = $('#btnClearPhoto');
+
+    if (!btn || !input || !preview) return;
+
+    // 2. ผูกปุ่มหลักให้เรียก Input File
+    btn.addEventListener('click', ()=> input.click());
+
+    // 3. ผูก Event เมื่อมีการเลือกไฟล์ (รวมฟังก์ชันทั้งหมดไว้ที่นี่)
+    input.addEventListener('change', (e)=>{
+        const f = e.target.files?.[0]; 
+        
+        // 3.1 ตรวจสอบไฟล์ (จากโค้ดชุดที่ 2)
+        if (!f) return;
+        if (!f.type.startsWith('image/')){ 
+            alert('กรุณาเลือกรูปภาพ'); 
+            e.target.value = ''; 
+            preview.innerHTML = '👤'; // ล้าง Preview ด้วย
+            tempPlayerPhoto = '';
+            return; 
+        }
+        if (f.size > 5 * 1024 * 1024){ 
+            alert('ไฟล์เกิน 5MB'); 
+            e.target.value = ''; 
+            preview.innerHTML = '👤'; // ล้าง Preview ด้วย
+            tempPlayerPhoto = '';
+            return; 
+        }
+
+        // 3.2 อ่านไฟล์และแสดงผล (รวมโค้ดชุดที่ 1 และชุดที่ 2 เข้าด้วยกัน)
+        const reader = new FileReader();
+        
+        reader.onload = function(ev) {
+            tempPlayerPhoto = ev.target.result; // <-- เก็บลงตัวแปรสำหรับส่งข้อมูล
+            
+            // **แสดงรูปภาพ (Preview):**
+            const imgTag = `<img src="${tempPlayerPhoto}" 
+                               alt="Player Photo" 
+                               class="h-full w-full object-cover rounded-xl" />`; // ใช้ class ที่คุณเคยกำหนด
+                               
+            preview.innerHTML = imgTag; 
+        };
+        
+        reader.readAsDataURL(f); // สั่งให้อ่านไฟล์
+    });
+
+    // 4. ฟังก์ชันล้างรูปภาพ (Clear)
+    btnClear?.addEventListener('click', ()=>{
+        tempPlayerPhoto = ''; 
+        input.value = ''; // ใช้ input.value = '' แทนการใช้ tempPlayerPhoto
+        preview.innerHTML = '👤'; 
+    });
+    
+    // 5. โค้ดสำหรับคำนวณอายุ (จากโค้ดเดิมของคุณ)
+    $('#npBirth')?.addEventListener('input', ()=>{
+        const iso=$('#npBirth')?.value;
+        const a=calcAgeFromISO(iso);
+        if($('#npAge') && (a||a===0)) $('#npAge').value=a;
+    });
+}
+    
 // ตั้งสีหัวข้อรายชื่อทีมตามทีมที่เลือก
 function applyRosterColor(team){
   const hex = team?.color || $('#teamColor')?.value || '#16a34a';
