@@ -1,23 +1,21 @@
+
+
+
 <!DOCTYPE html>
 <html lang="th">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ระบบตารางคะแนนสนามฟุตบอล Jakhong (แก้ไขสมบูรณ์)</title>
+  <title>ระบบตารางคะแนนสนามฟุตบอล Jakhong</title>
   <script src="https://cdn.tailwindcss.com"></script>
   
-  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-auth-compat.js"></script>
 
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&display=swap" rel="stylesheet">
   
 <style>
-  body {
-    font-family: 'Kanit', sans-serif;
-    background-color: #f7f7f7;
-    padding: 20px;
-  }
   @layer components {
     .input { @apply w-full rounded-xl border border-slate-300 px-3 py-2 text-sm
                    focus:outline-none focus:ring-2 focus:ring-slate-400; }
@@ -25,339 +23,1941 @@
 
     .btn   { @apply inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-medium
                      border transition shadow-sm hover:shadow active:scale-[.99]; }
-    .btn-primary { @apply bg-blue-600 text-white border-blue-700 hover:bg-blue-700; }
-    /* เพิ่ม overflow-hidden เพื่อให้รูปภาพที่ย่อขนาดแล้วแสดงผลในขอบเขต */
-    .avatar { @apply w-20 h-20 bg-slate-200 rounded-full flex items-center justify-center text-3xl overflow-hidden; } 
+    .btn-green { @apply bg-emerald-500 text-white border-transparent hover:bg-emerald-600; }  /* เพิ่มนักกีฬา */
+    .btn-white { @apply bg-white text-slate-700 border-slate-300 hover:bg-slate-50; }         /* ล้างฟอร์ม/ดาวน์โหลด */
+    .btn-red   { @apply bg-rose-500 text-white border-transparent hover:bg-rose-600; }         /* ยกเลิก/ลบรูป */
+
+    .btn-ghost { @apply bg-white text-slate-700 border-slate-300 hover:bg-slate-50; }          /* ปุ่มย่อย ๆ */
+    .chip      { @apply inline-flex items-center rounded-full bg-slate-100 text-slate-700
+                         px-2 py-0.5 text-[11px] font-medium; }
+    .avatar { @apply w-40 h-40 md:w-56 md:h-56 rounded-2xl bg-slate-100 grid place-items-center text-3xl overflow-hidden; }
+    .avatar img { width:100%; height:100%; object-fit:cover; display:block; }
   }
+    :root{ color-scheme:light; --team-color:#16a34a; --team-contrast:#ffffff }
+    body{font-family:'Kanit',system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+    .page{display:none}.page.active{display:block}
+    .btn{border-radius:.9rem;padding:.55rem .9rem;font-weight:700;cursor:pointer}
+    .btn-main{background:#0ea5e9;color:#fff;box-shadow:0 8px 18px rgba(14,165,233,.25)}
+    .btn-s{background:#3b82f6;color:#fff;border-radius:.9rem;padding:.5rem .9rem}
+    .btn-danger{background:#ef4444;color:#fff;border-radius:.9rem;padding:.5rem .9rem}
+    .inp,.sel{width:100%;padding:.7rem;border:2px solid #e5e7eb;border-radius:.9rem;background:#fff}
+    .inp:focus,.sel:focus{outline:none;border-color:#93c5fd;box-shadow:0 0 0 4px rgba(147,197,253,.3)}
+    .card{background:#fff;border-radius:1rem;box-shadow:0 1px 4px rgba(0,0,0,.08);padding:1rem;text-align:center}
+    .card .t{font-size:.85rem;color:#64748b}
+    .card .v{font-size:1.5rem;font-weight:800;color:#2563eb}
+    .panel{background:#fff;border-radius:1rem;box-shadow:0 1px 4px rgba(0,0,0,.08);padding:1rem}
+    table th,table td{padding:.5rem;text-align:center}
+    /* player card */
+    .player-card{position:relative;background:#fff;border-radius:1.1rem;border:1px solid rgba(2,6,23,.06);
+      padding:.85rem;display:flex;gap:.8rem;align-items:center;
+      box-shadow:0 18px 30px rgba(2,6,23,.06),0 2px 6px rgba(2,6,23,.04),inset 0 1px 0 rgba(255,255,255,.9)}
+    .player-card:hover{transform:translateY(-2px);transition:.2s ease;box-shadow:0 22px 36px rgba(2,6,23,.10),0 4px 10px rgba(2,6,23,.06)}
+    .player-avatar { width: 72px; height: 72px; border-radius: 6px;overflow: hidden;border: 2px solid #e5e7eb;box-shadow: 0 2px 6px rgba(0,0,0,.06);background: #fff;}
+    .num-badge{position:absolute;left:44px;top:-6px;transform:translateX(-50%);
+      background:var(--team-color);color:var(--team-contrast);font-weight:800;
+      border-radius:999px;padding:.18rem .5rem;font-size:.7rem;box-shadow:0 4px 10px rgba(0,0,0,.25)}
+    .chip{border:1px solid rgba(2,6,23,.08);background:linear-gradient(180deg,#fff,rgba(255,255,255,.92));
+      border-radius:999px;padding:.1rem .5rem;font-size:.72rem}
+    .team-header{background:var(--team-color);color:var(--team-contrast);border-radius:1rem;
+      padding:.9rem 1rem;box-shadow:inset 0 -2px 0 rgba(255,255,255,.25),0 10px 24px rgba(0,0,0,.08)}
+    /* เบอร์เสื้อแบบใหม่ (ขวาบนของชื่อ) */
+.num-badge-static{background: var(--team-color);color: var(--team-contrast);font-weight: 700;border-radius: 999px;padding: 0.1rem 0.5rem;font-size: 0.7rem;line-height: 1;white-space: nowrap;box-shadow: 0 4px 10px rgba(0,0,0,.12);}
+    /* วงกลมเล็ก ๆ บนการ์ดผู้เล่น */
+.icon-dot{
+  width:20px; height:20px; border-radius:9999px;
+  display:inline-block; border:1px solid rgba(0,0,0,.08);
+  box-shadow:0 2px 6px rgba(0,0,0,.12);
+  cursor:pointer; transition:transform .12s ease, opacity .12s ease;
+}
+.icon-dot:hover{ transform:scale(1.08); }
+.icon-dot.gray{ background:#e5e7eb; } /* แก้ไข */
+.icon-dot.red { background:#ef4444; } /* ลบ   */
+  /* ขนาดโลโก้ทีมบนการ์ดผู้เล่น (วงกลม) */
+.team-logo{
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;       /* <<< เปลี่ยนจาก .5rem เป็น 50% */
+  object-fit: cover;
+  border: 1px solid rgba(0,0,0,.08);
+}
+@media (min-width: 768px){
+  .team-logo{ width: 48px; height: 48px; } /* ใหญ่ขึ้นบนหน้าจอใหญ่ */
+}
+/* --- Modern Save Button --- */
+.btn-pro{
+  --accent:#2563eb;            /* น้ำเงินดูโปร ถ้าจะผูกกับสีทีมค่อยเปลี่ยนทีหลัง */
+  position:relative;
+  display:inline-flex; align-items:center; gap:.6rem;
+  padding:.78rem 1.15rem;
+  border-radius:9999px;
+  font-weight:700;
+  color:#fff;
+  background: linear-gradient(135deg, var(--accent), #60a5fa);
+  box-shadow: 0 12px 22px rgba(37,99,235,.25), inset 0 1px 0 rgba(255,255,255,.25);
+  border:none; outline:0;
+  transition:transform .12s ease, filter .12s ease, box-shadow .12s ease;
+}
+.btn-pro:hover{ transform: translateY(-1px); filter:brightness(1.04); }
+.btn-pro:active{ transform: translateY(0); filter:brightness(.98); box-shadow:0 8px 16px rgba(37,99,235,.28), inset 0 1px 0 rgba(255,255,255,.25); }
+
+.btn-pro .ico{
+  width:20px; height:20px; display:inline-grid; place-items:center;
+  background:rgba(255,255,255,.22);
+  border-radius:9999px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.35);
+}
+
+/* ปุ่มสถิติผู้เล่น */
+.btn-stat{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;                        /* เว้นระยะระหว่างไอคอนกับข้อความ */
+  padding:6px 14px;               /* ระยะขอบด้านใน */
+  border-radius: 0.75rem;         /* มนๆ แต่ไม่กลม */
+  background: #fff;
+  color: #374151;                 /* slate-700 */
+  font-size: 0.9rem;              /* ฟอนต์เล็กลง */
+  line-height: 1.2;
+  box-shadow: 0 2px 6px rgba(0,0,0,.08);
+  border: 1px solid rgba(0,0,0,.05);
+  transition: all .15s ease;
+  cursor:pointer;
+}
+.btn-stat:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0,0,0,.12);
+}
+.btn-stat:active{
+  transform: translateY(0);
+  box-shadow: 0 1px 3px rgba(0,0,0,.1);
+}
+
+/* ปุ่มบันทึกผล (มินิมอล) */
+.btn-save {
+  padding: 0.6rem 1.5rem;
+  border-radius: 0.75rem;          /* มน ๆ */
+  background: #10b981;             /* เขียวมินิมอล (tailwind emerald-500) */
+  color: #fff;
+  font-weight: 600;
+  font-size: 1rem;
+  box-shadow: 0 4px 10px rgba(0,0,0,.12);
+  transition: all .15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-save:hover {
+  background: #059669;             /* เขียวเข้มขึ้น */
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(0,0,0,.15);
+}
+
+.btn-save:active {
+  transform: translateY(0);
+  box-shadow: 0 3px 6px rgba(0,0,0,.1);
+}
+
+
+/* สถานะกำลังบันทึก */
+.btn-pro[data-loading="1"]{
+  pointer-events:none; filter:grayscale(.2) brightness(.9);
+}
+.btn-pro[data-loading="1"] .label{ opacity:.0; }
+.btn-pro[data-loading="1"] .spinner{
+  position:absolute; inset:0; display:grid; place-items:center;
+}
+.spinner:before{
+  content:""; width:18px; height:18px; border-radius:50%;
+  border:2.5px solid rgba(255,255,255,.55);
+  border-top-color:#fff; animation:spin 1s linear infinite;
+}
+@keyframes spin{ to{ transform:rotate(360deg);} }
+
+/* ===== ปุ่มแก้ไข/ลบ ในประวัติสถิติ ===== */
+.hist-row{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:.75rem; padding:.4rem .6rem; border-radius:.5rem;
+}
+.hist-row:nth-child(odd){ background:#f8fafc; } /* สลับบรรทัดสีอ่อน */
+.hist-main{ display:flex; gap:.5rem; align-items:center; min-width:0; }
+.hist-time{ font-size:.72rem; color:#64748b; white-space:nowrap; }
+
+.hist-actions{ display:flex; gap:.35rem; }
+.hist-btn{
+  border:1px solid rgba(0,0,0,.06); background:#fff; padding:.25rem .45rem;
+  border-radius:.5rem; font-size:.8rem; cursor:pointer;
+  box-shadow:0 1px 3px rgba(0,0,0,.08);
+  transition:transform .12s ease, box-shadow .12s ease;
+}
+.hist-btn:hover{
+  transform:translateY(-1px);
+  box-shadow:0 3px 8px rgba(0,0,0,.12);
+}
+.hist-btn.red{ color:#b91c1c; }
+.hist-type{ font-weight:700; }
+  
 </style>
 </head>
-<body>
+<body class="bg-gradient-to-br from-green-50 to-blue-50 min-h-screen">
 
-  <div class="max-w-xl mx-auto bg-white p-6 rounded-xl shadow-lg">
-    <h1 class="text-2xl font-bold mb-4">ฟอร์มเพิ่มนักกีฬา</h1>
+  <!-- Header -->
+<header class="bg-white/90 backdrop-blur shadow sticky top-0 z-50">
+  <div class="container mx-auto px-4 py-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+    
+    <!-- โลโก้ + หัวข้อ -->
+    <div class="flex items-center gap-3 text-xl md:text-2xl font-bold text-gray-800">
+      <img src="https://img5.pic.in.th/file/secure-sv1/S__2703408.jpg" alt="โลโก้ Jakhong" class="h-10 w-10">
+      <span>ระบบจัดบอลสนาม Jakhong</span>
+    </div>
 
-    <form id="rosterForm">
-      <div class="mb-4 flex gap-4 items-center">
-        <div id="preview" class="avatar cursor-pointer" onclick="$('#npPhoto').click()">👤</div>
-        <div>
-          <input type="file" id="npPhoto" class="hidden" accept="image/*">
-          <button type="button" id="btnPickPhoto" class="btn btn-primary mb-2">เลือกรูปภาพ</button>
-          <button type="button" id="btnClearPhoto" class="btn bg-red-500 text-white border-red-600 hover:bg-red-600">ล้างรูป</button>
+    <!-- ปุ่มล้างข้อมูล -->
+    <div class="flex gap-2">
+      <button id="btnClear" class="btn-danger">🧹 ล้างข้อมูล</button>
+    </div>
+  </div>
+</header>
+
+<!-- ปุ่มเมนู -->
+<nav class="container mx-auto px-4 py-3">
+  <div class="flex flex-wrap items-center gap-3 justify-center md:justify-start">
+
+    <button class="nav-btn inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold tracking-wide text-gray-700
+      bg-white shadow-md transition-all duration-300
+      hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 active:shadow-md
+      border border-transparent"
+      style="border-image: linear-gradient(90deg, #ec4899, #8b5cf6, #3b82f6) 1;"
+      data-target="dashboard">
+      🏠 หน้าหลัก
+    </button>
+
+    <button class="nav-btn inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold tracking-wide text-gray-700
+      bg-white shadow-md transition-all duration-300
+      hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 active:shadow-md
+      border border-transparent"
+      style="border-image: linear-gradient(90deg, #ec4899, #8b5cf6, #3b82f6) 1;"
+      data-target="table">
+      🏆 ตารางคะแนน
+    </button>
+
+    <button class="nav-btn inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold tracking-wide text-gray-700
+      bg-white shadow-md transition-all duration-300
+      hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 active:shadow-md
+      border border-transparent"
+      style="border-image: linear-gradient(90deg, #ec4899, #8b5cf6, #3b82f6) 1;"
+      data-target="match">
+      ⚽ บันทึกผล
+    </button>
+
+    <button class="nav-btn inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold tracking-wide text-gray-700
+      bg-white shadow-md transition-all duration-300
+      hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 active:shadow-md
+      border border-transparent"
+      style="border-image: linear-gradient(90deg, #ec4899, #8b5cf6, #3b82f6) 1;"
+      data-target="players">
+      👤 สถิติผู้เล่น
+    </button>
+
+    <button class="nav-btn inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold tracking-wide text-gray-700
+      bg-white shadow-md transition-all duration-300
+      hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 active:shadow-md
+      border border-transparent"
+      style="border-image: linear-gradient(90deg, #ec4899, #8b5cf6, #3b82f6) 1;"
+      data-target="teams">
+      ⚙️ จัดการทีม
+    </button>
+
+    <button class="nav-btn inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold tracking-wide text-gray-700
+      bg-white shadow-md transition-all duration-300
+      hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 active:shadow-md
+      border border-transparent"
+      style="border-image: linear-gradient(90deg, #ec4899, #8b5cf6, #3b82f6) 1;"
+      data-target="roster">
+      📝 รายชื่อนักกีฬา
+    </button>
+
+  </div>
+</nav>
+
+
+<!-- เพิ่ม CSS animation -->
+<style>
+@keyframes gradient-x {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.animate-gradient-x {
+  background-size: 200% 200%;
+  animation: gradient-x 3s ease infinite;
+}
+</style>
+
+  <main class="container mx-auto px-4 py-6 space-y-6">
+    <!-- Dashboard -->
+    <section id="dashboard" class="page active">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="card"><div class="t">ทีมทั้งหมด</div><div id="statTeams" class="v"></div></div>
+        <div class="card"><div class="t">แมตช์ทั้งหมด</div><div id="statMatches" class="v"></div></div>
+        <div class="card"><div class="t">สมาชิกทั้งหมด</div><div id="statMembers" class="v"></div></div>
+        <div class="card"><div class="t">สัปดาห์ปัจจุบัน</div><div id="statWeek" class="v"></div></div>
+        <div class="bg-white rounded-2xl shadow p-5 mt-5">
+        <h3 class="font-bold text-gray-800 mb-3">📞 เบอร์ติดต่อผู้จัดการทีม</h3>
+        <div id="teamContacts" class="grid grid-cols-1 gap-2"></div>
+</div>
+
+      </div>
+      <div class="bg-white rounded-2xl shadow p-5 mt-5">
+        <h3 class="font-bold text-gray-800 mb-3">🥇 Top Teams</h3>
+        <div id="topTeams" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3"></div>
+      </div>
+      <div class="bg-white rounded-2xl shadow p-5 mt-5">
+        <h3 class="font-bold text-gray-800 mb-3">🗓️ แมตช์ล่าสุด</h3>
+        <div id="recentMatches" class="space-y-2"></div>
+      </div>
+      <div class="bg-white rounded-2xl shadow p-5 mt-5">
+        <h3 class="font-bold text-gray-800 mb-3">📊 กิจกรรมล่าสุด</h3>
+        <div id="activities" class="space-y-2 max-h-64 overflow-y-auto" aria-live="polite"></div>
+      </div>
+      
+    </section>
+    <!-- Table -->
+    <section id="table" class="page">
+      <div class="bg-white rounded-2xl shadow overflow-hidden">
+        <div class="bg-gradient-to-r from-blue-800 to-blue-600 text-white p-4 text-center text-xl font-bold">JAKHONG LEAGUE</div>
+        <div class="p-3 overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-blue-700 text-white">
+              <tr><th>#</th><th class="text-left">ทีม</th><th>แข่ง</th><th>ชนะ</th><th>เสมอ</th><th>แพ้</th><th>ได้</th><th>เสีย</th><th>+/-</th><th>คะแนน</th><th>ฟอร์ม</th></tr>
+            </thead>
+            <tbody id="tbl"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    
+    <!-- ====== บันทึกผล ====== -->
+<section id="match" class="page">
+  <div class="bg-white rounded-2xl shadow p-5 max-w-3xl mx-auto space-y-4">
+
+    <!-- เลือกทีม -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div class="min-w-0">
+        <label class="lbl">ทีม 1</label>
+        <select id="selHome" class="sel"></select>
+      </div>
+      <div class="min-w-0">
+        <label class="lbl">ทีม 2</label>
+        <select id="selAway" class="sel"></select>
+      </div>
+    </div>
+
+    <!-- สกอร์ -->
+    <div class="grid grid-cols-2 gap-3">
+      <div class="min-w-0">
+        <label class="lbl">สกอร์ทีม 1</label>
+        <input id="hg" type="number" min="0" max="20" value="0" class="inp text-center">
+      </div>
+      <div class="min-w-0">
+        <label class="lbl">สกอร์ทีม 2</label>
+        <input id="ag" type="number" min="0" max="20" value="0" class="inp text-center">
+      </div>
+    </div>
+
+    <!-- ปุ่มบันทึกผล (กึ่งกลางแน่นอน) -->
+    <div class="w-full flex justify-center mt-4">
+      <button type="button" class="btn-save" id="btnSaveMatch">บันทึกผล</button>
+    </div>
+
+    <!-- ประวัติแมตช์ -->
+    <div class="space-y-2">
+      <div class="flex items-center gap-2 text-slate-600">
+        <span>📜</span><span class="font-semibold">ประวัติแมตช์</span>
+      </div>
+      <div id="matchHistory" class="mt-2"></div>
+    </div>
+
+  </div>
+</section>
+
+<script>
+let editingMatchId = null; // null = เพิ่มใหม่, มีค่า = แก้ไข
+
+function setMatchForm(m){
+  const selHome = document.getElementById('selHome');
+  const selAway = document.getElementById('selAway');
+  const hgEl    = document.getElementById('hg');
+  const agEl    = document.getElementById('ag');
+  if(!selHome || !selAway || !hgEl || !agEl) return;
+  if(!m) return;
+
+  selHome.value = m.homeId || '';
+  selAway.value = m.awayId || '';
+  hgEl.value    = m.hg ?? 0;
+  agEl.value    = m.ag ?? 0;
+}
+
+function renderMatchHistory(){
+  const box = document.getElementById('matchHistory');
+  if(!box) return;
+
+  const rows = [...(state.matches||[])]
+    .sort((a,b)=> b.ts-a.ts)
+    .map(m=>{
+      const t1 = (state.teams||[]).find(t=>t.id===m.homeId)?.name || 'ทีม 1';
+      const t2 = (state.teams||[]).find(t=>t.id===m.awayId)?.name || 'ทีม 2';
+      const time = new Date(m.ts||Date.now()).toLocaleString();
+      return `
+        <div class="rounded border px-3 py-2 text-sm flex items-center justify-between" data-mid="${m.id}">
+          <div>${t1} vs ${t2} • <b>${m.hg}:${m.ag}</b></div>
+          <div class="flex items-center gap-2 text-xs text-slate-500">
+            <span>${time}</span>
+            <button class="hist-btn" data-act="edit" title="แก้ไข">✏️</button>
+            <button class="hist-btn red" data-act="del" title="ลบ">✖️</button>
+          </div>
+        </div>`;
+    }).join('');
+
+  box.innerHTML = rows || `<div class="text-slate-400">ยังไม่มีประวัติ</div>`;
+}
+
+function wireMatchHistoryActions(){
+  const box = document.getElementById('matchHistory');
+  if(!box || box.dataset.bound==='1') return;
+
+  box.addEventListener('click', (e)=>{
+    const btn = e.target.closest('button[data-act]');
+    if(!btn) return;
+
+    const row = e.target.closest('[data-mid]');
+    const id  = row?.getAttribute('data-mid');
+    const m   = (state.matches||[]).find(x=>x.id===id);
+    if(!m) return;
+
+    if(btn.dataset.act==='edit'){
+      // เข้าโหมดแก้ไข
+      editingMatchId = id;
+      setMatchForm(m);
+      const saveBtn = document.getElementById('btnSaveMatch');
+      if(saveBtn) saveBtn.textContent = 'อัปเดตผล';
+      return;
+    }
+
+    if(btn.dataset.act==='del'){
+      if(!confirm('ลบผลการแข่งขันนี้?')) return;
+      state.matches = (state.matches||[]).filter(x=>x.id!==id);
+      save();               // มีอยู่แล้วในสคริปต์หลักของคุณ
+      renderTable?.();      // คำนวณตารางคะแนนใหม่
+      renderDashboard?.();  // อัปเดตสถิติหน้าแรก
+      renderMatchHistory(); // รีเฟรชรายการ
+    }
+  });
+
+  box.dataset.bound = '1';
+}
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  const btn = document.getElementById('btnSaveMatch');
+  if(!btn) return;
+
+  btn.addEventListener('click', ()=>{
+    const selHome = document.getElementById('selHome');
+    const selAway = document.getElementById('selAway');
+    const hgEl = document.getElementById('hg');
+    const agEl = document.getElementById('ag');
+
+    const homeId = selHome?.value || '';
+    const awayId = selAway?.value || '';
+    const hg = Number(hgEl?.value || 0);
+    const ag = Number(agEl?.value || 0);
+
+    if(!homeId || !awayId) return alert('กรุณาเลือกทีมให้ครบ');
+    if(homeId === awayId) return alert('ห้ามเลือกทีมซ้ำกัน');
+
+    // โหมดแก้ไข
+    if(editingMatchId){
+      const m = (state.matches||[]).find(x=>x.id===editingMatchId);
+      if(m){
+        m.homeId = homeId;
+        m.awayId = awayId;
+        m.hg = hg;
+        m.ag = ag;
+        m.ts = Date.now();
+        save();
+        renderTable?.();
+        renderDashboard?.();
+        renderMatchHistory();
+      }
+      editingMatchId = null;
+      btn.textContent = 'บันทึกผล';
+      hgEl.value = 0; agEl.value = 0;
+      return;
+    }
+
+    // โหมดเพิ่มใหม่
+    window.state = window.state || { teams: [], matches: [], playersStats: [] };
+    state.matches = Array.isArray(state.matches) ? state.matches : [];
+    const match = { id: crypto.randomUUID?.() || String(Date.now()), homeId, awayId, hg, ag, ts: Date.now() };
+    state.matches.push(match);
+
+    save();
+    renderTable?.();
+    renderDashboard?.();
+    renderMatchHistory();
+
+    hgEl.value = 0; agEl.value = 0;
+  });
+
+  // แสดงรายการเมื่อเปิดหน้า + ผูกปุ่มแก้/ลบ
+  renderMatchHistory();
+  wireMatchHistoryActions();
+});
+
+// เพื่อให้โค้ดส่วนอื่นที่เรียก renderMatchLog() เดิมยังใช้ได้
+function renderMatchLog(){ renderMatchHistory(); }
+</script>
+
+
+    <!-- Players -->
+<section id="players" class="page">
+  <div class="bg-white rounded-2xl shadow p-5 mb-5">
+
+    <!-- หัวข้อ + ปุ่มล้าง (ใหม่) -->
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="font-bold text-gray-800">📝 บันทึกสถิติผู้เล่น</h3>
+      <div class="flex items-center gap-2">
+        <button id="btnClearPlayerStats" class="btn-danger">🧹 ล้างสถิติทีมนี้</button>
+        <!-- ถ้าอยากมีปุ่มล้างทั้งหมดด้วย ให้เอาคอมเมนต์ออก -->
+        <!-- <button id="btnClearAllStats" class="btn btn-white">🧽 ล้างทั้งหมด</button> -->
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+      <div><label class="lbl">ทีม</label><select id="selTeamForPlayer" class="sel"></select></div>
+      <div><label class="lbl">ผู้เล่น</label><select id="selPlayer" class="sel"></select></div>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+      <button data-s="goals"        class="btn-stat btn-s">⚽ ประตู</button>
+      <button data-s="saves"        class="btn-stat btn-s">🥅 เซฟ</button>
+      <button data-s="yellowCards"  class="btn-stat btn-s">🟨 เหลือง</button>
+      <button data-s="redCards"     class="btn-stat btn-s">🟥 แดง</button>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4">
+    <div class="panel"><h4>🏆 ดาวซัลโว (ประตู)</h4><div id="topGoals"></div></div>
+    <div class="panel"><h4>🧤 ผู้รักษาประตูยอดเยี่ยม (เซฟ)</h4><div id="topSaves"></div></div>
+    <div class="panel"><h4>🟨 ใบเหลือง</h4><div id="topYellow"></div></div>
+    <div class="panel"><h4>🟥 ใบแดง</h4><div id="topRed"></div></div>
+
+    <div class="panel lg:col-span-2">
+      <h4>📜 ประวัติสถิติ (แก้ไข/ลบ)</h4>
+      <div id="statsHistory"></div>
+    </div>
+  </div>
+</section>
+
+
+    <!-- Teams -->
+<section id="teams" class="page">
+  <div class="bg-white rounded-2xl shadow p-5 mb-5">
+
+    <!-- แถวแรก: เลือกทีม / ชื่อทีม / โลโก้ -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
+      <div>
+        <label class="lbl">เลือกทีม</label>
+        <select id="selEditTeam" class="sel"></select>
+      </div>
+
+      <div>
+        <label class="lbl">ชื่อทีม</label>
+        <input id="inpTeamName" class="inp" placeholder="ใส่ชื่อทีม">
+      </div>
+
+      <div>
+        <label class="lbl">โลโก้ทีม</label>
+        <div class="flex items-center gap-3">
+          <div id="teamLogoPreviewEdit" class="w-14 h-14 rounded-full overflow-hidden border-2 border-gray-200 bg-gradient-to-b from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold">🏳️</div>
+          <input id="teamLogoInputEdit" type="file" accept="image/*" class="hidden">
+          <button id="btnChooseTeamLogoEdit" class="btn-s">📷 เลือกรูป</button>
+          <button id="btnClearTeamLogoEdit" class="btn-danger">🧹 ลบรูป</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- แถวใหม่: ผู้จัดการทีม / เบอร์โทร -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 mt-3">
+      <div>
+        <label class="lbl">ผู้จัดการทีม</label>
+        <input id="inpManagerName" class="inp" placeholder="เช่น คุณเอกชัย">
+      </div>
+      <div>
+        <label class="lbl">เบอร์โทรผู้จัดการ</label>
+        <input id="inpManagerPhone" class="inp" inputmode="tel" placeholder="08x-xxx-xxxx">
+      </div>
+    </div>
+
+    <div class="flex gap-2 justify-center mt-3">
+      <button id="btnTeamUpdate" class="btn-pro">
+        <span class="ico">💾</span>
+        <span class="label">บันทึกการแก้ไข</span>
+        <span class="spinner" style="display:none"></span>
+      </button>
+      <button id="btnTeamAdd" class="btn-s">➕ เพิ่มทีมใหม่</button>
+      <button id="btnTeamDelete" class="btn-danger">🗑️ ลบทีม</button>
+    </div>
+
+  </div>
+</section>
+
+
+        <!-- Roster -->
+    <section id="roster" class="page">
+      <div class="bg-white rounded-2xl shadow p-5 mb-4 flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
+       
+        <div class="flex items-center gap-2">
+          <span class="font-semibold">เลือกทีม:</span>
+          <select id="selRosterTeam" class="sel w-56"></select>
+        </div>
+        <div class="flex items-center gap-3">
+          <input id="teamColor" type="color" value="#16a34a" class="w-10 h-8 p-0 border rounded-lg">
+         
+          <button id="btnToggleAddPlayer"
+  class="relative inline-flex items-center gap-2 rounded-full px-5 py-2 font-semibold text-black bg-white overflow-hidden">
+  <span class="relative z-10 text-xl font-bold">＋</span>
+  <span class="relative z-10">เพิ่มนักกีฬา</span>
+  <span class="absolute inset-0 rounded-full p-[2px] bg-gradient-to-r from-pink-500 via-yellow-400 to-cyan-500 animate-[gradient-move_3s_linear_infinite]"></span>
+  <span class="absolute inset-[2px] rounded-full bg-white"></span>
+</button>
+
         </div>
       </div>
 
-      <div class="mb-4">
-        <label for="npName" class="lbl">ชื่อนักกีฬา</label>
-        <input type="text" id="npName" class="input" required>
+<div id="addPlayerForm" class="bg-white rounded-2xl shadow p-5 mb-5 hidden">
+  <h3 class="text-center font-bold text-gray-800 mb-4">➕ เพิ่มนักกีฬาใหม่</h3>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+    <!-- ซ้าย: รูปตัวอย่าง + ปุ่มเลือกรูป -->
+    <div class="flex flex-col items-center gap-3">
+      <div id="preview" class="avatar">👤</div>
+      <input id="npPhoto" type="file" accept="image/*" class="hidden">
+      <div class="flex gap-2">
+        <button id="btnPickPhoto"  type="button" class="btn btn-ghost">📷 เลือกรูป</button>
+        <button id="btnClearPhoto" type="button" class="btn btn-red">🧹 ลบรูป</button>
+      </div>
+    </div>
+
+    <!-- ขวา: ฟิลด์ฟอร์ม (ไม่ซ้อนกัน) -->
+    <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+      <!-- ทีมที่ต้องการเพิ่มนักกีฬา (สคริปต์จะเติม options ให้อัตโนมัติ) -->
+      <div class="md:col-span-2">
+        <label class="lbl" for="npTeam">เพิ่มให้ทีม</label>
+        <select id="npTeam" class="input">
+          <!-- renderTeamSelects() จะเติม option ให้ -->
+        </select>
       </div>
 
-      <div class="mb-4">
-        <label for="npNumber" class="lbl">เบอร์เสื้อ</label>
-        <input type="text" id="npNumber" class="input">
+      <div class="md:col-span-2">
+        <label class="lbl" for="npName">ชื่อนักกีฬา</label>
+        <input id="npName" name="name" type="text" class="input" placeholder="เช่น สุเมธ ศุภกิจ">
       </div>
-      
-      <select id="selRosterTeam" class="hidden"><option value="team1">Team A</option></select>
-      <input type="hidden" id="npPos" value="Forward">
-      <input type="hidden" id="npBirth">
-      <input type="hidden" id="npAge">
-      
-      <div class="mb-4">
-        <label for="teamColor" class="lbl">สีทีม</label>
-        <input type="color" id="teamColor" value="#0000ff" class="w-full h-10">
+
+      <div>
+        <label class="lbl" for="npNum">เบอร์เสื้อ</label>
+        <input id="npNum" name="num" type="number" class="input" min="0" placeholder="เช่น 10">
       </div>
-      
-      <button type="submit" id="btnAddPlayer" class="btn btn-primary w-full mt-4">เพิ่มชื่อนักกีฬา</button>
-    </form>
-    
-    <h2 class="text-xl font-semibold mt-8 mb-4">รายชื่อนักกีฬา (ตัวอย่าง)</h2>
-    <div id="rosterGrid" class="grid grid-cols-2 gap-4">
+
+      <div>
+        <label class="lbl" for="npPos">ตำแหน่ง</label>
+        <select id="npPos" name="pos" class="input">
+          <option value="">— เลือกตำแหน่ง —</option>
+          <option value="GK">GK — ผู้รักษาประตู</option>
+          <option value="DF">DF — กองหลัง</option>
+          <option value="MF">MF — กองกลาง</option>
+          <option value="FW">FW — กองหน้า</option>
+        </select>
       </div>
+
+      <div>
+        <label class="lbl" for="npAge">อายุ</label>
+        <input id="npAge" name="age" type="number" class="input" min="0" placeholder="เช่น 24">
+      </div>
+
+      <div>
+        <label class="lbl" for="npBirth">วันเกิด</label>
+        <input id="npBirth" name="birth" type="date" class="input">
+      </div>
+
+      <div class="col-span-2 md:col-span-1">
+        <label for="npPhone" class="lbl">เบอร์โทร (ไม่บังคับ)</label>
+        <input id="npPhone" name="phone" type="tel" inputmode="tel"
+         class="input" placeholder="08x-xxx-xxxx" />
+      </div>
+
+      <div class="md:col-span-2 flex flex-wrap items-center gap-2 pt-2">
+        <button id="btnAddNewPlayer"    type="button" class="btn btn-green">✅ เพิ่มนักกีฬา</button>
+        <button id="btnClearNewPlayer"  type="button" class="btn btn-white">🧽 ล้างฟอร์ม</button>
+        <button id="btnDownloadRoster"  type="button" class="btn btn-white">⬇️ ดาวน์โหลด</button>
+        <button id="btnCancelNewPlayer" type="button" class="btn btn-red">✖️ ยกเลิก</button>
+      </div>
+    </div>
   </div>
+</div>
 
+
+      <div class="team-header mb-4"><h2 class="font-bold text-xl">รายชื่อทีม: <span id="rosterTeamName">-</span></h2></div>
+      <div id="rosterGrid" class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+    </section>
+  </main>
+
+  <!-- Script -->
   <script>
-    // --------------------------------------------------------------------------------------
-    // ส่วนที่ 1: Global Variables และ Core Utilities (รวมถึง isInitialized Flag)
-    // --------------------------------------------------------------------------------------
-    let state; 
-    let tempPlayerPhoto = ''; 
-    let isInitialized = false; // <<< Flag สำคัญ: แก้ปัญหาข้อมูลหาย
-    
-    const $ = (selector, parent = document) => parent.querySelector(selector);
-    const $$ = (selector, parent = document) => parent.querySelectorAll(selector);
+// อ่าน room จาก URL ?room=jakhong (ถ้าไม่ใส่ room จะทำงานแบบโลคอล)
+const ROOM_ID      = new URLSearchParams(location.search).get('room') || '';
+const SYNC_ENABLED = !!ROOM_ID;
 
-    // Placeholder Function: สร้างสถานะเริ่มต้น
-    function createInitialState() {
-        return {
-            teams: [{ 
-                id: 'team1', 
-                name: 'Team Placeholder', 
-                color: '#0000ff', 
-                roster: [],
-                logo: null
-            }],
-            currentNav: 'roster' // เช่น มี Navigation
-        };
-    }
-    
-    // Placeholder Function: แสดงสีทีม
-    function applyRosterColor(team) { 
-        // Logic สำหรับเปลี่ยนสี UI
-    } 
+// ---- Firebase (Compat) ----
+const firebaseConfig = {
+  apiKey: "AIzaSyDRhbcfmYVWV0rjwZYyIVFFoqDdMjipXMk",
+  authDomain: "footballprogram-93b7d.firebaseapp.com",
+  projectId: "footballprogram-93b7d",
+  storageBucket: "footballprogram-93b7d.appspot.com",
+  messagingSenderId: "242565780267",
+  appId: "1:242565780267:web:f5ccc63cec293be2de6b6e",
+  measurementId: "G-78P27Z4J87"
+};
 
-    // Placeholder Function: เรนเดอร์ตารางผู้เล่น
-    function renderRosterGrid(team) { 
-        const grid = $('#rosterGrid');
-        if (!grid) return;
-        const teamId = $('#selRosterTeam')?.value || 'team1';
-        const teamData = state.teams.find(t => t.id === teamId);
+// ตัวแปรที่ส่วนอื่นใช้งาน
+let app = null;
+let db  = null;
+let roomRef = null;
+let roomUnsub = null;
+let lastWriteAt = 0;
 
-        if (!teamData) {
-            grid.innerHTML = '<p class="text-slate-500">ไม่พบข้อมูลทีม</p>';
-            return;
+if (window.firebase && firebase.initializeApp) {
+  try {
+    app = firebase.apps?.length ? firebase.app() : firebase.initializeApp(firebaseConfig);
+    db  = firebase.firestore();
+
+    // ตั้ง roomRef ก่อนใช้งาน
+    roomRef = SYNC_ENABLED ? db.collection('rooms').doc(ROOM_ID) : null;
+
+    // ใช้ Anonymous auth ตาม rules
+    if (firebase.auth) {
+      firebase.auth().signInAnonymously()
+        .catch(err => console.warn('anon sign-in failed', err));
+
+      // เริ่มซิงก์ "หลัง" ล็อกอินเท่านั้น
+      firebase.auth().onAuthStateChanged((user) => {
+        console.log('[AUTH]', user ? 'signed-in' : 'signed-out');
+        if (user && SYNC_ENABLED && roomRef) {
+          if (roomUnsub) { roomUnsub(); roomUnsub = null; }
+          startRealtimeSync();
         }
+      });
+    } // ✅ ปิด if(firebase.auth) ให้เรียบร้อย
 
-        grid.innerHTML = teamData.roster.map(p => `
-          <div class="p-2 border rounded-lg flex items-center gap-3">
-            <div class="avatar w-10 h-10 flex-shrink-0">
-              <img src="${p.photo || ''}" class="w-full h-full object-cover" alt="Photo">
-            </div>
-            <span>${p.name} (#${p.number})</span>
+  } catch (e) {
+    console.warn('Firebase init failed', e);
+  }
+} else {
+  console.warn('Firebase SDK not loaded — fallback to localStorage only.');
+}
+
+// render ใหม่ทุกจุดที่มีในโค้ดเดิม โดยไม่แตะ logic ข้างใน
+function rerenderAll(){
+  try{
+    renderTeamSelects?.();
+    renderPlayerDropdowns?.();
+    renderDashboard?.();
+    renderTable?.();
+    renderMatchLog?.();
+    renderRosterGrid?.();
+    renderTopStats?.();
+    renderRosterHooks?.();
+    renderStatsHistory?.();
+    renderActivities?.();
+    renderTeamContacts?.();
+  }catch(e){ console.warn('rerenderAll warn', e); }
+}
+
+// ==== Cloud Sync (ไม่ยุ่งกับ load()/save() เดิม แค่ “พ่วง”) ====
+async function startRealtimeSync(){
+  if (!SYNC_ENABLED || !roomRef) return;
+  if (roomUnsub) return; 
+
+  // สร้าง doc ครั้งแรกถ้ายังไม่มี (ใช้ state ปัจจุบันในเครื่องเป็น seed)
+  try{
+    const snap = await roomRef.get();
+    if (!snap.exists) {
+      lastWriteAt = Date.now();
+      await roomRef.set({ state, updatedAt: lastWriteAt, version: 1 }, { merge: true });
+    }
+  }catch(e){ console.warn('initial write failed', e); }
+
+  // subscribe realtime
+  roomUnsub = roomRef.onSnapshot((doc)=>{
+    const data = doc.data();
+    if (!data) return;
+
+    const remoteTs = Number(data.updatedAt || 0);
+    // ถ้าคืออัปเดตที่เราเพิ่งเขียนเอง ก็ข้าม (กันลูป)
+    if (remoteTs && remoteTs <= lastWriteAt) return;
+
+    // รับจากคลาวด์เป็น “source of truth”
+    state = sanitizeState(data.state);
+    // mirror ลง localStorage เดิม (ไม่แตะฟังก์ชัน save เดิม เพื่อเลี่ยง trigger ซิงก์ซ้ำ)
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e){}
+
+    rerenderAll();
+  }, (err)=> console.warn('onSnapshot error', err));
+}
+
+// helper: debounce
+const debounce = (fn, ms = 250) => {
+  let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+};
+
+const cloudSave = async () => {
+  if (!SYNC_ENABLED || !roomRef) return;
+  try {
+    lastWriteAt = Date.now();
+    await roomRef.set({ state, updatedAt: lastWriteAt, version: 1 }, { merge: true });
+  } catch (e) { console.warn('cloudSave failed', e); }
+};
+
+// ✅ ประกาศนอกฟังก์ชัน
+const cloudSaveDebounced = debounce(cloudSave, 400);
+    
+  
+/* =========================
+   Football CE — Single Script (Clean, Full)
+========================= */
+
+/* ---------- Utils ---------- */
+const STORAGE_KEY = 'football_state_ce_v2';
+const $  = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
+const esc = s => String(s ?? '')
+  .replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
+  .replaceAll('"','&quot;').replaceAll("'",'&#39;');
+const nid = (p='id') => p + '_' + Math.random().toString(36).slice(2,9);
+const log = (msg) => { try { console.log('[LOG]', msg); } catch(e){} };
+
+function calcAgeFromISO(iso){
+  if(!iso) return '';
+  const [y,m,d] = iso.split('-').map(Number);
+  if(!y||!m||!d) return '';
+  const today = new Date();
+  let age = today.getFullYear() - y;
+  const beforeBirthday = (today.getMonth()+1 < m) || (today.getMonth()+1===m && today.getDate()<d);
+  if(beforeBirthday) age--;
+  return age;
+}
+
+/* ---------- State + persistence ---------- */
+let state = { teams:[], matches:[], playersStats:[], playersEvents:[] };
+
+function load(){
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      const obj = JSON.parse(raw);
+      if(obj && typeof obj==='object'){
+        state.teams        = Array.isArray(obj.teams)? obj.teams : [];
+        state.matches      = Array.isArray(obj.matches)? obj.matches : [];
+        state.playersStats = Array.isArray(obj.playersStats)? obj.playersStats : [];
+
+        // ✅ เพิ่มอันนี้ไว้ “ใน” load()
+        state.playersEvents = Array.isArray(obj.playersEvents) ? obj.playersEvents : [];
+      }
+    } else {
+      state.playersEvents = [];
+    }
+  } catch(e){
+    console.warn('load failed', e);
+  }
+}
+  
+function save(){
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+  catch(e){ console.warn('save failed', e); }
+  cloudSaveDebounced?.();
+}
+
+/* ---------- Navigation (เมนู .nav-btn + สลับหน้า) ---------- */
+const pageLoaders = {
+  dashboard(){ renderDashboard?.(); renderMatchLog?.(); renderTopStats?.(); },
+  table(){ renderTable?.(); },
+  teams(){ renderTeamSelects?.(); renderTeamEditPreview?.(null); },
+  roster(){ renderTeamSelects?.(); renderRosterGrid?.(); renderRosterHooks?.(); },
+
+  // 👇 เพิ่มสองอันนี้
+  players(){
+    renderTeamSelects?.();
+    renderPlayerDropdowns?.();
+    renderTopStats?.();
+    renderStatsHistory?.();
+    wireStatsHistoryActions?.();
+    wireClearStatsButton?.();
+  },
+
+  match(){
+    renderTeamSelects?.();
+    renderMatchLog?.();
+  },
+};
+
+  
+function showPage(id){
+  // ซ่อน/โชว์หน้า
+  $$('.page').forEach(sec=>{
+    sec.classList.remove('active'); sec.classList.add('hidden');
+    if (sec.id === id){ sec.classList.add('active'); sec.classList.remove('hidden'); }
+  });
+  // ไฮไลต์ปุ่มเมนู
+  $$('.nav-btn').forEach(b=> b.classList.remove('ring-2','ring-offset-2','ring-purple-400'));
+  const active = $(`.nav-btn[data-target="${id}"]`);
+  if (active) active.classList.add('ring-2','ring-offset-2','ring-purple-400');
+
+  // โหลดข้อมูลเฉพาะหน้า
+  if (pageLoaders[id]) pageLoaders[id]();
+}
+
+function wireNavigation(){
+  $$('.nav-btn').forEach(btn=>{
+    if (btn.tagName === 'BUTTON') btn.type = 'button';
+    btn.addEventListener('click', (e)=>{
+      e.preventDefault();
+      const target = btn.dataset.target;
+      if (target) showPage(target);
+    }, {passive:false});
+  });
+}
+
+/* ---------- Teams select (reuse) ---------- */
+function renderTeamSelects(){
+  const opts = state.teams.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('');
+  if($('#selEditTeam'))        $('#selEditTeam').innerHTML        = '<option value="">-- เลือกทีม --</option>'+opts;
+  if($('#selHome'))            $('#selHome').innerHTML            = opts;
+  if($('#selAway'))            $('#selAway').innerHTML            = opts;
+  if($('#selTeamForPlayer'))   $('#selTeamForPlayer').innerHTML   = opts;
+  if($('#selRosterTeam'))      $('#selRosterTeam').innerHTML      = opts;
+  if($('#npTeam'))             $('#npTeam').innerHTML             = opts;
+}
+
+/* ---------- Standings / Table ---------- */
+function computeTable(){
+  const tmap = {};
+  state.teams.forEach(t=>{
+    tmap[t.id] = { id:t.id, name:t.name, logo:t.logo||'', P:0,W:0,D:0,L:0,GF:0,GA:0,GD:0,PTS:0, form:[] };
+  });
+  state.matches.forEach(m=>{
+    const H = tmap[m.homeId], A = tmap[m.awayId];
+    if(!H||!A) return;
+    H.P++; A.P++;
+    H.GF+=m.hg; H.GA+=m.ag; H.GD=H.GF-H.GA;
+    A.GF+=m.ag; A.GA+=m.hg; A.GD=A.GF-A.GA;
+    if(m.hg>m.ag){ H.W++; A.L++; H.PTS+=3; H.form.push('W'); A.form.push('L'); }
+    else if(m.hg<m.ag){ A.W++; H.L++; A.PTS+=3; A.form.push('W'); H.form.push('L'); }
+    else { H.D++; A.D++; H.PTS+=1; A.PTS+=1; H.form.push('D'); A.form.push('D'); }
+  });
+  return Object.values(tmap).sort((a,b)=> b.PTS-a.PTS || b.GD-a.GD || b.GF-a.GF || a.name.localeCompare(b.name));
+}
+  
+function renderTable(){
+  const el = document.getElementById('tbl'); if(!el) return;
+
+  const rows = computeTable().map((r,i)=>{
+  const rank = i + 1;
+
+  const rowClass =
+    rank === 1
+      ? 'bg-amber-50 border-l-4 border-amber-400'         // 🥇 Gold
+    : rank === 2
+      ? 'bg-[#C0C0C0]/20 border-l-4 border-[#C0C0C0]'      // 🥈 Silver
+    : rank === 3
+      ? 'bg-[#CD7F32]/15 border-l-4 border-[#CD7F32]'      // 🥉 Bronze
+    : 'odd:bg-white even:bg-slate-50';
+    
+    const last5 = r.form.slice(-5).join(' ');
+    return `
+      <tr class="${rowClass}">
+        <td class="font-bold">${rank}</td>
+        <td class="text-left">
+          <div class="flex items-center gap-2">
+            ${r.logo ? `<img src="${r.logo}" class="w-6 h-6 rounded-full object-cover border">` : '<span>🏳️</span>'}
+            <span>${esc(r.name)}</span>
           </div>
-        `).join('');
-    }
+        </td>
+        <td>${r.P}</td><td>${r.W}</td><td>${r.D}</td><td>${r.L}</td>
+        <td>${r.GF}</td><td>${r.GA}</td><td>${r.GD}</td>
+        <td class="font-bold">${r.PTS}</td>
+        <td class="text-xs">${last5}</td>
+      </tr>`;
+  }).join('');
 
-    // Placeholder Function: ที่เหลือ (จากโค้ดเดิมของคุณ)
-    function wireNavigation() {}
-    function wireRosterFormToggle() {}
-    function wireMatchControls() {}
-    function wireStatsButtons() {}
-    function wireClearStatsButton() {}
-    function wireTeamLogoPickers() {}
-    function wireTeamCRUD() {}
-    function wireRosterTeamSwitcher() {}
-    function wireStatsHistoryActions() {}
-    function wireGlobalClearButton() {}
-    function renderTeamSelects() {}
-    function renderPlayerDropdowns() {}
-    function renderTable() {}
-    function renderDashboard() {}
-    function renderMatchLog() {}
-    function renderTopStats() {}
-    function renderRosterHooks() {}
-    function renderStatsHistory() {}
-    function renderActivities() {}
-    function renderTeamContacts() {}
-    function calcAgeFromISO() { return 25; } // ตัวอย่าง
-    
+  el.innerHTML = rows || `<tr><td colspan="11" class="py-6 text-slate-400">ยังไม่มีข้อมูล</td></tr>`;
+}
 
-    // --------------------------------------------------------------------------------------
-    // ส่วนที่ 2: State Management (Save/Load - แก้ปัญหาข้อมูลหาย)
-    // --------------------------------------------------------------------------------------
+function telHref(s){ return 'tel:' + String(s||'').replace(/[^\d+]/g,''); }
 
-    function save() {
-      // บันทึกเฉพาะเมื่อระบบถูก Initialize แล้วเท่านั้น
-      if (!isInitialized) {
-        console.warn('Attempted to save state before initialization complete. Save prevented.');
-        return;
-      }
-      localStorage.setItem('state', JSON.stringify(state));
-      // ถ้าใช้ Firebase
-      // firestore.collection('users').doc('user1').set(state);
-      console.log('State saved successfully.');
-    }
+function renderTeamContacts(){
+  const box = document.getElementById('teamContacts');
+  if(!box) return;
 
-    function load() {
-      const json = localStorage.getItem('state');
-      if (json) {
-        try {
-          state = JSON.parse(json);
-          console.log('State loaded successfully from localStorage.');
-        } catch (e) {
-          console.error('Failed to parse state from localStorage. Using initial state.', e);
-          state = createInitialState(); 
-        }
-      } else {
-          state = createInitialState();
-      }
-    }
+  const html = (state.teams||[]).map(t=>{
+    const logo = t.logo
+      ? `<img src="${t.logo}" class="w-7 h-7 rounded-full object-cover border" alt="">`
+      : `<div class="w-7 h-7 rounded-full grid place-items-center bg-slate-100">🏳️</div>`;
 
+    const m  = (t.managerName||'').trim();
+    const ph = (t.managerPhone||'').trim();
+    const phoneHtml = ph
+      ? `<a href="${telHref(ph)}" class="chip inline-flex items-center">📞 ${esc(ph)}</a>`
+      : `<span class="chip">—</span>`;
 
-    // --------------------------------------------------------------------------------------
-    // ส่วนที่ 3: Roster (Upload/Add - แก้ปัญหาอัปโหลดรูป)
-    // --------------------------------------------------------------------------------------
-    
-    /* ---------- Roster Photo Pickers (แก้ไขสมบูรณ์) ---------- */
-    function wireRosterPhotoPickers(){
-      $('#btnPickPhoto')?.addEventListener('click', ()=> $('#npPhoto')?.click());
-      
-      $('#btnClearPhoto')?.addEventListener('click', ()=>{
-        tempPlayerPhoto=''; 
-        if($('#preview')) $('#preview').innerHTML='👤'; 
-        if($('#npPhoto')) $('#npPhoto').value='';
-        
-        // คืนค่าปุ่มบันทึก
-        $('#btnAddPlayer')?.removeAttribute('disabled'); 
-        $('#btnAddPlayer')?.textContent = 'เพิ่มชื่อนักกีฬา'; 
-      });
+    return `
+      <div class="rounded-lg border p-3">
+        <div class="flex flex-wrap items-center gap-2">
+          ${logo}
+          <div class="min-w-0 flex-1">
+            <div class="font-semibold break-words">${esc(t.name||'-')}</div>
+            <div class="text-xs text-slate-500 break-words">${esc(m||'ไม่มีชื่อผู้จัดการ')}</div>
+          </div>
+          <div class="w-full sm:w-auto sm:ml-auto mt-1 sm:mt-0">${phoneHtml}</div>
+        </div>
+      </div>`;
+  }).join('');
 
-      // --- โค้ดที่แก้ไข: Canvas Resize + Async Control (แก้ปัญหา iPad อัปโหลด) ---
-      $('#npPhoto')?.addEventListener('change', e=>{
-        const file = e.target.files?.[0]; 
-        if(!file) return;
+  box.innerHTML = html || `<div class="text-slate-400">ยังไม่มีทีม</div>`;
+}
 
-        if(!file.type.startsWith('image/')){ 
-            alert('กรุณาเลือกรูปภาพ'); 
-            e.target.value=''; 
-            return; 
-        }
-        
-        // 1. ปิดปุ่มและแสดงสถานะกำลังโหลด (ป้องกันการบันทึกก่อนที่รูปจะพร้อม)
-        $('#btnAddPlayer')?.setAttribute('disabled', 'true');
-        $('#btnAddPlayer')?.textContent = 'กำลังประมวลผลรูป...'; 
+// สัปดาห์ปัจจุบันแบบนับจาก "แมตช์แรก" (บล็อกละ 7 วัน เริ่มนับที่ 1)
+function weekFromFirstMatch(now = Date.now()){
+  const matches = Array.isArray(state.matches) ? state.matches : [];
+  if (!matches.length) return 1; // ยังไม่มีแมตช์ → แสดง 1
 
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const img = new Image();
-          img.onload = () => {
-            const MAX_SIZE = 800; // กำหนดขนาดสูงสุด 800px
-            let width = img.width;
-            let height = img.height;
-            
-            // Logic สำหรับย่อขนาด (รักษา Aspect Ratio)
-            if (width > height && width > MAX_SIZE) {
-              height *= MAX_SIZE / width;
-              width = MAX_SIZE;
-            } else if (height > width && height > MAX_SIZE) {
-              width *= MAX_SIZE / height;
-              height = MAX_SIZE;
-            } else if (width > MAX_SIZE) { 
-               width = height = MAX_SIZE;
-            }
+  // หาวัน/เวลาแมตช์ที่เก่าสุด (รองรับทั้ง ts และ date)
+  const firstTs = Math.min(
+    ...matches
+      .map(m => m.ts || m.date || 0)
+      .filter(Boolean)
+  );
+  if (!isFinite(firstTs)) return 1;
 
-            const canvas = document.createElement('canvas');
-            canvas.width = width;
-            canvas.height = height;
+  const start = new Date(firstTs);
+  start.setHours(0,0,0,0); // ปัดเป็นเที่ยงคืนของวันแรก
 
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, width, height);
+  const msPerWeek = 7 * 24 * 60 * 60 * 1000;
+  const weeks = Math.floor((now - start.getTime()) / msPerWeek) + 1;
+  return Math.max(1, weeks);
+}
 
-            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8);
+  
+/* ---------- Dashboard ---------- */
+function renderDashboard(){
+  if($('#statTeams'))   $('#statTeams').textContent   = state.teams.length;
+  if($('#statMatches')) $('#statMatches').textContent = state.matches.length;
+  if($('#statMembers')) $('#statMembers').textContent = state.teams.reduce((s,t)=> s + (t.members?.length||0), 0);
+  if($('#statWeek')) $('#statWeek').textContent = weekFromFirstMatch();
+  
+  // Top Teams
+  const table = computeTable();
+  const top = $('#topTeams');
+  if(top){
+    top.innerHTML = table.slice(0,3).map((r,i)=>`
+      <div class="panel text-left flex items-center gap-3">
+        <div class="text-2xl font-black text-sky-600">${i+1}</div>
+        ${r.logo?`<img src="${r.logo}" class="w-10 h-10 rounded-full object-cover border">`:'<div class="w-10 h-10 rounded-full grid place-items-center bg-slate-100">🏳️</div>'}
+        <div>
+          <div class="font-bold">${esc(r.name)}</div>
+          <div class="text-xs text-slate-500">Pts ${r.PTS} • GD ${r.GD}</div>
+        </div>
+      </div>`).join('') || `<div class="text-slate-400">ยังไม่มีข้อมูล</div>`;
+  }
 
-            // 2. จัดเก็บ Base64 และแสดงผล
-            tempPlayerPhoto = compressedBase64; 
-            if($('#preview')) {
-                $('#preview').innerHTML = `<img src="${tempPlayerPhoto}" class="w-full h-full object-cover">`; 
-            }
-            
-            // 3. เปิดปุ่มกลับเมื่อเสร็จแล้ว
-            $('#btnAddPlayer')?.removeAttribute('disabled');
-            $('#btnAddPlayer')?.textContent = 'เพิ่มชื่อนักกีฬา';
-          };
-          img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-      });
-      
-      // Hook สำหรับวันเกิด/อายุ (จากโค้ดเดิมของคุณ)
-      $('#npBirth')?.addEventListener('input', ()=>{
-        const iso=$('#npBirth')?.value;
-        const a=calcAgeFromISO(iso);
-        if($('#npAge') && (a||a===0)) $('#npAge').value=a;
-      });
-    }
+  // Recent Matches
+  const recBox = $('#recentMatches');
+  if(recBox){
+    const rec = [...state.matches].slice(-6).reverse().map(m=>{
+      const h = state.teams.find(t=>t.id===m.homeId)?.name||'—';
+      const a = state.teams.find(t=>t.id===m.awayId)?.name||'—';
+      return `<div class="flex justify-between items-center text-sm">
+        <span>${esc(h)} vs ${esc(a)}</span>
+        <span class="font-bold">${m.hg} : ${m.ag}</span>
+      </div>`;
+    }).join('');
+    recBox.innerHTML = rec || `<div class="text-slate-400">ยังไม่มีแมตช์</div>`;
+  }
+}
 
-    /* ---------- Roster (Add Player) ---------- */
-    function wireAddPlayer(){
-      $('#rosterForm')?.addEventListener('submit', (e)=>{
-        e.preventDefault();
+/* ---------- Match log + controls ---------- */
+function renderMatchLog(){
+  const box = $('#matchLog'); if(!box) return;
+  const html = [...state.matches].reverse().map(m=>{
+    const h = state.teams.find(t=>t.id===m.homeId)?.name||'—';
+    const a = state.teams.find(t=>t.id===m.awayId)?.name||'—';
+    const ts = new Date(m.date||Date.now()).toLocaleString();
+    return `<div class="flex justify-between items-center bg-slate-50 rounded-lg px-3 py-2">
+      <span class="text-sm">${esc(h)} vs ${esc(a)} • <span class="font-bold">${m.hg}:${m.ag}</span></span>
+      <span class="text-xs text-slate-500">${ts}</span>
+    </div>`;
+  }).join('');
+  box.innerHTML = html || `<div class="text-slate-400">ยังไม่มีประวัติ</div>`;
+}
+function wireMatchControls(){
+  $('#incH')?.addEventListener('click', ()=> { const el=$('#hg'); if(el) el.value = (+el.value||0)+1; });
+  $('#incA')?.addEventListener('click', ()=> { const el=$('#ag'); if(el) el.value = (+el.value||0)+1; });
+  $('#setDraw')?.addEventListener('click', ()=> { if($('#hg')) $('#hg').value = 1; if($('#ag')) $('#ag').value = 1; });
 
-        const teamId = $('#selRosterTeam')?.value || 'team1'; 
-        const t = state.teams.find(x=>x.id===teamId);
-        
-        // ตรวจสอบ: หากปุ่มยังถูก disabled แสดงว่ารูปยังไม่เสร็จ
-        if ($('#btnAddPlayer')?.hasAttribute('disabled')) {
-            alert('กรุณารอให้รูปภาพประมวลผลเสร็จสิ้นก่อนบันทึก');
-            return;
-        }
+  $('#saveMatch')?.addEventListener('click', ()=>{
+    const homeId = $('#selHome')?.value, awayId = $('#selAway')?.value;
+    const hg = +($('#hg')?.value||0), ag = +($('#ag')?.value||0);
+    if(!homeId||!awayId||homeId===awayId) return alert('เลือกทีมเหย้า/เยือนให้ถูกต้อง');
+    const m = { id:nid('m'), homeId, awayId, hg, ag, date: Date.now() };
+    state.matches.push(m);
+    save(); renderTable(); renderDashboard(); renderMatchLog();
+    log(`บันทึกผล ${state.teams.find(t=>t.id===homeId)?.name} ${hg}:${ag} ${state.teams.find(t=>t.id===awayId)?.name}`);
+    if($('#hg')) $('#hg').value = 0; if($('#ag')) $('#ag').value = 0;
+  });
+}
 
-        const newPlayer = {
-          id: Date.now().toString(),
-          name: $('#npName').value, 
-          number: $('#npNumber').value || '',
-          pos: $('#npPos').value || 'Forward',
-          age: $('#npAge')?.value || '',
-          photo: tempPlayerPhoto, // <<< ใช้ tempPlayerPhoto ที่ถูกประมวลผลแล้ว
-          // ... (Stats และ fields อื่นๆ จากโค้ดเดิมของคุณ)
-        };
-        
-        if (t) t.roster.push(newPlayer);
-        
-        // 8. Reset form and save
-        $('#npName').value = ''; 
-        $('#npNumber').value = ''; 
-        $('#npPhoto').value = ''; 
-        tempPlayerPhoto = ''; // <<< รีเซ็ตตัวแปร Base64
-        
-        if($('#preview')) $('#preview').innerHTML='👤';
-        
-        save(); // บันทึกข้อมูล
-        if (t) renderRosterGrid(t);
-      });
-    }
+/* ---------- Player stats ---------- */
+function ensurePlayerStat(playerId, name, teamId){
+  let s = state.playersStats.find(x=>x.playerId===playerId);
+  if(!s){ s = { playerId, name, teamId, goals:0, assists:0, saves:0, cleanSheets:0, yellowCards:0, redCards:0 }; state.playersStats.push(s); }
+  return s;
+}
+function renderPlayerDropdowns(){
+  const teamId = $('#selTeamForPlayer')?.value || state.teams[0]?.id || '';
+  const team = state.teams.find(t=>t.id===teamId);
+  if(!team) { if($('#selPlayer')) $('#selPlayer').innerHTML=''; return; }
+  if($('#selPlayer')) $('#selPlayer').innerHTML = (team.members||[]).map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');
+}
+function topList(key){
+  const arr = [...state.playersStats].sort((a,b)=> (b[key]||0)-(a[key]||0) ).slice(0,10);
+  return arr.map((s,i)=>{
+    const tname = state.teams.find(t=>t.id===s.teamId)?.name||'-';
+    return `<div class="flex justify-between items-center py-1 ${i%2?'':'bg-slate-50'} rounded px-2">
+      <span class="text-sm">${i+1}. ${esc(s.name)} <span class="text-xs text-slate-500">(${esc(tname)})</span></span>
+      <span class="font-bold">${s[key]||0}</span>
+    </div>`;
+  }).join('') || `<div class="text-slate-400">ยังไม่มีข้อมูล</div>`;
+}
+function renderTopStats(){
+  const teamId = $('#selTeamForPlayer')?.value || '';
+  if($('#topGoals'))   $('#topGoals').innerHTML   = topList('goals', teamId);
+  if($('#topSaves'))   $('#topSaves').innerHTML   = topList('saves', teamId);         // 🆕
+  if($('#topYellow'))  $('#topYellow').innerHTML  = topList('yellowCards', teamId);  // 🆕
+  if($('#topRed'))     $('#topRed').innerHTML     = topList('redCards', teamId);     // 🆕
+}
+  
+function wireStatsButtons(){
+  $$('.btn-stat').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const teamId = $('#selTeamForPlayer')?.value;
+      const pid = $('#selPlayer')?.value;
+      if(!teamId||!pid) return alert('เลือกทีมและผู้เล่น');
 
-    // --------------------------------------------------------------------------------------
-    // ส่วนที่ 4: Boot (แก้ไขการบันทึกข้อมูลหาย)
-    // --------------------------------------------------------------------------------------
+      const player = state.teams.find(t=>t.id===teamId)?.members?.find(m=>m.id===pid);
+      if(!player) return alert('ไม่พบผู้เล่น');
 
-    /* ---------- Boot ---------- */
-    document.addEventListener('DOMContentLoaded', ()=> {
-      load?.(); // 1. โหลดข้อมูลเดิม
-      
-      // 2. Wire ALL event listeners (จากโค้ดเดิมของคุณ)
-      wireNavigation();
-      wireRosterFormToggle?.();
-      wireMatchControls?.();
-      wireStatsButtons?.();
-      wireClearStatsButton?.();
-      wireTeamLogoPickers?.();
-      wireTeamCRUD?.();
-      wireRosterPhotoPickers?.(); // <= ฟังก์ชันที่แก้ไข
-      wireAddPlayer?.();
-      wireRosterTeamSwitcher();  
-      wireStatsHistoryActions();
-      wireGlobalClearButton(); 
-      
-      // 3. Render ALL initial UI elements (จากโค้ดเดิมของคุณ)
-      renderTeamSelects?.();
-      renderPlayerDropdowns?.();
-      renderTable?.();
-      renderDashboard?.();
-      renderMatchLog?.();
-      renderRosterGrid(state.teams[0]); // เรนเดอร์เริ่มต้น
-      renderTopStats?.();
-      renderRosterHooks?.();
+      const key  = b.getAttribute('data-s'); // goals, saves, yellowCards, redCards
+      const stat = ensurePlayerStat(pid, player.name, teamId);
+      stat[key] = (stat[key]||0) + 1;
+
+      // บันทึก event ไว้แสดงในกิจกรรม
+      addStatEvent({ playerId: pid, teamId, type: key });
+
+      // อัปเดตทุกจอที่เกี่ยวข้อง
       renderStatsHistory();
-      renderActivities();
-      renderTeamContacts?.();
+      save();
+      renderTopStats?.();
+      renderActivities?.();   // ✅ อัปเดต “กิจกรรมล่าสุด”
 
-      // ตั้งค่า nav ป้องกัน submit
-      $$('.nav-btn').forEach(btn => { if (btn.tagName === 'BUTTON') btn.type = 'button'; });
-
-      // --- สีทีม: ผูกอีเวนต์ (แก้ไขการบันทึก) ---
-      $('#teamColor')?.addEventListener('input', (e)=> {
-        const teamId = $('#selRosterTeam')?.value || 'team1'; 
-        const t = state.teams.find(x=>x.id===teamId);
-        if (t) { 
-          t.color = e.target.value; 
-          save(); // การเรียก save() ที่นี่ปลอดภัยแล้ว เพราะเราควบคุมด้วย isInitialized flag
-        }
-        applyRosterColor(t);
-      });
-
-      // ******* บรรทัดสำคัญ: ประกาศว่าการโหลดและการตั้งค่าเริ่มต้นเสร็จสมบูรณ์แล้ว *******
-      isInitialized = true; 
-      // ********************************************************************************
+      log(`อัปเดตสถิติ ${player.name}: ${key}+1`);
     });
-  </script>
+  });
+
+  $('#selTeamForPlayer')?.addEventListener('change', () => {
+    renderPlayerDropdowns();   // เปลี่ยนตัวเลือกผู้เล่นตามทีม
+    renderTopStats?.();        // รีเฟรชอันดับ/สรุป
+    renderStatsHistory?.();    // รีเฟรชประวัติสถิติ
+    renderActivities?.();      // ✅ ให้กล่องกิจกรรมรีเฟรชด้วย
+  });
+}
+
+// ปุ่ม "ล้างสถิติทีมนี้"
+function wireClearStatsButton(){
+  const btn = document.getElementById('btnClearPlayerStats');
+  if (!btn || btn.dataset.bound === '1') return;
+  btn.type = 'button';
+
+  btn.addEventListener('click', ()=>{
+    const teamId = document.getElementById('selTeamForPlayer')?.value;
+    if (!teamId) { alert('กรุณาเลือกทีมก่อน'); return; }
+
+    const t = state.teams.find(x=>x.id===teamId);
+    const name = t?.name || 'ทีมนี้';
+    if (!confirm(`ยืนยันล้างสถิติทั้งหมดของ "${name}" ?\n(รวมประวัติสถิติด้วย)`)) return;
+
+    // ล้างเฉพาะของทีมที่เลือก
+    state.playersStats  = state.playersStats.filter(s => s.teamId !== teamId);
+    state.playersEvents = state.playersEvents.filter(e => e.teamId !== teamId);
+
+    save();
+    renderTopStats?.();
+    renderStatsHistory?.();
+    renderActivities?.();    // ✅ หลังล้างให้กิจกรรมอัปเดต
+  });
+
+  btn.dataset.bound = '1';
+}
+
+// (ถ้าต้องการปุ่ม "ล้างทั้งหมด" ให้เอาคอมเมนต์ออก + เรียกใช้)
+function wireClearAllStatsButton(){
+  const btn = document.getElementById('btnClearAllStats');
+  if (!btn || btn.dataset.bound === '1') return;
+  btn.type = 'button';
+  btn.addEventListener('click', ()=>{
+    if (!confirm('ยืนยันล้างสถิติและประวัติผู้เล่นทั้งหมด?')) return;
+    state.playersStats = [];
+    state.playersEvents = [];
+    save();
+    renderTopStats?.();
+    renderStatsHistory?.();
+    renderActivities?.();     // ✅
+  });
+  btn.dataset.bound = '1';
+}
+
+// ===== Event helpers (ประวัติสถิติ) =====
+function labelStatType(t){
+  return t==='goals' ? 'ประตู'
+       : t==='saves' ? 'เซฟ'
+       : t==='yellowCards' ? 'ใบเหลือง'
+       : t==='redCards' ? 'ใบแดง'
+       : t;
+}
+
+// ===== Helpers =====
+function teamName(id){
+  return (state.teams||[]).find(t=>t.id===id)?.name || '-';
+}
+function playerName(id){
+  for (const t of (state.teams||[])){
+    const p = (t.members||[]).find(m=>m.id===id);
+    if (p) return p.name;
+  }
+  return '(ไม่มีชื่อ)';
+}
+
+function renderActivities(limit = 12){
+  const box = document.getElementById('activities');
+  if (!box) return;
+
+  // ดึงเหตุการณ์จากแมตช์
+  const matchActs = (state.matches || []).map(m => ({
+    ts: m.ts || m.date || 0,
+    html: `<b>${esc(teamName(m.homeId))}</b> ${m.hg}:${m.ag} <b>${esc(teamName(m.awayId))}</b>`
+  }));
+
+  // ดึงเหตุการณ์จากสถิติผู้เล่น
+  const statActs = (state.playersEvents || []).map(e => ({
+    ts: e.ts || 0,
+    html: `${esc(playerName(e.playerId))} • ${esc(labelStatType(e.type))}
+           <span class="text-xs text-slate-500">(${esc(teamName(e.teamId))})</span>`
+  }));
+
+  const acts = [...matchActs, ...statActs]
+    .sort((a,b)=> b.ts - a.ts)
+    .slice(0, limit);
+
+  box.innerHTML = acts.length
+    ? acts.map(a => `
+        <div class="flex items-center justify-between rounded-lg bg-white/60 px-3 py-2">
+          <div class="text-sm">${a.html}</div>
+          <div class="text-xs text-slate-500">${new Date(a.ts).toLocaleString()}</div>
+        </div>
+      `).join('')
+    : `<div class="text-slate-400">ยังไม่มีกิจกรรม</div>`;
+}
+
+
+// ===== Dashboard: กิจกรรมล่าสุด =====
+function renderActivities(limit=12){
+  const box = document.getElementById('activities');
+  if(!box) return;
+
+  // แปลง matches และ playersEvents เป็น activity เดียวกัน
+  const matchActs = (state.matches||[]).map(m=>({
+    ts: m.ts || m.date || 0,
+    html: `<b>${esc(teamName(m.homeId))}</b> ${m.hg}:${m.ag} <b>${esc(teamName(m.awayId))}</b>`
+  }));
+
+  const statActs = (state.playersEvents||[]).map(e=>({
+    ts: e.ts || 0,
+    html: `${esc(playerName(e.playerId))} • ${esc(labelStatType(e.type))}
+           <span class="text-xs text-slate-500">(${esc(teamName(e.teamId))})</span>`
+  }));
+
+  const acts = [...matchActs, ...statActs]
+    .sort((a,b)=> b.ts - a.ts)
+    .slice(0, limit);
+
+  box.innerHTML = acts.length
+    ? acts.map(a=>`
+        <div class="flex items-center justify-between rounded-lg bg-white/60 px-3 py-2">
+          <div class="text-sm">${a.html}</div>
+          <div class="text-xs text-slate-500">${new Date(a.ts).toLocaleString()}</div>
+        </div>`).join('')
+    : `<div class="text-slate-400">ยังไม่มีกิจกรรม</div>`;
+}
+  
+function addStatEvent({playerId, teamId, type}){
+  const ev = { id: nid('ev'), playerId, teamId, type, ts: Date.now() };
+  state.playersEvents.push(ev);
+  return ev;
+}
+
+function deleteStatEvent(evId){
+  const idx = state.playersEvents.findIndex(e=>e.id===evId);
+  if (idx<0) return;
+  const ev = state.playersEvents[idx];
+  const stat = state.playersStats.find(s=>s.playerId===ev.playerId);
+  if (stat && stat[ev.type]>0) stat[ev.type]--;
+  state.playersEvents.splice(idx,1);
+  save(); renderTopStats(); renderStatsHistory();
+}
+
+function editStatEvent(evId,newType){
+  const ev = state.playersEvents.find(e=>e.id===evId);
+  if (!ev) return;
+  const stat = state.playersStats.find(s=>s.playerId===ev.playerId);
+  if (stat){
+    if (stat[ev.type]>0) stat[ev.type]--;
+    stat[newType] = (stat[newType]||0)+1;
+  }
+  ev.type=newType;
+  save(); renderTopStats(); renderStatsHistory(); renderActivities?.(); 
+}
+
+function renderStatsHistory(limit=30){
+  const box=document.getElementById('statsHistory');
+  if (!box) return;
+  const rows=[...state.playersEvents]
+    .sort((a,b)=>b.ts-a.ts)
+    .slice(0,limit)
+    .map(ev=>{
+      const player=state.teams.flatMap(t=>t.members||[]).find(p=>p.id===ev.playerId);
+      const team=state.teams.find(t=>t.id===ev.teamId);
+      const name=player?.name||'(ไม่มีชื่อ)';
+      const tname=team?.name||'-';
+      const time=new Date(ev.ts).toLocaleString();
+      return `<div class="hist-row" data-evid="${ev.id}">
+        <div class="hist-main">
+          <span class="hist-type">• ${labelStatType(ev.type)}</span>
+          <span class="truncate">${esc(name)} <span class="text-xs text-slate-500">(${esc(tname)})</span></span>
+        </div>
+        <div class="hist-actions">
+          <span class="hist-time">${time}</span>
+          <button class="hist-btn" data-act="edit">✏️</button>
+          <button class="hist-btn red" data-act="del">✖️</button>
+        </div>
+      </div>`;
+    }).join('');
+  box.innerHTML=rows||`<div class="text-slate-400">ยังไม่มีประวัติ</div>`;
+}
+function wireStatsHistoryActions(){
+  const box=document.getElementById('statsHistory');
+  if (!box||box.dataset.bound==='1') return;
+  box.addEventListener('click',(e)=>{
+    const btn=e.target.closest('.hist-btn'); if(!btn) return;
+    const row=e.target.closest('.hist-row'); if(!row) return;
+    const evId=row.getAttribute('data-evid');
+    if(btn.dataset.act==='del'){ if(confirm('ลบ?')) deleteStatEvent(evId); }
+    if(btn.dataset.act==='edit'){
+      const newType=prompt('แก้เป็นอะไร? (goals/saves/yellowCards/redCards)','goals');
+      if(newType) editStatEvent(evId,newType.trim());
+    }
+  });
+  box.dataset.bound='1';
+}
+
+/* ---------- Teams (logo upload + CRUD) ---------- */
+function renderTeamEditPreview(team){
+  const box = $('#teamLogoPreviewEdit');
+  if(!box) return;
+  if(team?.logo){ box.innerHTML = `<img src="${team.logo}" class="w-full h-full object-cover" alt="${esc(team.name)}">`; }
+  else { box.innerHTML = `🏳️`; }
+}
+let pendingLogoDataURL_Edit = '';
+function wireTeamLogoPickers(){
+  $('#btnChooseTeamLogoEdit')?.addEventListener('click', ()=> $('#teamLogoInputEdit')?.click());
+  $('#btnClearTeamLogoEdit')?.addEventListener('click', ()=>{
+    pendingLogoDataURL_Edit=''; renderTeamEditPreview(null);
+    if($('#teamLogoInputEdit')) $('#teamLogoInputEdit').value='';
+  });
+  $('#teamLogoInputEdit')?.addEventListener('change', e=>{
+    const f = e.target.files?.[0]; if(!f) return;
+    if(!f.type.startsWith('image/')) { alert('กรุณาเลือกรูปภาพ'); e.target.value=''; return; }
+    if(f.size > 5*1024*1024) { alert('ไฟล์เกิน 5MB'); e.target.value=''; return; }
+    const r = new FileReader();
+    r.onload = ev => { pendingLogoDataURL_Edit = ev.target.result; if($('#teamLogoPreviewEdit')) $('#teamLogoPreviewEdit').innerHTML = `<img src="${pendingLogoDataURL_Edit}" class="w-full h-full object-cover">`; };
+    r.readAsDataURL(f);
+  });
+}
+
+  function wireTeamCRUD(){
+  // ดึงค่าผู้จัดการ/เบอร์จากอินพุต
+  const getMgr = () => ({
+    name:  $('#inpManagerName')?.value?.trim() || '',
+    phone: $('#inpManagerPhone')?.value?.trim() || ''
+  });
+
+  // เพิ่มทีมใหม่
+  $('#btnTeamAdd')?.addEventListener('click', ()=>{
+    const name = $('#inpTeamName')?.value?.trim();
+    if(!name) return alert('ใส่ชื่อทีม');
+    if(state.teams.some(t=>t.name===name)) return alert('มีทีมนี้อยู่แล้ว');
+
+    const { name: mname, phone: mphone } = getMgr();
+
+    const team = {
+      id: nid('team'),
+      name,
+      logo: pendingLogoDataURL_Edit || '',
+      managerName:  mname,
+      managerPhone: mphone,
+      members: []
+    };
+
+    state.teams.push(team);
+    save();
+
+    // ล้างฟอร์ม
+    if($('#inpTeamName'))     $('#inpTeamName').value = '';
+    if($('#inpManagerName'))  $('#inpManagerName').value = '';
+    if($('#inpManagerPhone')) $('#inpManagerPhone').value = '';
+    pendingLogoDataURL_Edit = '';
+    if($('#teamLogoInputEdit')) $('#teamLogoInputEdit').value = '';
+
+    renderTeamSelects(); renderTeamEditPreview(null);
+    renderDashboard(); renderTable(); renderRosterHooks();
+    if ($('#selRosterTeam') && !$('#selRosterTeam').value) $('#selRosterTeam').value = team.id;
+    renderPlayerDropdowns?.(); renderRosterGrid?.();
+    renderTeamContacts?.(); // 👈 อัปเดตกล่องเบอร์ติดต่อ
+    log(`เพิ่มทีมใหม่: ${name}`);
+  });
+
+  // บันทึกการแก้ไขทีม
+  $('#btnTeamUpdate')?.addEventListener('click', ()=>{
+    const id   = $('#selEditTeam')?.value;
+    const name = $('#inpTeamName')?.value?.trim();
+    if(!id) return alert('เลือกทีม');
+    if(!name) return alert('ใส่ชื่อทีม');
+
+    const t = state.teams.find(x=>x.id===id); if(!t) return;
+    const { name: mname, phone: mphone } = getMgr();
+
+    t.name = name;
+    if(pendingLogoDataURL_Edit) t.logo = pendingLogoDataURL_Edit;
+    t.managerName  = mname;
+    t.managerPhone = mphone;
+
+    save();
+
+    renderTeamSelects();
+    if($('#selEditTeam')) $('#selEditTeam').value = t.id;
+    renderTeamEditPreview(t);
+    pendingLogoDataURL_Edit = '';
+    if($('#teamLogoInputEdit')) $('#teamLogoInputEdit').value = '';
+
+    renderDashboard(); renderTable(); renderRosterHooks();
+    renderRosterGrid?.(); renderPlayerDropdowns?.();
+    renderTeamContacts?.(); // 👈
+    log(`แก้ไขทีม: ${name}`);
+  });
+
+  // ลบทีม
+  $('#btnTeamDelete')?.addEventListener('click', ()=>{
+    const id = $('#selEditTeam')?.value; if(!id) return alert('เลือกทีม');
+    const t  = state.teams.find(x=>x.id===id); if(!t) return;
+    if(!confirm(`ยืนยันลบทีม "${t.name}" ?`)) return;
+
+    state.teams   = state.teams.filter(x=>x.id!==id);
+    state.matches = state.matches.filter(m=> m.homeId!==id && m.awayId!==id );
+    save();
+
+    if($('#inpTeamName'))     $('#inpTeamName').value = '';
+    if($('#inpManagerName'))  $('#inpManagerName').value = '';
+    if($('#inpManagerPhone')) $('#inpManagerPhone').value = '';
+    pendingLogoDataURL_Edit = '';
+    if($('#teamLogoInputEdit')) $('#teamLogoInputEdit').value = '';
+
+    renderTeamSelects(); renderTeamEditPreview(null);
+    renderDashboard(); renderTable(); renderMatchLog(); renderRosterHooks();
+    renderPlayerDropdowns?.(); renderRosterGrid?.();
+    renderTeamContacts?.(); // 👈
+    log(`ลบทีม: ${t.name}`);
+  });
+
+  // เวลาเลือกทีม ให้เติมค่าลงฟอร์ม
+  $('#selEditTeam')?.addEventListener('change', e=>{
+    const t = state.teams.find(x=>x.id===e.target.value);
+    if($('#inpTeamName'))     $('#inpTeamName').value     = t?.name || '';
+    if($('#inpManagerName'))  $('#inpManagerName').value  = t?.managerName  || '';
+    if($('#inpManagerPhone')) $('#inpManagerPhone').value = t?.managerPhone || '';
+    pendingLogoDataURL_Edit = '';
+    renderTeamEditPreview(t||null);
+    if($('#teamLogoInputEdit')) $('#teamLogoInputEdit').value = '';
+  });
+}
+
+/* ---------- Roster (upload + add + grid + actions) ---------- */
+let tempPlayerPhoto = '';
+function wireRosterPhotoPickers(){
+  $('#btnPickPhoto')?.addEventListener('click', ()=> $('#npPhoto')?.click());
+  $('#btnClearPhoto')?.addEventListener('click', ()=>{
+    tempPlayerPhoto=''; if($('#preview')) $('#preview').innerHTML='👤'; if($('#npPhoto')) $('#npPhoto').value='';
+  });
+  $('#npPhoto')?.addEventListener('change', e=>{
+    const f=e.target.files?.[0]; if(!f) return;
+    if(!f.type.startsWith('image/')){ alert('กรุณาเลือกรูปภาพ'); e.target.value=''; return; }
+    if(f.size>5*1024*1024){ alert('ไฟล์เกิน 5MB'); e.target.value=''; return; }
+    const r=new FileReader();
+    r.onload=ev=>{ tempPlayerPhoto=ev.target.result; if($('#preview')) $('#preview').innerHTML=`<img src="${tempPlayerPhoto}" class="w-full h-full object-cover">`; };
+    r.readAsDataURL(f);
+  });
+  $('#npBirth')?.addEventListener('input', ()=>{
+    const iso=$('#npBirth')?.value;
+    const a=calcAgeFromISO(iso);
+    if($('#npAge') && (a||a===0)) $('#npAge').value=a;
+  });
+}
+
+// ตั้งสีหัวข้อรายชื่อทีมตามทีมที่เลือก
+function applyRosterColor(team){
+  const hex = team?.color || $('#teamColor')?.value || '#16a34a';
+  const hdr = document.querySelector('#roster .team-header');
+  if (hdr){
+    hdr.style.background = hex;
+    hdr.style.color = '#fff';
+  }
+}
+
+// เมื่อสลับทีมในหน้า Roster ให้รีเรนเดอร์ทุกอย่างที่เกี่ยวข้อง
+function wireRosterTeamSwitcher(){
+  const sel = document.getElementById('selRosterTeam');
+  if (!sel) return;
+  if (sel.dataset.bound === '1') return;
+
+  sel.addEventListener('change', ()=>{
+    renderRosterGrid?.();         // เปลี่ยนรายชื่อ + ชื่อหัวข้อทีม
+    renderRosterHooks?.();        // ให้ปุ่มบนการ์ดยังทำงาน
+    syncRosterColorFromTeam?.();  // ปรับสีหัวข้อให้ตรงกับสีทีม
+    fillTeamsForNewPlayer?.();    // ถ้าเปิดฟอร์มเพิ่มนักกีฬาอยู่ ให้ dropdown ในฟอร์มตรงด้วย
+  });
+
+  sel.dataset.bound = '1';
+}
+ 
+
+// ให้ตัวเลือกสี (#teamColor) แสดงสีของทีมที่เลือกใน roster
+function syncRosterColorFromTeam(){
+  const teamId = $('#selRosterTeam')?.value;
+  const t = state.teams.find(x=>x.id===teamId);
+  if ($('#teamColor')) $('#teamColor').value = t?.color || '#16a34a';
+  applyRosterColor(t);
+}
+
+function labelPos(pos){
+  return pos==='goalkeeper' ? 'ผู้รักษาประตู'
+       : pos==='defender'   ? 'กองหลัง'
+       : pos==='midfielder' ? 'กองกลาง'
+       : 'กองหน้า';
+}
+function clearNewPlayerForm() {
+  ['npName','npPos','npNum','npBirth','npAge','npPhone'].forEach(id=>{
+    const el = $('#'+id);
+    if (el) el.value = '';
+  });
+  tempPlayerPhoto = '';
+  if ($('#preview')) $('#preview').innerHTML = '👤';
+  if ($('#npPhoto')) $('#npPhoto').value = '';
+}
+  
+function renderPlayerCard(p, team) {
+  const has = (v) => v !== undefined && v !== null && String(v).trim() !== '';
+  const fmtDate = (iso) => {
+    if (!has(iso)) return '';
+    const [y,m,d] = iso.split('-');
+    return `${d}/${m}/${y}`;
+  };
+
+  // สีประจำทีม (ใช้กับ badge เบอร์เสื้อ)
+  const accent = team?.color || '#16a34a';
+
+  // chips ข้อมูลเสริม
+  const chips = [];
+  if (has(p.pos))   chips.push(`<span class="chip">${labelPos(p.pos)}</span>`);
+  if (Number.isFinite(p.age) && p.age > 0) chips.push(`<span class="chip">อายุ ${p.age}</span>`);
+  if (has(p.birth)) chips.push(`<span class="chip">${fmtDate(p.birth)}</span>`);
+  if (has(p.phone)) chips.push(`<span class="chip">📞 ${p.phone}</span>`);
+
+  // เบอร์เสื้อ — ย้ายไป "ซ้ายบน" และลงสีตามทีม
+  const numBadge = has(p.num)
+    ? `<span class="num-badge-static"
+         style="background:${accent};color:#fff;border-color:${accent}">
+         #${String(p.num).trim()}
+       </span>`
+    : '';
+
+  // รูป
+  const photo = has(p.photo)
+    ? `<img src="${esc(p.photo)}" alt="${esc(p.name||'นักกีฬา')}" class="player-avatar object-cover">`
+    : `<div class="player-avatar grid place-items-center text-slate-400">👤</div>`;
+
+  const teamLogo = team?.logo
+  ? `<div class="mt-2 flex justify-end">
+       <img src="${esc(team.logo)}" class="team-logo" alt="">
+     </div>`
+  : '';
+
+  return `
+    <div class="player-card relative">
+      <!-- เบอร์เสื้อซ้ายบน (สีตามทีม) -->
+      ${numBadge ? `<div class="absolute top-2 left-2 z-10">${numBadge}</div>` : ''}
+
+      <!-- ปุ่มกลมมุมขวาบน -->
+      <div class="absolute top-2 right-2 flex gap-2 z-10">
+        <button class="icon-dot gray" data-act="edit-player" data-id="${p.id}" title="แก้ไข" aria-label="แก้ไข"></button>
+        <button class="icon-dot red"  data-act="del-player"  data-id="${p.id}" title="ลบ"   aria-label="ลบ"></button>
+      </div>
+
+      <div class="relative">${photo}</div>
+
+      <div class="min-w-0 flex-1 mt-1">
+        <div class="font-bold whitespace-normal break-words leading-tight">
+          ${esc(p.name || '(ไม่มีชื่อ)')}
+        </div>
+
+        ${chips.length ? `
+          <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-600">
+            ${chips.join('')}
+          </div>` : ''}
+
+        ${teamLogo}
+      </div>
+    </div>
+  `;
+}
+
+
+function renderRosterGrid(){
+  let teamId = $('#selRosterTeam')?.value || '';
+  if (!teamId && state.teams.length) {
+    teamId = state.teams[0].id;
+    if ($('#selRosterTeam')) $('#selRosterTeam').value = teamId;
+  }
+  const team = state.teams.find(t => t.id === teamId);
+  if ($('#rosterTeamName')) $('#rosterTeamName').textContent = team?.name || '-';
+  applyRosterColor(team);
+  const grid = $('#rosterGrid'); if (!grid) return;
+  const items = (team?.members || []).map(p => renderPlayerCard(p, team)).join('');
+  grid.innerHTML = items || `<div class="text-slate-400">ยังไม่มีรายชื่อ</div>`;
+}
+
+  function renderRosterHooks(){
+  const grid = $('#rosterGrid'); if (!grid) return;
+  if (grid.dataset.bound === '1') return;
+
+  grid.addEventListener('click', (e)=>{
+    const btn = e.target.closest('[data-act]'); // ปุ่มบนการ์ด
+    if (!btn) return;
+
+    const act = btn.dataset.act;   // 'edit-player' | 'del-player'
+    const pid = btn.dataset.id;    // playerId จากการ์ด
+    const teamId = $('#selRosterTeam')?.value; // ทีมที่กำลังแสดงอยู่
+
+    if (act === 'edit-player') {
+      // <<< ตรงนี้แหละที่เรียกเข้าโหมดแก้ไข
+      enterEditPlayer(teamId, pid);
+      return;
+    }
+
+    if (act === 'del-player') {
+      const team = state.teams.find(t=>t.id===teamId);
+      const p = team?.members?.find(m=>m.id===pid);
+      if (!team || !p) return;
+      if (!confirm(`ลบผู้เล่น "${p.name}" ?`)) return;
+      team.members = team.members.filter(m=>m.id!==pid);
+      save(); renderRosterGrid?.(); renderDashboard?.(); renderActivities?.(); 
+    }
+  });
+
+  grid.dataset.bound = '1';
+}
+
+
+/* ---------- ฟอร์มเพิ่มนักกีฬา (เปิด/ปิดด้วยปุ่มสายรุ้ง) ---------- */
+function fillTeamsForNewPlayer() {
+  const sel = $('#npTeam'); if (!sel) return;
+  sel.innerHTML = state.teams.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join('');
+  const current = $('#selRosterTeam')?.value || state.teams[0]?.id || '';
+  if (current) sel.value = current;
+}
+function openAddPlayerForm() {
+  const box = $('#addPlayerForm'); if (!box) return;
+  fillTeamsForNewPlayer();
+  clearNewPlayerForm?.();
+  box.classList.remove('hidden');
+  setTimeout(()=> $('#npName')?.focus(), 0);
+  wireRosterPhotoPickers?.();
+}
+function closeAddPlayerForm() { $('#addPlayerForm')?.classList.add('hidden'); }
+function wireRosterFormToggle() {
+  $('#btnToggleAddPlayer')?.addEventListener('click', (e)=>{
+    e.preventDefault();
+    const box = $('#addPlayerForm');
+    if (!box || box.classList.contains('hidden')) openAddPlayerForm();
+    else closeAddPlayerForm();
+  });
+  $('#btnCancelNewPlayer')?.addEventListener('click', (e)=>{ e.preventDefault(); closeAddPlayerForm(); });
+  $('#btnClearNewPlayer')?.addEventListener('click', (e)=>{ e.preventDefault(); clearNewPlayerForm?.(); });
+  $('#selRosterTeam')?.addEventListener('change', ()=>{
+    if (!$('#addPlayerForm')?.classList.contains('hidden')) fillTeamsForNewPlayer();
+  });
+}
+
+/* ---------- เพิ่มนักกีฬา ---------- */
+function wireAddPlayer(){
+  const btn = $('#btnAddNewPlayer');
+  if (!btn) { console.warn('btnAddNewPlayer not found'); return; }
+  btn.type = 'button';
+  if (!btn.dataset.mode) btn.dataset.mode = 'add';
+  if (btn.dataset.bound === '1') return;
+
+  btn.addEventListener('click', (e)=>{
+    e.preventDefault();
+
+    const formTeamId = $('#npTeam')?.value || $('#selRosterTeam')?.value || state.teams[0]?.id || '';
+    const name  = $('#npName')?.value?.trim() || '';
+    const pos   = $('#npPos')?.value || '';
+    const num   = $('#npNum')?.value?.trim() || '';
+    const birth = $('#npBirth')?.value || '';
+    const ageIn = $('#npAge')?.value || '';
+    const phone = $('#npPhone')?.value?.trim() || '';
+    const age   = (Number.isFinite(+ageIn) && +ageIn >= 0) ? +ageIn : (calcAgeFromISO?.(birth) ?? '');
+    if(!name){ alert('กรุณากรอกชื่อนักกีฬา'); $('#npName')?.focus(); return; }
+
+    // --- โหมดแก้ไข ---
+    if (btn.dataset.mode === 'edit' && editingPlayer){
+      const oldTeam = state.teams.find(t=>t.id===editingPlayer.teamId);
+      const newTeam = state.teams.find(t=>t.id===formTeamId);
+      if(!newTeam){ alert('กรุณาเลือกทีม'); return; }
+
+      let p = oldTeam?.members?.find(m=>m.id===editingPlayer.playerId);
+      if(!p){ alert('ไม่พบผู้เล่นเดิม'); exitEditMode(); return; }
+
+      // ถ้าย้ายทีม
+      if (oldTeam && newTeam && oldTeam.id !== newTeam.id){
+        oldTeam.members = (oldTeam.members||[]).filter(m=>m.id!==p.id);
+        p = { ...p };
+        newTeam.members = newTeam.members || [];
+        newTeam.members.push(p);
+      }
+
+      p.name  = name;  p.pos   = pos;  p.num   = num;
+      p.birth = birth; p.age   = age;  p.phone = phone;
+      p.photo = (typeof tempPlayerPhoto==='string' ? tempPlayerPhoto : '') || p.photo || '';
+
+      save();
+      renderRosterGrid?.(); renderDashboard?.();
+      closeAddPlayerForm?.(); clearNewPlayerForm?.(); exitEditMode();
+      return;
+    }
+
+    // --- โหมดเพิ่มใหม่ ---
+    const team = state.teams.find(t=>t.id===formTeamId);
+    if(!team){ alert('กรุณาเพิ่ม/เลือกทีมก่อน'); return; }
+
+    const p = {
+      id: nid('p'),
+      name, pos, num, birth, age, phone,
+      photo: (typeof tempPlayerPhoto==='string' ? tempPlayerPhoto : '') || ''
+    };
+
+    team.members = team.members || [];
+    team.members.push(p);
+    save();
+
+    renderRosterGrid?.(); renderDashboard?.();
+    closeAddPlayerForm?.(); clearNewPlayerForm?.(); exitEditMode();
+    const selRoster = $('#selRosterTeam'); if(selRoster && !selRoster.value) selRoster.value = team.id;
+  });
+
+  // ยกเลิก/ล้าง = ออกจากโหมดแก้ไขด้วย
+  $('#btnCancelNewPlayer')?.addEventListener('click', ()=> exitEditMode());
+  $('#btnClearNewPlayer')?.addEventListener('click', ()=> exitEditMode());
+
+  btn.dataset.bound = '1';
+}
+
+
+  
+// ==== Edit mode (ผู้เล่น) ====
+let editingPlayer = null; // { teamId, playerId }
+
+function enterEditPlayer(teamId, playerId){
+  const team = state.teams.find(t=>t.id===teamId);
+  const p    = team?.members?.find(m=>m.id===playerId);
+  if(!team || !p) return;
+
+  // เปิดฟอร์ม + เติมค่า
+  openAddPlayerForm?.();
+
+  $('#npTeam')  && ($('#npTeam').value  = teamId);
+  $('#npName')  && ($('#npName').value  = p.name || '');
+  $('#npPos')   && ($('#npPos').value   = p.pos  || '');
+  $('#npNum')   && ($('#npNum').value   = p.num  || '');
+  $('#npBirth') && ($('#npBirth').value = p.birth|| '');
+  $('#npAge')   && ($('#npAge').value   = (p.age ?? ''));
+  $('#npPhone') && ($('#npPhone').value = p.phone|| '');
+
+  // รูปตัวอย่าง
+  tempPlayerPhoto = p.photo || '';
+  if($('#preview')){
+    $('#preview').innerHTML = p.photo
+      ? `<img src="${esc(p.photo)}" class="w-full h-full object-cover">`
+      : '👤';
+  }
+
+  // สลับปุ่มเป็นโหมด "แก้ไข"
+  const btn = $('#btnAddNewPlayer');
+  if(btn){ btn.textContent = '💾 บันทึกการแก้ไข'; btn.dataset.mode = 'edit'; }
+
+  editingPlayer = { teamId, playerId };
+}
+
+function exitEditMode(){
+  editingPlayer = null;
+  const btn = $('#btnAddNewPlayer');
+  if(btn){ btn.textContent = '✅ เพิ่มนักกีฬา'; btn.dataset.mode = 'add'; }
+}
+
+  function wireGlobalClearButton(){
+  const btn = document.getElementById('btnClear');
+  if (!btn || btn.dataset.bound === '1') return;
+  btn.type = 'button';
+
+  btn.addEventListener('click', ()=>{
+    if (!confirm(
+      'ยืนยันล้างข้อมูลทั้งหมด?\n' +
+      '— ทีม, โลโก้, ผู้เล่น, ผลการแข่งขัน, สถิติผู้เล่น และกิจกรรม —'
+    )) return;
+
+    // รีเซ็ต state ในหน่วยความจำ
+    state = { teams: [], matches: [], playersStats: [], playersEvents: [] };
+
+    // ลบจาก localStorage
+    try { localStorage.removeItem(STORAGE_KEY); } catch(e){}
+
+    // เคลียร์ตัวแปรชั่วคราว/ฟอร์มที่เกี่ยวข้อง
+    try {
+      pendingLogoDataURL_Edit = '';
+      tempPlayerPhoto = '';
+      editingMatchId = null;
+      editingPlayer  = null;
+
+      [
+        'inpTeamName','inpManagerName','inpManagerPhone',
+        'npName','npNum','npAge','npBirth','npPhone'
+      ].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+
+      const selEditTeam = document.getElementById('selEditTeam');
+      if (selEditTeam) selEditTeam.innerHTML = '<option value="">-- เลือกทีม --</option>';
+    } catch(e){}
+
+    // รีเรนเดอร์ทุกจุดของ UI
+    renderTeamSelects?.();
+    renderPlayerDropdowns?.();
+    renderDashboard?.();
+    renderTable?.();
+    renderMatchLog?.();
+    renderRosterGrid?.();
+    renderTopStats?.();
+    renderRosterHooks?.();
+    renderStatsHistory?.();
+    renderActivities?.();
+    renderTeamContacts?.();
+
+    // กลับไปหน้าแรกและแจ้งผล
+    showPage?.('dashboard');
+    alert('ล้างข้อมูลเรียบร้อย ✅');
+  });
+
+  btn.dataset.bound = '1';
+}
+
+
+/* ---------- Boot ---------- */
+document.addEventListener('DOMContentLoaded', ()=>{
+  load?.();
+  
+  // เมนู + ฮุคต่างๆ
+  wireNavigation();
+  wireRosterFormToggle?.();
+  wireMatchControls?.();
+  wireStatsButtons?.();
+  wireClearStatsButton?.();
+  wireTeamLogoPickers?.();
+  wireTeamCRUD?.();
+  wireRosterPhotoPickers?.();
+  wireAddPlayer?.();
+  wireRosterTeamSwitcher();  
+  wireStatsHistoryActions();
+  wireGlobalClearButton(); 
+  
+  // เรนเดอร์เริ่มต้น
+  renderTeamSelects?.();
+  renderPlayerDropdowns?.();
+  renderTable?.();
+  renderDashboard?.();
+  renderMatchLog?.();
+  renderRosterGrid?.();    // <= ต้องมาก่อน sync สี
+  renderTopStats?.();
+  renderRosterHooks?.();
+  renderStatsHistory();
+  renderActivities();
+  renderTeamContacts?.();
+
+  // ตั้งค่า nav ป้องกัน submit
+  $$('.nav-btn').forEach(btn => { if (btn.tagName === 'BUTTON') btn.type = 'button'; });
+
+  // --- สีทีม: ผูกอีเวนต์ + sync ครั้งแรก ---
+  // เปลี่ยนสีแบบเรียลไทม์และบันทึกลงทีม
+  $('#teamColor')?.addEventListener('input', (e)=>{
+    const teamId = $('#selRosterTeam')?.value;
+    const t = state.teams.find(x=>x.id===teamId);
+    if (t) { t.color = e.target.value; save(); }
+    applyRosterColor(t);
+  });
+
+  // เวลาเปลี่ยนทีม ให้ซิงก์สีที่ปุ่มเลือกสีและแถบ
+  $('#selRosterTeam')?.addEventListener('change', syncRosterColorFromTeam);
+
+  // ซิงก์สีครั้งแรกหลัง render เสร็จ
+  syncRosterColorFromTeam?.();
+
+  // หน้าแรก
+  showPage('dashboard'); // เปลี่ยนเป็น 'roster' ได้ตามต้องการ
+});
+
+</script>
+
 </body>
 </html>
