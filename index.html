@@ -1519,42 +1519,49 @@ let tempPlayerPhoto = '';
 function wireRosterPhotoPickers(){
   $('#btnPickPhoto')?.addEventListener('click', ()=> $('#npPhoto')?.click());
   $('#btnClearPhoto')?.addEventListener('click', ()=>{
-    tempPlayerPhoto=''; if($('#preview')) $('#preview').innerHTML='👤'; if($('#npPhoto')) $('#npPhoto').value='';
+    tempPlayerPhoto=''; 
+    if($('#preview')) $('#preview').innerHTML='👤'; 
+    if($('#npPhoto')) $('#npPhoto').value='';
+    // ******* เพิ่ม: คืนค่าปุ่มทันทีที่กดล้างรูป ********
+    $('#btnAddPlayer')?.removeAttribute('disabled'); 
+    $('#btnAddPlayer')?.textContent = 'เพิ่มชื่อนักกีฬา'; 
+    // ****************************************************
   });
 
-  // --- โค้ดที่แก้ไข: เพิ่มการย่อ/บีบอัดด้วย Canvas API ---
   $('#npPhoto')?.addEventListener('change', e=>{
     const file = e.target.files?.[0]; 
     if(!file) return;
 
-    // 1. ตรวจสอบว่าเป็นไฟล์รูปภาพ
     if(!file.type.startsWith('image/')){ 
         alert('กรุณาเลือกรูปภาพ'); 
         e.target.value=''; 
         return; 
     }
     
-    // 2. อ่านไฟล์เป็น Data URL
+    // ******* เพิ่ม: ปิดปุ่มและแสดงสถานะกำลังโหลด ********
+    $('#btnAddPlayer')?.setAttribute('disabled', 'true');
+    $('#btnAddPlayer')?.textContent = 'กำลังประมวลผลรูป...'; 
+    // ****************************************************
+
     const reader = new FileReader();
     reader.onload = (e) => {
       const img = new Image();
       img.onload = () => {
-        const MAX_SIZE = 800; // กำหนดขนาดสูงสุดของด้านที่ยาวที่สุด (800px)
+        const MAX_SIZE = 800;
         let width = img.width;
         let height = img.height;
         
-        // คำนวณอัตราส่วนเพื่อย่อขนาด
+        // ... (Canvas resizing and compression logic) ...
         if (width > height && width > MAX_SIZE) {
           height *= MAX_SIZE / width;
           width = MAX_SIZE;
         } else if (height > width && height > MAX_SIZE) {
           width *= MAX_SIZE / height;
           height = MAX_SIZE;
-        } else if (width > MAX_SIZE) { // กรณีเป็นสี่เหลี่ยมจตุรัส
+        } else if (width > MAX_SIZE) {
            width = height = MAX_SIZE;
         }
 
-        // 3. วาดรูปภาพลงใน Canvas เพื่อบีบอัด/ย่อขนาด
         const canvas = document.createElement('canvas');
         canvas.width = width;
         canvas.height = height;
@@ -1562,21 +1569,26 @@ function wireRosterPhotoPickers(){
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, width, height);
 
-        // 4. แปลงเป็น Base64 ที่บีบอัดแล้ว (คุณภาพ 80%)
         const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8);
 
         // 5. จัดเก็บ Base64 ขนาดเล็กที่ได้
         tempPlayerPhoto = compressedBase64; 
-        console.log('Base64 Length:', tempPlayerPhoto.length); 
         if($('#preview')) {
             $('#preview').innerHTML = `<img src="${tempPlayerPhoto}" class="w-full h-full object-cover">`; 
         }
+        
+        // ******* เพิ่ม: เปิดปุ่มกลับเมื่อเสร็จแล้ว ********
+        $('#btnAddPlayer')?.removeAttribute('disabled');
+        $('#btnAddPlayer')?.textContent = 'เพิ่มชื่อนักกีฬา';
+        // ****************************************************
       };
       img.src = e.target.result;
     };
     reader.readAsDataURL(file);
   });
-  // --- สิ้นสุดโค้ดที่แก้ไข ---
+  
+  // ... (ส่วนของ npBirth และ npAge)
+}
 
   $('#npBirth')?.addEventListener('input', ()=>{
     const iso=$('#npBirth')?.value;
