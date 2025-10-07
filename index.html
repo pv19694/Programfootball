@@ -1520,21 +1520,20 @@ function wireTeamLogoPickers(){
 /* ---------- Roster (upload + add + grid + actions) ---------- */
 let tempPlayerPhoto = ''; 
 
+/* ---------- Roster (upload + add + grid + actions) ---------- */
+let tempPlayerPhoto = ''; 
+
 function wireRosterPhotoPickers(){
-    // 1. อ้างถึง Element โดยใช้ $('#...') ตามโครงสร้างเดิมที่เคยทำงานได้
-    const btn = $('#btnPickPhoto');
-    const input = $('#npPhoto');
-    
-    // **ใช้ document.getElementById('preview') เพื่อให้มั่นใจว่าได้ Native Element สำหรับ innerHTML**
+    // ใช้ Native Selector (document.getElementById) สำหรับทุก Element
+    const btn = document.getElementById('btnPickPhoto');
+    const input = document.getElementById('npPhoto');
     const preview = document.getElementById('preview'); 
-    
-    const btnClear = $('#btnClearPhoto');
+    const btnClear = document.getElementById('btnClearPhoto');
 
     // ตรวจสอบความพร้อมของ Element
     if (!btn || !input || !preview) return;
 
-    // 2. ผูกปุ่มหลักให้เรียก Input File (ปุ่ม "เลือกรูป")
-    // Note: btn อาจเป็น jQuery/Custom Object ต้องใช้ addEventListener ของ Object นั้น
+    // 2. ผูกปุ่มหลัก (ตอนนี้ btn เป็น Native Element แล้ว)
     btn.addEventListener('click', ()=> input.click());
 
     // 3. ผูก Event เมื่อมีการเลือกไฟล์
@@ -1564,12 +1563,11 @@ function wireRosterPhotoPickers(){
         reader.onload = function(ev) {
             tempPlayerPhoto = ev.target.result; 
             
-            // **แสดงรูปภาพ (Preview) โดยใช้ Native Element**
+            // ใช้ Inline Style เพื่อบังคับให้รูปเต็มกรอบ (แก้ปัญหา CSS Conflict)
             const imgTag = `<img src="${tempPlayerPhoto}" 
                                alt="Player Photo" 
-                               class="h-full w-full object-cover rounded-xl" />`;
+                               style="width: 100%; height: 100%; object-fit: cover; border-radius: 0.75rem;" />`;
                                
-            // *** จุดที่ถูกต้อง: ใช้ innerHTML บน Native Element (preview) ***
             preview.innerHTML = imgTag; 
         };
         
@@ -1583,11 +1581,13 @@ function wireRosterPhotoPickers(){
         preview.innerHTML = '👤'; // คืนเป็น Icon Placeholder
     });
     
-    // 5. โค้ดสำหรับคำนวณอายุ (จากโค้ดเดิมของคุณ)
-    $('#npBirth')?.addEventListener('input', ()=>{
-        const iso=$('#npBirth')?.value;
-        const a=calcAgeFromISO(iso);
-        if($('#npAge') && (a||a===0)) $('#npAge').value=a;
+    // 5. โค้ดสำหรับคำนวณอายุ (ให้แปลง selector เป็น document.getElementById ถ้ามี)
+    const npBirth = document.getElementById('npBirth');
+    const npAge = document.getElementById('npAge');
+    npBirth?.addEventListener('input', ()=>{
+        const iso = npBirth.value;
+        const a = calcAgeFromISO(iso); // สมมติว่า calcAgeFromISO เป็นฟังก์ชันที่มีอยู่
+        if(npAge && (a || a === 0)) npAge.value = a;
     });
 }
     
