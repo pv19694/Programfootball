@@ -1515,7 +1515,6 @@ function wireTeamLogoPickers(){
 }
 
 /* ---------- Roster (upload + add + grid + actions) ---------- */
-// ต้องแน่ใจว่าตัวแปรนี้ถูกประกาศใน Global Scope หรือบริเวณที่ฟังก์ชัน wireAddPlayer เข้าถึงได้
 let tempPlayerPhoto = ''; 
 
 function wireRosterPhotoPickers(){
@@ -1532,33 +1531,30 @@ function wireRosterPhotoPickers(){
     $('#btnAddPlayer')?.textContent = 'เพิ่มชื่อนักกีฬา'; 
   });
 
-  // --- โค้ดที่แก้ไข: เพิ่มการย่อ/บีบอัดด้วย Canvas API พร้อมการควบคุมปุ่ม ---
+  // --- โค้ดแก้ไข: Canvas Resize + Async Control ---
   $('#npPhoto')?.addEventListener('change', e=>{
     const file = e.target.files?.[0]; 
     if(!file) return;
 
-    // 1. ตรวจสอบว่าเป็นไฟล์รูปภาพ
     if(!file.type.startsWith('image/')){ 
         alert('กรุณาเลือกรูปภาพ'); 
         e.target.value=''; 
         return; 
     }
     
-    // ******* เริ่มประมวลผล: ปิดปุ่มและแสดงสถานะกำลังโหลด ********
+    // 1. ปิดปุ่มและแสดงสถานะกำลังโหลด
     $('#btnAddPlayer')?.setAttribute('disabled', 'true');
     $('#btnAddPlayer')?.textContent = 'กำลังประมวลผลรูป...'; 
-    // ************************************************************
 
-    // 2. อ่านไฟล์เป็น Data URL
     const reader = new FileReader();
     reader.onload = (e) => {
       const img = new Image();
       img.onload = () => {
-        const MAX_SIZE = 800; // กำหนดขนาดสูงสุดของด้านที่ยาวที่สุด (800px)
+        const MAX_SIZE = 800; // กำหนดขนาดสูงสุด 800px
         let width = img.width;
         let height = img.height;
         
-        // คำนวณอัตราส่วนเพื่อย่อขนาด
+        // Logic สำหรับย่อขนาด
         if (width > height && width > MAX_SIZE) {
           height *= MAX_SIZE / width;
           width = MAX_SIZE;
@@ -1569,7 +1565,6 @@ function wireRosterPhotoPickers(){
            width = height = MAX_SIZE;
         }
 
-        // 3. วาดรูปภาพลงใน Canvas เพื่อบีบอัด/ย่อขนาด
         const canvas = document.createElement('canvas');
         canvas.width = width;
         canvas.height = height;
@@ -1577,21 +1572,17 @@ function wireRosterPhotoPickers(){
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, width, height);
 
-        // 4. แปลงเป็น Base64 ที่บีบอัดแล้ว (คุณภาพ 80%)
         const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8);
 
-        // 5. จัดเก็บ Base64 ขนาดเล็กที่ได้
+        // 2. จัดเก็บ Base64 และแสดงผล
         tempPlayerPhoto = compressedBase64; 
-        console.log('Base64 Length:', tempPlayerPhoto.length); // ใช้ตรวจสอบใน Console
-
         if($('#preview')) {
             $('#preview').innerHTML = `<img src="${tempPlayerPhoto}" class="w-full h-full object-cover">`; 
         }
         
-        // ******* ประมวลผลเสร็จสิ้น: เปิดปุ่มกลับเมื่อเสร็จแล้ว ********
+        // 3. เปิดปุ่มกลับเมื่อเสร็จแล้ว
         $('#btnAddPlayer')?.removeAttribute('disabled');
         $('#btnAddPlayer')?.textContent = 'เพิ่มชื่อนักกีฬา';
-        // ************************************************************
       };
       img.src = e.target.result;
     };
