@@ -1520,23 +1520,88 @@ function wireTeamLogoPickers(){
 /* ---------- Roster (upload + add + grid + actions) ---------- */
 let tempPlayerPhoto = '';
 function wireRosterPhotoPickers(){
-  $('#btnPickPhoto')?.addEventListener('click', ()=> $('#npPhoto')?.click());
-  $('#btnClearPhoto')?.addEventListener('click', ()=>{
-    tempPlayerPhoto=''; if($('#preview')) $('#preview').innerHTML='👤'; if($('#npPhoto')) $('#npPhoto').value='';
-  });
-  $('#npPhoto')?.addEventListener('change', e=>{
-    const f=e.target.files?.[0]; if(!f) return;
-    if(!f.type.startsWith('image/')){ alert('กรุณาเลือกรูปภาพ'); e.target.value=''; return; }
-    if(f.size>5*1024*1024){ alert('ไฟล์เกิน 5MB'); e.target.value=''; return; }
-    const r=new FileReader();
-    r.onload=ev=>{ tempPlayerPhoto=ev.target.result; if($('#preview')) $('#preview').innerHTML=`<img src="${tempPlayerPhoto}" class="w-full h-full object-cover">`; };
-    r.readAsDataURL(f);
-  });
-  $('#npBirth')?.addEventListener('input', ()=>{
-    const iso=$('#npBirth')?.value;
-    const a=calcAgeFromISO(iso);
-    if($('#npAge') && (a||a===0)) $('#npAge').value=a;
-  });
+  // ปุ่มเลือกรูป (เดิม)
+  $('#btnPickPhoto')?.addEventListener('click', ()=> $('#npPhoto')?.click());
+  
+  // ปุ่มลบรูป (แก้ไข: เพิ่มการเปิดปุ่มบันทึก)
+  $('#btnClearPhoto')?.addEventListener('click', ()=>{
+    tempPlayerPhoto=''; 
+    if($('#preview')) $('#preview').innerHTML='👤'; 
+    if($('#npPhoto')) $('#npPhoto').value='';
+    
+    // *** เพิ่ม: เปิดปุ่มบันทึกและเปลี่ยนข้อความกลับเป็นปกติ ***
+    $('#btnAddNewPlayer')?.removeAttribute('disabled'); 
+    $('#btnAddNewPlayer')?.textContent = '✅ เพิ่มนักกีฬา'; 
+  });
+  
+  // *** โค้ดใหม่: การจัดการไฟล์, การบีบอัดรูปภาพ, และสถานะ ***
+  $('#npPhoto')?.addEventListener('change', e=>{
+    const file = e.target.files?.[0]; 
+    if(!file) return;
+
+    if(!file.type.startsWith('image/')){ 
+        alert('กรุณาเลือกรูปภาพ'); 
+        e.target.value=''; 
+        return; 
+    }
+    
+    // **1. แสดงสถานะกำลังโหลด & ปิดปุ่มบันทึก (ตามที่คุณต้องการ)**
+    $('#btnAddNewPlayer')?.setAttribute('disabled', 'true');
+    $('#btnAddNewPlayer')?.textContent = '⏳ กำลังประมวลผลรูป...'; 
+    if($('#preview')) $('#preview').innerHTML = '🔄'; // แสดงสัญลักษณ์กำลังโหลด
+    
+    // (ส่วนนี้จะถูกแทนที่ด้วย Canvas API)
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        
+        // **2. Logic ย่อขนาดรูปภาพ (Canvas API)**
+        const MAX_SIZE = 800; // กำหนดขนาดสูงสุด 800px (ความกว้างหรือความสูงที่ยาวที่สุด)
+        let width = img.width;
+        let height = img.height;
+        
+        // คำนวณอัตราส่วนเพื่อย่อขนาด
+        if (width > height && width > MAX_SIZE) {
+          height *= MAX_SIZE / width;
+          width = MAX_SIZE;
+        } else if (height > width && height > MAX_SIZE) {
+          width *= MAX_SIZE / height;
+          height = MAX_SIZE;
+        } else if (width > MAX_SIZE) { // กรณีรูปสี่เหลี่ยมจัตุรัส
+           width = height = MAX_SIZE;
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // **3. แปลงเป็น Base64 ที่บีบอัด (JPEG คุณภาพ 80%)**
+        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8);
+
+        // **4. Update Preview และเปิดปุ่มบันทึก**
+        tempPlayerPhoto = compressedBase64; 
+        if($('#preview')) {
+            $('#preview').innerHTML = `<img src="${tempPlayerPhoto}" class="w-full h-full object-cover" alt="Player Photo">`; 
+        }
+        
+        $('#btnAddNewPlayer')?.removeAttribute('disabled');
+        $('#btnAddNewPlayer')?.textContent = '✅ เพิ่มนักกีฬา';
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+  // *** สิ้นสุดโค้ดที่ต้องเปลี่ยน ***
+
+  $('#npBirth')?.addEventListener('input', ()=>{
+    const iso=$('#npBirth')?.value;
+    const a=calcAgeFromISO(iso);
+    if($('#npAge') && (a||a===0)) $('#npAge').value=a;
+  });
 }
 
 // ตั้งสีหัวข้อรายชื่อทีมตามทีมที่เลือก
@@ -1740,12 +1805,17 @@ function wireAddPlayer(){
   btn.type = 'button';
   if (!btn.dataset.mode) btn.dataset.mode = 'add';
   if (btn.dataset.bound === '1') return;
-
   btn.addEventListener('click', (e)=>{
-    e.preventDefault();
+    e.preventDefault();
 
+    // *** เพิ่ม: ตรวจสอบสถานะปุ่ม disabled ก่อนบันทึก ***
+    if (btn.hasAttribute('disabled')) {
+        alert('กรุณารอให้รูปภาพประมวลผลเสร็จสิ้นก่อนบันทึก (⏳)');
+        return;
+    }
+    
     const formTeamId = $('#npTeam')?.value || $('#selRosterTeam')?.value || state.teams[0]?.id || '';
-    const name  = $('#npName')?.value?.trim() || '';
+    const name  = $('#npName')?.value?.trim() || '';
     const pos   = $('#npPos')?.value || '';
     const num   = $('#npNum')?.value?.trim() || '';
     const birth = $('#npBirth')?.value || '';
