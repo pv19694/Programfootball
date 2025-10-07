@@ -1567,6 +1567,7 @@ function wireRosterPhotoPickers(){
 
         // 5. จัดเก็บ Base64 ขนาดเล็กที่ได้
         tempPlayerPhoto = compressedBase64; 
+        console.log('Base64 Length:', tempPlayerPhoto.length); 
         if($('#preview')) {
             $('#preview').innerHTML = `<img src="${tempPlayerPhoto}" class="w-full h-full object-cover">`; 
         }
