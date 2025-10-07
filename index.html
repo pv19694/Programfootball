@@ -1517,40 +1517,60 @@ function wireTeamLogoPickers(){
   });
 }
 
-//* ---------- Roster (upload + add + grid + actions) ---------- */
-let tempPlayerPhoto = ''; // ตัวแปรสำหรับเก็บข้อมูลรูปภาพที่พร้อมจะส่งไปยัง backend
+/* ---------- Roster (upload + add + grid + actions) ---------- */
+let tempPlayerPhoto = ''; 
 
 function wireRosterPhotoPickers(){
-    // 1. อ้างถึง Element โดยใช้ document.getElementById() แทน $('#...')
-    const btn = document.getElementById('btnPickPhoto');
-    const input = document.getElementById('npPhoto');
-    // เปลี่ยนมาใช้ document.getElementById เพื่อให้มั่นใจว่าเป็น Native DOM Element
+    // 1. อ้างถึง Element โดยใช้ $('#...') ตามโครงสร้างเดิมที่เคยทำงานได้
+    const btn = $('#btnPickPhoto');
+    const input = $('#npPhoto');
+    
+    // **ใช้ document.getElementById('preview') เพื่อให้มั่นใจว่าได้ Native Element สำหรับ innerHTML**
     const preview = document.getElementById('preview'); 
-    const btnClear = document.getElementById('btnClearPhoto');
+    
+    const btnClear = $('#btnClearPhoto');
 
-    // ... (ส่วน if (!btn || !input || !preview) return; )
+    // ตรวจสอบความพร้อมของ Element
+    if (!btn || !input || !preview) return;
+
+    // 2. ผูกปุ่มหลักให้เรียก Input File (ปุ่ม "เลือกรูป")
+    // Note: btn อาจเป็น jQuery/Custom Object ต้องใช้ addEventListener ของ Object นั้น
+    btn.addEventListener('click', ()=> input.click());
 
     // 3. ผูก Event เมื่อมีการเลือกไฟล์
     input.addEventListener('change', (e)=>{
-        // ... (ส่วนตรวจสอบไฟล์ 3.1 เหมือนเดิม) ...
+        const f = e.target.files?.[0]; 
         
-        // 3.2 อ่านไฟล์และแสดงผล
+        // 3.1 ตรวจสอบไฟล์ (ขนาดและประเภท)
+        if (!f) return;
+        if (!f.type.startsWith('image/')){ 
+            alert('กรุณาเลือกไฟล์ที่เป็นรูปภาพเท่านั้น'); 
+            e.target.value = ''; 
+            preview.innerHTML = '👤';
+            tempPlayerPhoto = '';
+            return; 
+        }
+        if (f.size > 5 * 1024 * 1024){ 
+            alert('ไฟล์รูปภาพต้องมีขนาดไม่เกิน 5MB'); 
+            e.target.value = ''; 
+            preview.innerHTML = '👤';
+            tempPlayerPhoto = '';
+            return; 
+        }
+
+        // 3.2 อ่านไฟล์และแสดงผล (ส่วนที่ทำให้รูปภาพเด้งขึ้นมาโชว์)
         const reader = new FileReader();
         
         reader.onload = function(ev) {
             tempPlayerPhoto = ev.target.result; 
             
-            // **แสดงรูปภาพ (Preview):**
+            // **แสดงรูปภาพ (Preview) โดยใช้ Native Element**
             const imgTag = `<img src="${tempPlayerPhoto}" 
                                alt="Player Photo" 
                                class="h-full w-full object-cover rounded-xl" />`;
                                
-            // *** จุดที่แก้ไข ***
-            // ถ้า preview เป็น Native DOM Element อยู่แล้ว โค้ดนี้ก็ใช้งานได้
+            // *** จุดที่ถูกต้อง: ใช้ innerHTML บน Native Element (preview) ***
             preview.innerHTML = imgTag; 
-            
-            // หรือเพื่อความมั่นคงมากขึ้น: (ให้ลบ/คอมเมนต์ บรรทัดด้านบนก่อน แล้วใช้โค้ดนี้แทน)
-            // if (preview) { preview.innerHTML = imgTag; }
         };
         
         reader.readAsDataURL(f);
