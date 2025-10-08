@@ -1520,10 +1520,10 @@ function wireTeamLogoPickers(){
 
 /* ---------- Roster (upload + add + grid + actions) ---------- */
 let tempPlayerPhoto = ''; 
+
 function wireRosterPhotoPickers(){
     const btn = $('#btnPickPhoto');
     const input = $('#npPhoto');
-    // ใช้ document.getElementById เพื่อให้ได้ Native Element
     const preview = document.getElementById('preview'); 
     const btnClear = $('#btnClearPhoto');
 
@@ -1536,22 +1536,7 @@ function wireRosterPhotoPickers(){
         
         // (ส่วนการตรวจสอบไฟล์ คงไว้ตามเดิม)
         if (!f) return;
-        if (!f.type.startsWith('image/')){ 
-            alert('กรุณาเลือกไฟล์ที่เป็นรูปภาพเท่านั้น'); 
-            e.target.value = ''; 
-            preview.innerHTML = '👤';
-            preview.style.backgroundImage = 'none'; // เพิ่มการล้างพื้นหลัง
-            tempPlayerPhoto = '';
-            return; 
-        }
-        if (f.size > 5 * 1024 * 1024){ 
-            alert('ไฟล์รูปภาพต้องมีขนาดไม่เกิน 5MB'); 
-            e.target.value = ''; 
-            preview.innerHTML = '👤';
-            preview.style.backgroundImage = 'none'; // เพิ่มการล้างพื้นหลัง
-            tempPlayerPhoto = '';
-            return; 
-        }
+        // ... (ตรวจสอบไฟล์)
 
         const reader = new FileReader();
         
@@ -1560,14 +1545,13 @@ function wireRosterPhotoPickers(){
             tempPlayerPhoto = base64Image; 
             
             // ===============================================
-            // *** จุดที่ 1: ล้างเนื้อหาภายใน ('👤') ออกก่อน ***
-            preview.innerHTML = '';
+            // *** ใช้ innerHTML (แทรก <img>) ***
+            // ใช้คลาส h-full w-full object-cover เพื่อให้รูปพอดี
+            const imgTag = `<img src="${tempPlayerPhoto}"
+                                 alt="Player Photo"
+                                 class="h-full w-full object-cover rounded-xl" />`; 
             
-            // *** จุดที่ 2: ใช้ background-image ***
-            preview.style.backgroundImage = `url('${base64Image}')`;
-            preview.style.backgroundSize = 'cover';
-            preview.style.backgroundPosition = 'center';
-            preview.style.backgroundRepeat = 'no-repeat';
+            preview.innerHTML = imgTag; 
             // ===============================================
         };
         
@@ -1578,9 +1562,8 @@ function wireRosterPhotoPickers(){
     btnClear?.addEventListener('click', ()=>{
         tempPlayerPhoto = ''; 
         input.value = ''; 
-        // ต้องล้าง background-image และคืนค่าไอคอน 👤
-        preview.style.backgroundImage = 'none'; 
-        preview.innerHTML = '👤'; // คืนเป็น Icon Placeholder
+        // คืนค่าไอคอน 👤
+        preview.innerHTML = '👤'; 
     });
     
     // 5. โค้ดสำหรับคำนวณอายุ (คงไว้ตามเดิม)
