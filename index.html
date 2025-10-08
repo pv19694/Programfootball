@@ -1657,7 +1657,7 @@ function renderPlayerCard(p, team) {
         return `${d}/${m}/${y}`;
     };
 
-    // 💡 โค้ดที่ต้องเพิ่ม: สร้าง HTML สำหรับรูปภาพ
+    // 1. สร้างตัวแปรสำหรับ HTML ส่วนรูปภาพ (เหมือนเดิม)
     const playerPhotoHTML = p.photo && p.photo.startsWith('data:image') 
         ? `<img src="${p.photo}" 
                 alt="${p.name} Photo" 
@@ -1666,25 +1666,29 @@ function renderPlayerCard(p, team) {
              👤 
            </div>`;
 
-    // 💡 คุณต้องหาโค้ดส่วนที่สร้าง HTML Card หลัก และแทนที่ส่วนของรูปภาพ
-    // ตัวอย่าง (สมมติว่า Card ผู้เล่นของคุณมีโครงสร้างคล้ายด้านล่าง):
-    
-    // ... (ส่วนโค้ดอื่นๆ ของ renderPlayerCard ที่สร้าง HTML)
-    
+    // 2. สร้าง HTML Card ทั้งหมด (ต้องมีโครงสร้างของข้อมูลเดิมอยู่)
     const cardHtml = `
-        <div class="roster-player-card relative group rounded-xl shadow-md overflow-hidden bg-white">
+        <div class="roster-player-card relative group rounded-xl shadow-md overflow-hidden bg-white" 
+             data-player-id="${p.id}"
+             data-team-id="${team.id}">
             
             <div class="roster-player-photo w-full h-32 bg-slate-200 overflow-hidden">
                 ${playerPhotoHTML}
             </div>
             
             <div class="p-3">
-                <p class="font-bold text-lg">${p.name}</p>
+                <p class="text-xs font-medium text-slate-500">${team.name || 'ไม่มีทีม'}</p>
+                <p class="font-bold text-lg">${p.name || 'ไม่ระบุชื่อ'}</p>
+                
+                ${has(p.pos) ? `<p class="text-sm">ตำแหน่ง: ${p.pos}</p>` : ''}
+                ${has(p.num) ? `<p class="text-sm">เบอร์: ${p.num}</p>` : ''}
+                
                 </div>
-        </div>
+
+            </div>
     `;
 
-    return cardHtml; // หรือ string ที่เป็น HTML ทั้งหมดของ Card
+    return cardHtml;
 }
     
   // สีประจำทีม (ใช้กับ badge เบอร์เสื้อ)
