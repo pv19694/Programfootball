@@ -1522,20 +1522,16 @@ function wireTeamLogoPickers(){
 let tempPlayerPhoto = ''; 
 
 function wireRosterPhotoPickers(){
-    // 1. อ้างถึง Element โดยใช้ $('#...') ตามโครงสร้างเดิมที่เคยทำงานได้
+    // 1. อ้างถึง Element โดยใช้ $('#...') และ document.getElementById
     const btn = $('#btnPickPhoto');
     const input = $('#npPhoto');
-    
-    // **ใช้ document.getElementById('preview') เพื่อให้มั่นใจว่าได้ Native Element สำหรับ innerHTML**
-    const preview = document.getElementById('preview'); 
-    
+    const preview = document.getElementById('preview'); // Element แสดงรูปภาพ
     const btnClear = $('#btnClearPhoto');
 
     // ตรวจสอบความพร้อมของ Element
     if (!btn || !input || !preview) return;
 
-    // 2. ผูกปุ่มหลักให้เรียก Input File (ปุ่ม "เลือกรูป")
-    // Note: btn อาจเป็น jQuery/Custom Object ต้องใช้ addEventListener ของ Object นั้น
+    // 2. ผูกปุ่มหลักให้เรียก Input File
     btn.addEventListener('click', ()=> input.click());
 
     // 3. ผูก Event เมื่อมีการเลือกไฟล์
@@ -1559,19 +1555,24 @@ function wireRosterPhotoPickers(){
             return; 
         }
 
-        // 3.2 อ่านไฟล์และแสดงผล (ส่วนที่ทำให้รูปภาพเด้งขึ้นมาโชว์)
+        // 3.2 อ่านไฟล์และแสดงผล (ส่วนที่แก้ไข)
         const reader = new FileReader();
         
         reader.onload = function(ev) {
-            tempPlayerPhoto = ev.target.result; 
+            const base64Image = ev.target.result;
+            tempPlayerPhoto = base64Image; 
             
-            // **แสดงรูปภาพ (Preview) โดยใช้ Native Element**
-            const imgTag = `<img src="${tempPlayerPhoto}" 
-                               alt="Player Photo" 
-                               class="h-full w-full object-cover rounded-xl" />`;
-                               
-            // *** จุดที่ถูกต้อง: ใช้ innerHTML บน Native Element (preview) ***
-            preview.innerHTML = imgTag; 
+            // *** ส่วนที่แก้ไข: เปลี่ยนไปใช้ background-image แทน innerHTML ***
+            // 1. ล้างเนื้อหาภายใน (เช่น ไอคอน 👤)
+            preview.innerHTML = '';
+            
+            // 2. ตั้งค่ารูปภาพเป็น background-image
+            preview.style.backgroundImage = `url('${base64Image}')`;
+            preview.style.backgroundSize = 'cover';
+            preview.style.backgroundPosition = 'center';
+            preview.style.backgroundRepeat = 'no-repeat';
+            
+            // (คุณอาจต้องตรวจสอบว่า CSS เดิมของ #preview มีความสูงและความกว้างที่กำหนดไว้หรือไม่)
         };
         
         reader.readAsDataURL(f);
@@ -1581,10 +1582,13 @@ function wireRosterPhotoPickers(){
     btnClear?.addEventListener('click', ()=>{
         tempPlayerPhoto = ''; 
         input.value = ''; 
+        
+        // ** ต้องล้าง background-image เมื่อล้างรูปภาพด้วย **
+        preview.style.backgroundImage = 'none'; 
         preview.innerHTML = '👤'; // คืนเป็น Icon Placeholder
     });
     
-    // 5. โค้ดสำหรับคำนวณอายุ (จากโค้ดเดิมของคุณ)
+    // 5. โค้ดสำหรับคำนวณอายุ (คงไว้ตามเดิม)
     $('#npBirth')?.addEventListener('input', ()=>{
         const iso=$('#npBirth')?.value;
         const a=calcAgeFromISO(iso);
