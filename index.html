@@ -639,16 +639,25 @@ function renderMatchLog(){ renderMatchHistory(); }
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
     <!-- ซ้าย: รูปตัวอย่าง + ปุ่มเลือกรูป -->
     <div class="flex flex-col items-center gap-3">
-      <div id="preview" 
-     class="avatar w-28 h-28 flex items-center justify-center 
-            bg-slate-200 rounded-xl text-4xl text-slate-500 overflow-hidden shrink-0">
-    👤 </div>
-      <input id="npPhoto" type="file" accept="image/*" class="hidden">
-      <div class="flex gap-2">
-        <button id="btnPickPhoto"  type="button" class="btn btn-ghost">📷 เลือกรูป</button>
-        <button id="btnClearPhoto" type="button" class="btn btn-red">🧹 ลบรูป</button>
-      </div>
+    
+    <div class="relative w-28 h-28 shrink-0"> 
+        
+        <div id="preview" class="avatar w-28 h-28 flex items-center justify-center bg-slate-200 rounded-xl text-4xl text-slate-500 overflow-hidden">
+        👤 
+        </div>
+
+        <input id="npPhoto" 
+               type="file" 
+               accept="image/*" 
+               class="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer z-10"> 
+               
     </div>
+    
+    <div class="flex gap-2">
+      <button id="btnPickPhoto" type="button" class="btn btn-ghost">📷 เลือกรูป</button>
+      <button id="btnClearPhoto" type="button" class="btn btn-red">🧹 ลบรูป</button>
+    </div>
+</div>
 
     <!-- ขวา: ฟิลด์ฟอร์ม (ไม่ซ้อนกัน) -->
     <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1531,13 +1540,15 @@ function wireRosterPhotoPickers(){
     // ตรวจสอบ Element
     if (!btn || !input || !preview || !btnClear) return;
 
-    // 1. ผูกปุ่มหลักให้เรียก Input File
-    btn.addEventListener('click', ()=> input.click());
-
-    // 2. ผูก Event เมื่อมีการเลือกไฟล์
+    // *** ส่วนที่สำคัญที่สุดสำหรับ iOS/iPad: ลบ Event Listener ของปุ่มออก ***
+    // เราจะไม่ใช้การคลิกซ้อนคลิกอีกต่อไป
+    // (หมายเหตุ: บรรทัดนี้ถูกลบไปแล้วหากคุณทำตามขั้นตอนก่อนหน้า)
+    
+    // 2. ผูก Event เมื่อมีการเลือกไฟล์ (input.addEventListener('change', ...))
     input.addEventListener('change', (e)=>{
         const f = e.target.files?.[0]; 
         
+        // [โค้ดตรวจสอบไฟล์: คงไว้]
         if (!f || !f.type.startsWith('image/') || f.size > 5 * 1024 * 1024) {
             alert('กรุณาเลือกไฟล์ที่เป็นรูปภาพเท่านั้นและต้องมีขนาดไม่เกิน 5MB');
             e.target.value = ''; 
@@ -1554,19 +1565,14 @@ function wireRosterPhotoPickers(){
             const base64Image = ev.target.result;
             window.tempPlayerPhoto = base64Image; 
             
-            // ===============================================
-            // *** 1. ลบคลาสจัดวาง Flexbox ออก ***
-            // คลาสเหล่านี้จะขัดแย้งกับการแสดงผลของแท็ก <img> ที่แทรกเข้าไป
+            // 1. ลบคลาสจัดวาง Flexbox ออก (แก้ปัญหาการแสดงผลรูปภาพ)
             preview.classList.remove('flex', 'items-center', 'justify-center');
             
-            // *** 2. แทรกแท็ก <img> เข้าไป (วิธีที่ยืดหยุ่นที่สุด) ***
-            // ใช้ class 'h-full w-full object-cover' เพื่อให้รูปพอดีกรอบ
+            // 2. แทรกแท็ก <img> เข้าไป
             const imgTag = `<img src="${base64Image}"
                                  alt="Player Photo"
                                  class="h-full w-full object-cover rounded-xl" />`;
             preview.innerHTML = imgTag; 
-            
-            // ===============================================
         };
         
         reader.readAsDataURL(f);
@@ -1585,7 +1591,6 @@ function wireRosterPhotoPickers(){
     });
     
     // 4. โค้ดอื่นๆ (คำนวณอายุ)
-    // ใช้ $() ตามโครงสร้างโค้ดเดิมของคุณ
     $('#npBirth')?.addEventListener('input', ()=>{
         const iso = $('#npBirth')?.value;
         const a = calcAgeFromISO(iso);
