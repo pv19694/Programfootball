@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -1650,57 +1651,13 @@ function clearNewPlayerForm() {
 }
   
 function renderPlayerCard(p, team) {
-    const has = (v) => v !== undefined && v !== null && String(v).trim() !== '';
-    const fmtDate = (iso) => {
-        if (!has(iso)) return '';
-        const [y,m,d] = iso.split('-');
-        return `${d}/${m}/${y}`;
-    };
+  const has = (v) => v !== undefined && v !== null && String(v).trim() !== '';
+  const fmtDate = (iso) => {
+    if (!has(iso)) return '';
+    const [y,m,d] = iso.split('-');
+    return `${d}/${m}/${y}`;
+  };
 
-    // 1. สร้าง HTML สำหรับรูปภาพ (ใช้ในส่วน Avatar)
-    // ถ้ามี p.photo (Base64) ให้ใช้ <img src="..."> ถ้าไม่ ให้ใช้ไอคอน 👤
-    const playerPhotoHTML = p.photo && p.photo.startsWith('data:image') 
-        ? `<img src="${p.photo}" alt="${p.name} Photo">`
-        : `👤`; // ไอคอน Placeholder
-
-    // 2. สร้าง HTML Card ทั้งหมด
-    const cardHtml = `
-        <div class="player-card" 
-             data-player-id="${p.id}"
-             data-team-id="${team.id}"
-             style="--team-color: ${team.color || '#16a34a'};">
-
-            <div class="player-avatar grid place-items-center text-3xl">
-                ${playerPhotoHTML}
-            </div>
-            
-            <div class="flex-1 min-w-0">
-                <div class="text-xs text-gray-500">${team.name || 'ไม่ระบุทีม'}</div>
-                
-                <div class="flex items-center gap-2 mt-0.5">
-                    <span class="font-bold text-base">${p.name || 'ไม่ระบุชื่อ'}</span>
-                    ${has(p.num) 
-                        ? `<span class="num-badge-static">${p.num}</span>` 
-                        : ''}
-                </div>
-                
-                <div class="text-xs text-gray-500 mt-1 flex flex-wrap gap-x-2 gap-y-0.5">
-                    ${has(p.pos) ? `<span>ตำแหน่ง: ${p.pos}</span>` : ''}
-                    ${has(p.age) ? `<span>อายุ: ${p.age}</span>` : ''}
-                    ${has(p.phone) ? `<span>เบอร์โทร: ${p.phone}</span>` : ''}
-                </div>
-            </div>
-
-            <div class="flex flex-col gap-2 items-center shrink-0">
-                <div class="icon-dot gray" title="แก้ไข" data-act="edit">✏️</div>
-                <div class="icon-dot red" title="ลบ" data-act="del">✖️</div>
-            </div>
-        </div>
-    `;
-
-    return cardHtml;
-}
-    
   // สีประจำทีม (ใช้กับ badge เบอร์เสื้อ)
   const accent = team?.color || '#16a34a';
 
@@ -1857,63 +1814,51 @@ function wireAddPlayer(){
     const age   = (Number.isFinite(+ageIn) && +ageIn >= 0) ? +ageIn : (calcAgeFromISO?.(birth) ?? '');
     if(!name){ alert('กรุณากรอกชื่อนักกีฬา'); $('#npName')?.focus(); return; }
 
-    /* ---------- เพิ่มนักกีฬา ---------- */
-function wireAddPlayer(){
-    const btn = $('#btnAddNewPlayer');
-    // ... (ส่วนการตรวจสอบ Element และ Event Listener คงไว้)
+    // --- โหมดแก้ไข ---
+    if (btn.dataset.mode === 'edit' && editingPlayer){
+      const oldTeam = state.teams.find(t=>t.id===editingPlayer.teamId);
+      const newTeam = state.teams.find(t=>t.id===formTeamId);
+      if(!newTeam){ alert('กรุณาเลือกทีม'); return; }
 
-    btn.addEventListener('click', (e)=>{
-        e.preventDefault();
+      let p = oldTeam?.members?.find(m=>m.id===editingPlayer.playerId);
+      if(!p){ alert('ไม่พบผู้เล่นเดิม'); exitEditMode(); return; }
 
-        // ... (ส่วนการดึงค่าจากฟอร์มและตรวจสอบชื่อ คงไว้)
+      // ถ้าย้ายทีม
+      if (oldTeam && newTeam && oldTeam.id !== newTeam.id){
+        oldTeam.members = (oldTeam.members||[]).filter(m=>m.id!==p.id);
+        p = { ...p };
+        newTeam.members = newTeam.members || [];
+        newTeam.members.push(p);
+      }
 
-        // --- โหมดแก้ไข ---
-        if (btn.dataset.mode === 'edit' && editingPlayer){
-            // ... (โค้ดจัดการการย้ายทีม คงไว้)
+      p.name  = name;  p.pos   = pos;  p.num   = num;
+      p.birth = birth; p.age   = age;  p.phone = phone;
+      p.photo = (typeof tempPlayerPhoto==='string' ? tempPlayerPhoto : '') || p.photo || '';
 
-            p.name  = name;  p.pos   = pos;  p.num   = num;
-            p.birth = birth; p.age   = age;  p.phone = phone;
-            
-            // 💡 จุดที่ 1: แก้ไขการบันทึกรูปภาพในโหมดแก้ไข
-            // ใช้ค่าใหม่จาก tempPlayerPhoto (ถ้ามี), ถ้าไม่มี ให้ใช้ค่าเดิมของ p.photo
-            p.photo = (typeof window.tempPlayerPhoto === 'string' && window.tempPlayerPhoto.length > 0) 
-                      ? window.tempPlayerPhoto 
-                      : p.photo || '';
+      save();
+      renderRosterGrid?.(); renderDashboard?.();
+      closeAddPlayerForm?.(); clearNewPlayerForm?.(); exitEditMode();
+      return;
+    }
 
-            // *** เพิ่ม: ล้างตัวแปรชั่วคราวและรีเซ็ตฟอร์ม (สำคัญ!) ***
-            window.tempPlayerPhoto = '';
+    // --- โหมดเพิ่มใหม่ ---
+    const team = state.teams.find(t=>t.id===formTeamId);
+    if(!team){ alert('กรุณาเพิ่ม/เลือกทีมก่อน'); return; }
 
-            save();
-            renderRosterGrid?.(); renderDashboard?.();
-            closeAddPlayerForm?.(); clearNewPlayerForm?.(); exitEditMode();
-            return;
-        }
+    const p = {
+      id: nid('p'),
+      name, pos, num, birth, age, phone,
+      photo: (typeof tempPlayerPhoto==='string' ? tempPlayerPhoto : '') || ''
+    };
 
-        // --- โหมดเพิ่มใหม่ ---
-        const team = state.teams.find(t=>t.id===formTeamId);
-        if(!team){ alert('กรุณาเพิ่ม/เลือกทีมก่อน'); return; }
+    team.members = team.members || [];
+    team.members.push(p);
+    save();
 
-        const p = {
-            id: nid('p'),
-            name, pos, num, birth, age, phone,
-            
-            // 💡 จุดที่ 2: แก้ไขการบันทึกรูปภาพในโหมดเพิ่มใหม่
-            // ใช้ค่าจาก tempPlayerPhoto (ถ้ามี), ถ้าไม่มีให้เป็น String ว่าง
-            photo: (typeof window.tempPlayerPhoto === 'string' ? window.tempPlayerPhoto : '') || ''
-        };
-
-        team.members = team.members || [];
-        team.members.push(p);
-        
-        // *** เพิ่ม: ล้างตัวแปรชั่วคราวและรีเซ็ตฟอร์ม (สำคัญ!) ***
-        window.tempPlayerPhoto = '';
-        
-        save();
-
-        renderRosterGrid?.(); renderDashboard?.();
-        closeAddPlayerForm?.(); clearNewPlayerForm?.(); exitEditMode();
-        const selRoster = $('#selRosterTeam'); if(selRoster && !selRoster.value) selRoster.value = team.id;
-    });
+    renderRosterGrid?.(); renderDashboard?.();
+    closeAddPlayerForm?.(); clearNewPlayerForm?.(); exitEditMode();
+    const selRoster = $('#selRosterTeam'); if(selRoster && !selRoster.value) selRoster.value = team.id;
+  });
 
   // ยกเลิก/ล้าง = ออกจากโหมดแก้ไขด้วย
   $('#btnCancelNewPlayer')?.addEventListener('click', ()=> exitEditMode());
