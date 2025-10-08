@@ -1522,7 +1522,7 @@ function wireTeamLogoPickers(){
 let tempPlayerPhoto = ''; 
 
 function wireRosterPhotoPickers(){
-    // ใช้ document.getElementById โดยตรง
+    // ใช้ document.getElementById โดยตรงเพื่อความแม่นยำ
     const btn = document.getElementById('btnPickPhoto'); 
     const input = document.getElementById('npPhoto'); 
     const preview = document.getElementById('preview'); 
@@ -1531,21 +1531,19 @@ function wireRosterPhotoPickers(){
     // ตรวจสอบ Element
     if (!btn || !input || !preview || !btnClear) return;
 
-    // 1. ผูกปุ่มหลักให้เรียก Input File (ปุ่ม "เลือกรูป")
+    // 1. ผูกปุ่มหลักให้เรียก Input File
     btn.addEventListener('click', ()=> input.click());
 
     // 2. ผูก Event เมื่อมีการเลือกไฟล์
     input.addEventListener('change', (e)=>{
         const f = e.target.files?.[0]; 
         
-        // ตรวจสอบไฟล์ (ถ้าไม่ผ่าน ให้คืนค่า)
         if (!f || !f.type.startsWith('image/') || f.size > 5 * 1024 * 1024) {
             alert('กรุณาเลือกไฟล์ที่เป็นรูปภาพเท่านั้นและต้องมีขนาดไม่เกิน 5MB');
             e.target.value = ''; 
             
-            // คืนค่า flexbox และ placeholder (ถ้ามีปัญหา)
+            // คืนค่า Flexbox และ placeholder
             preview.classList.add('flex', 'items-center', 'justify-center'); 
-            preview.style.backgroundImage = 'none'; 
             preview.innerHTML = '👤';
             return;
         }
@@ -1557,17 +1555,16 @@ function wireRosterPhotoPickers(){
             window.tempPlayerPhoto = base64Image; 
             
             // ===============================================
-            // 1. ลบคลาสจัดวาง Flexbox ออก เพื่อให้ background-image แสดงผลเต็มพื้นที่
+            // *** 1. ลบคลาสจัดวาง Flexbox ออก ***
+            // คลาสเหล่านี้จะขัดแย้งกับการแสดงผลของแท็ก <img> ที่แทรกเข้าไป
             preview.classList.remove('flex', 'items-center', 'justify-center');
             
-            // 2. ล้างเนื้อหาภายใน ('👤')
-            preview.innerHTML = '';
-            
-            // 3. ใช้ background-image เพื่อแสดงรูปภาพ
-            preview.style.backgroundImage = `url('${base64Image}')`;
-            preview.style.backgroundSize = 'cover';
-            preview.style.backgroundPosition = 'center';
-            preview.style.backgroundRepeat = 'no-repeat';
+            // *** 2. แทรกแท็ก <img> เข้าไป (วิธีที่ยืดหยุ่นที่สุด) ***
+            // ใช้ class 'h-full w-full object-cover' เพื่อให้รูปพอดีกรอบ
+            const imgTag = `<img src="${base64Image}"
+                                 alt="Player Photo"
+                                 class="h-full w-full object-cover rounded-xl" />`;
+            preview.innerHTML = imgTag; 
             
             // ===============================================
         };
@@ -1575,7 +1572,7 @@ function wireRosterPhotoPickers(){
         reader.readAsDataURL(f);
     });
 
-    // 3. ฟังก์ชันล้างรูปภาพ (Clear) - ใช้แค่จุดเดียว
+    // 3. ฟังก์ชันล้างรูปภาพ (Clear)
     btnClear.addEventListener('click', ()=>{
         window.tempPlayerPhoto = ''; 
         input.value = ''; 
@@ -1583,16 +1580,16 @@ function wireRosterPhotoPickers(){
         // ** สำคัญ: คืนค่าคลาสจัดวาง Flexbox กลับมา **
         preview.classList.add('flex', 'items-center', 'justify-center');
         
-        // คืนค่า placeholder และล้าง background-image
-        preview.style.backgroundImage = 'none'; 
+        // คืนค่า placeholder 
         preview.innerHTML = '👤'; 
     });
     
     // 4. โค้ดอื่นๆ (คำนวณอายุ)
+    // ใช้ $() ตามโครงสร้างโค้ดเดิมของคุณ
     $('#npBirth')?.addEventListener('input', ()=>{
-        const iso=$('#npBirth')?.value;
-        const a=calcAgeFromISO(iso);
-        if($('#npAge') && (a||a===0)) $('#npAge').value=a;
+        const iso = $('#npBirth')?.value;
+        const a = calcAgeFromISO(iso);
+        if($('#npAge') && (a||a===0)) $('#npAge').value = a;
     });
 }
     
