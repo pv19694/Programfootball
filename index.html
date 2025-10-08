@@ -1657,35 +1657,44 @@ function renderPlayerCard(p, team) {
         return `${d}/${m}/${y}`;
     };
 
-    // 1. สร้างตัวแปรสำหรับ HTML ส่วนรูปภาพ (เหมือนเดิม)
+    // 1. โค้ดสำหรับแสดงรูปภาพ (รวม logic การใช้ Base64 และ Placeholder)
     const playerPhotoHTML = p.photo && p.photo.startsWith('data:image') 
-        ? `<img src="${p.photo}" 
-                alt="${p.name} Photo" 
-                class="w-full h-full object-cover">`
-        : `<div class="w-full h-full grid place-items-center text-4xl text-slate-500">
-             👤 
-           </div>`;
+        ? `<img src="${p.photo}" alt="${p.name} Photo">`
+        : `👤`;
 
-    // 2. สร้าง HTML Card ทั้งหมด (ต้องมีโครงสร้างของข้อมูลเดิมอยู่)
+    // 2. สร้าง HTML Card ทั้งหมด โดยใส่ข้อมูลกลับเข้าไปครบถ้วน
     const cardHtml = `
-        <div class="roster-player-card relative group rounded-xl shadow-md overflow-hidden bg-white" 
+        <div class="player-card" 
              data-player-id="${p.id}"
-             data-team-id="${team.id}">
-            
-            <div class="roster-player-photo w-full h-32 bg-slate-200 overflow-hidden">
+             data-team-id="${team.id}"
+             style="--team-color: ${team.color || '#16a34a'};">
+
+            <div class="player-avatar grid place-items-center text-3xl">
                 ${playerPhotoHTML}
             </div>
             
-            <div class="p-3">
-                <p class="text-xs font-medium text-slate-500">${team.name || 'ไม่มีทีม'}</p>
-                <p class="font-bold text-lg">${p.name || 'ไม่ระบุชื่อ'}</p>
+            <div class="flex-1 min-w-0">
+                <div class="text-xs text-gray-500">${team.name || 'ไม่ระบุทีม'}</div>
                 
-                ${has(p.pos) ? `<p class="text-sm">ตำแหน่ง: ${p.pos}</p>` : ''}
-                ${has(p.num) ? `<p class="text-sm">เบอร์: ${p.num}</p>` : ''}
-                
+                <div class="flex items-center gap-2 mt-0.5">
+                    <span class="font-bold text-base">${p.name || 'ไม่ระบุชื่อ'}</span>
+                    ${has(p.num) 
+                        ? `<span class="num-badge-static">${p.num}</span>` 
+                        : ''}
                 </div>
-
+                
+                <div class="text-xs text-gray-500 mt-1 flex flex-wrap gap-x-2 gap-y-0.5">
+                    ${has(p.pos) ? `<span>ตำแหน่ง: ${p.pos}</span>` : ''}
+                    ${has(p.age) ? `<span>อายุ: ${p.age}</span>` : ''}
+                    ${has(p.phone) ? `<span>เบอร์โทร: ${p.phone}</span>` : ''}
+                </div>
             </div>
+
+            <div class="flex flex-col gap-2 items-center shrink-0">
+                <div class="icon-dot gray" title="แก้ไข" data-act="edit">✏️</div>
+                <div class="icon-dot red" title="ลบ" data-act="del">✖️</div>
+            </div>
+        </div>
     `;
 
     return cardHtml;
