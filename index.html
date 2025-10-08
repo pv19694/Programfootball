@@ -1520,30 +1520,27 @@ function wireTeamLogoPickers(){
 
 /* ---------- Roster (upload + add + grid + actions) ---------- */
 let tempPlayerPhoto = ''; 
-
 function wireRosterPhotoPickers(){
-    // 1. อ้างถึง Element โดยใช้ $('#...') และ document.getElementById
     const btn = $('#btnPickPhoto');
     const input = $('#npPhoto');
-    const preview = document.getElementById('preview'); // Element แสดงรูปภาพ
+    // ใช้ document.getElementById เพื่อให้ได้ Native Element
+    const preview = document.getElementById('preview'); 
     const btnClear = $('#btnClearPhoto');
 
-    // ตรวจสอบความพร้อมของ Element
     if (!btn || !input || !preview) return;
 
-    // 2. ผูกปุ่มหลักให้เรียก Input File
     btn.addEventListener('click', ()=> input.click());
 
-    // 3. ผูก Event เมื่อมีการเลือกไฟล์
     input.addEventListener('change', (e)=>{
         const f = e.target.files?.[0]; 
         
-        // 3.1 ตรวจสอบไฟล์ (ขนาดและประเภท)
+        // (ส่วนการตรวจสอบไฟล์ คงไว้ตามเดิม)
         if (!f) return;
         if (!f.type.startsWith('image/')){ 
             alert('กรุณาเลือกไฟล์ที่เป็นรูปภาพเท่านั้น'); 
             e.target.value = ''; 
             preview.innerHTML = '👤';
+            preview.style.backgroundImage = 'none'; // เพิ่มการล้างพื้นหลัง
             tempPlayerPhoto = '';
             return; 
         }
@@ -1551,28 +1548,27 @@ function wireRosterPhotoPickers(){
             alert('ไฟล์รูปภาพต้องมีขนาดไม่เกิน 5MB'); 
             e.target.value = ''; 
             preview.innerHTML = '👤';
+            preview.style.backgroundImage = 'none'; // เพิ่มการล้างพื้นหลัง
             tempPlayerPhoto = '';
             return; 
         }
 
-        // 3.2 อ่านไฟล์และแสดงผล (ส่วนที่แก้ไข)
         const reader = new FileReader();
         
         reader.onload = function(ev) {
             const base64Image = ev.target.result;
             tempPlayerPhoto = base64Image; 
             
-            // *** ส่วนที่แก้ไข: เปลี่ยนไปใช้ background-image แทน innerHTML ***
-            // 1. ล้างเนื้อหาภายใน (เช่น ไอคอน 👤)
+            // ===============================================
+            // *** จุดที่ 1: ล้างเนื้อหาภายใน ('👤') ออกก่อน ***
             preview.innerHTML = '';
             
-            // 2. ตั้งค่ารูปภาพเป็น background-image
+            // *** จุดที่ 2: ใช้ background-image ***
             preview.style.backgroundImage = `url('${base64Image}')`;
             preview.style.backgroundSize = 'cover';
             preview.style.backgroundPosition = 'center';
             preview.style.backgroundRepeat = 'no-repeat';
-            
-            // (คุณอาจต้องตรวจสอบว่า CSS เดิมของ #preview มีความสูงและความกว้างที่กำหนดไว้หรือไม่)
+            // ===============================================
         };
         
         reader.readAsDataURL(f);
@@ -1582,8 +1578,7 @@ function wireRosterPhotoPickers(){
     btnClear?.addEventListener('click', ()=>{
         tempPlayerPhoto = ''; 
         input.value = ''; 
-        
-        // ** ต้องล้าง background-image เมื่อล้างรูปภาพด้วย **
+        // ต้องล้าง background-image และคืนค่าไอคอน 👤
         preview.style.backgroundImage = 'none'; 
         preview.innerHTML = '👤'; // คืนเป็น Icon Placeholder
     });
