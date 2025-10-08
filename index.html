@@ -1535,23 +1535,39 @@ function wireRosterPhotoPickers(){
         const f = e.target.files?.[0]; 
         
         // (ส่วนการตรวจสอบไฟล์ คงไว้ตามเดิม)
-        if (!f) return;
-        // ... (ตรวจสอบไฟล์)
+        if (!f || !f.type.startsWith('image/') || f.size > 5 * 1024 * 1024) {
+            // ... (โค้ดแจ้งเตือนและล้างค่า)
+            preview.innerHTML = '👤';
+            preview.style.backgroundImage = 'none'; 
+            preview.style.backgroundColor = ''; // ล้างสีพื้นหลังเฉพาะส่วนนี้
+            return;
+        }
 
         const reader = new FileReader();
         
         reader.onload = function(ev) {
             const base64Image = ev.target.result;
-            tempPlayerPhoto = base64Image; 
-            
+            window.tempPlayerPhoto = base64Image; // ใช้ window เพื่อให้ตัวแปรเข้าถึงได้ง่าย
+
             // ===============================================
-            // *** ใช้ innerHTML (แทรก <img>) ***
-            // ใช้คลาส h-full w-full object-cover เพื่อให้รูปพอดี
-            const imgTag = `<img src="${tempPlayerPhoto}"
-                                 alt="Player Photo"
-                                 class="h-full w-full object-cover rounded-xl" />`; 
+            // *** จุดแก้ไขที่ 1: ล้างเนื้อหาภายใน ('👤') ออกก่อนเสมอ ***
+            preview.innerHTML = '';
             
-            preview.innerHTML = imgTag; 
+            // *** จุดแก้ไขที่ 2: ตั้งค่า background-image และสไตล์ที่จำเป็น ***
+            preview.style.backgroundImage = `url('${base64Image}')`;
+            preview.style.backgroundSize = 'cover';
+            preview.style.backgroundPosition = 'center';
+            preview.style.backgroundRepeat = 'no-repeat';
+            
+            // ** สำคัญ: ให้ Element โปร่งใสเมื่อมีรูป ** // ลบสีพื้นหลังที่อาจบังรูปออกไป หรือเปลี่ยนเป็นสีที่สอดคล้องกัน
+            // เนื่องจาก div มี class 'bg-slate-200' อยู่แล้ว การล้างตรงนี้จึงไม่จำเป็นเท่าไหร่
+            // แต่ถ้าทำแบบนี้จะมั่นใจได้ว่า รูปภาพจะปรากฏ
+            preview.style.backgroundColor = 'transparent'; 
+            
+            // ** สำคัญ: ลบสไตล์ Flexbox ที่พยายามจัดไอคอนกลางจอออกไป **
+            // การลบ flex/grid properties ทำให้รูป background แสดงเต็มพื้นที่ได้ง่ายกว่า
+            preview.style.display = 'block'; // เปลี่ยนจาก grid/flex เป็น block/inline
+            
             // ===============================================
         };
         
@@ -1560,13 +1576,17 @@ function wireRosterPhotoPickers(){
 
     // 4. ฟังก์ชันล้างรูปภาพ (Clear)
     btnClear?.addEventListener('click', ()=>{
-        tempPlayerPhoto = ''; 
+        window.tempPlayerPhoto = ''; 
         input.value = ''; 
-        // คืนค่าไอคอน 👤
-        preview.innerHTML = '👤'; 
+        
+        // ** ต้องล้าง background-image และคืนค่าไอคอน 👤 และคืนค่า display style **
+        preview.style.backgroundImage = 'none'; 
+        preview.style.backgroundColor = 'var(--tw-bg-opacity, 1) #e2e8f0'; // คืนค่า bg-slate-200 (ใช้สีเดิม)
+        preview.style.display = 'flex'; // คืนค่า flexbox เพื่อจัดไอคอนตรงกลาง
+        preview.innerHTML = '👤'; // คืนเป็น Icon Placeholder
     });
     
-    // 5. โค้ดสำหรับคำนวณอายุ (คงไว้ตามเดิม)
+    // 5. (โค้ดอื่น ๆ คงเดิม)
     $('#npBirth')?.addEventListener('input', ()=>{
         const iso=$('#npBirth')?.value;
         const a=calcAgeFromISO(iso);
