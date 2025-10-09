@@ -1678,8 +1678,8 @@ function renderPlayerCard(p, team) {
 
   // รูป
   const photo = has(p.photo)
-    ? `<img src="${esc(p.photo)}" alt="${esc(p.name||'นักกีฬา')}" class="player-avatar object-cover">`
-    : `<div class="player-avatar grid place-items-center text-slate-400">👤</div>`;
+    ? `<img src="${esc(p.photo)}" alt="${esc(p.name||'นักกีฬา')}" class="w-full h-full object-cover">`
+    : `<div class="w-full h-full grid place-items-center text-slate-400">👤</div>`;
 
   const teamLogo = team?.logo
   ? `<div class="mt-2 flex justify-end">
