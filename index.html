@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -640,25 +639,16 @@ function renderMatchLog(){ renderMatchHistory(); }
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
     <!-- ซ้าย: รูปตัวอย่าง + ปุ่มเลือกรูป -->
     <div class="flex flex-col items-center gap-3">
-    
-    <div class="relative w-28 h-28 shrink-0"> 
-        
-        <div id="preview" class="avatar w-28 h-28 flex items-center justify-center bg-slate-200 rounded-xl text-4xl text-slate-500 overflow-hidden">
-        👤 
-        </div>
-
-        <input id="npPhoto" 
-               type="file" 
-               accept="image/*" 
-               class="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer z-10"> 
-               
+      <div id="preview" 
+     class="avatar w-28 h-28 flex items-center justify-center 
+            bg-slate-200 rounded-xl text-4xl text-slate-500 overflow-hidden shrink-0">
+    👤 </div>
+      <input id="npPhoto" type="file" accept="image/*" class="hidden">
+      <div class="flex gap-2">
+        <button id="btnPickPhoto"  type="button" class="btn btn-ghost">📷 เลือกรูป</button>
+        <button id="btnClearPhoto" type="button" class="btn btn-red">🧹 ลบรูป</button>
+      </div>
     </div>
-    
-    <div class="flex gap-2">
-      <button id="btnPickPhoto" type="button" class="btn btn-ghost">📷 เลือกรูป</button>
-      <button id="btnClearPhoto" type="button" class="btn btn-red">🧹 ลบรูป</button>
-    </div>
-</div>
 
     <!-- ขวา: ฟิลด์ฟอร์ม (ไม่ซ้อนกัน) -->
     <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1532,70 +1522,73 @@ function wireTeamLogoPickers(){
 let tempPlayerPhoto = ''; 
 
 function wireRosterPhotoPickers(){
-    // ใช้ document.getElementById โดยตรงเพื่อความแม่นยำ
-    const btn = document.getElementById('btnPickPhoto'); 
-    const input = document.getElementById('npPhoto'); 
+    // 1. อ้างถึง Element โดยใช้ $('#...') ตามโครงสร้างเดิมที่เคยทำงานได้
+    const btn = $('#btnPickPhoto');
+    const input = $('#npPhoto');
+    
+    // **ใช้ document.getElementById('preview') เพื่อให้มั่นใจว่าได้ Native Element สำหรับ innerHTML**
     const preview = document.getElementById('preview'); 
-    const btnClear = document.getElementById('btnClearPhoto');
     
-    // ตรวจสอบ Element
-    if (!btn || !input || !preview || !btnClear) return;
+    const btnClear = $('#btnClearPhoto');
 
-    // *** ส่วนที่สำคัญที่สุดสำหรับ iOS/iPad: ลบ Event Listener ของปุ่มออก ***
-    // เราจะไม่ใช้การคลิกซ้อนคลิกอีกต่อไป
-    // (หมายเหตุ: บรรทัดนี้ถูกลบไปแล้วหากคุณทำตามขั้นตอนก่อนหน้า)
-    
-    // 2. ผูก Event เมื่อมีการเลือกไฟล์ (input.addEventListener('change', ...))
+    // ตรวจสอบความพร้อมของ Element
+    if (!btn || !input || !preview) return;
+
+    // 2. ผูกปุ่มหลักให้เรียก Input File (ปุ่ม "เลือกรูป")
+    // Note: btn อาจเป็น jQuery/Custom Object ต้องใช้ addEventListener ของ Object นั้น
+    btn.addEventListener('click', ()=> input.click());
+
+    // 3. ผูก Event เมื่อมีการเลือกไฟล์
     input.addEventListener('change', (e)=>{
         const f = e.target.files?.[0]; 
         
-        // [โค้ดตรวจสอบไฟล์: คงไว้]
-        if (!f || !f.type.startsWith('image/') || f.size > 5 * 1024 * 1024) {
-            alert('กรุณาเลือกไฟล์ที่เป็นรูปภาพเท่านั้นและต้องมีขนาดไม่เกิน 5MB');
+        // 3.1 ตรวจสอบไฟล์ (ขนาดและประเภท)
+        if (!f) return;
+        if (!f.type.startsWith('image/')){ 
+            alert('กรุณาเลือกไฟล์ที่เป็นรูปภาพเท่านั้น'); 
             e.target.value = ''; 
-            
-            // คืนค่า Flexbox และ placeholder
-            preview.classList.add('flex', 'items-center', 'justify-center'); 
             preview.innerHTML = '👤';
-            return;
+            tempPlayerPhoto = '';
+            return; 
+        }
+        if (f.size > 5 * 1024 * 1024){ 
+            alert('ไฟล์รูปภาพต้องมีขนาดไม่เกิน 5MB'); 
+            e.target.value = ''; 
+            preview.innerHTML = '👤';
+            tempPlayerPhoto = '';
+            return; 
         }
 
+        // 3.2 อ่านไฟล์และแสดงผล (ส่วนที่ทำให้รูปภาพเด้งขึ้นมาโชว์)
         const reader = new FileReader();
         
         reader.onload = function(ev) {
-            const base64Image = ev.target.result;
-            window.tempPlayerPhoto = base64Image; 
+            tempPlayerPhoto = ev.target.result; 
             
-            // 1. ลบคลาสจัดวาง Flexbox ออก (แก้ปัญหาการแสดงผลรูปภาพ)
-            preview.classList.remove('flex', 'items-center', 'justify-center');
-            
-            // 2. แทรกแท็ก <img> เข้าไป
-            const imgTag = `<img src="${base64Image}"
-                                 alt="Player Photo"
-                                 class="h-full w-full object-cover rounded-xl" />`;
+            // **แสดงรูปภาพ (Preview) โดยใช้ Native Element**
+            const imgTag = `<img src="${tempPlayerPhoto}" 
+                               alt="Player Photo" 
+                               class="h-full w-full object-cover rounded-xl" />`;
+                               
+            // *** จุดที่ถูกต้อง: ใช้ innerHTML บน Native Element (preview) ***
             preview.innerHTML = imgTag; 
         };
         
         reader.readAsDataURL(f);
     });
 
-    // 3. ฟังก์ชันล้างรูปภาพ (Clear)
-    btnClear.addEventListener('click', ()=>{
-        window.tempPlayerPhoto = ''; 
+    // 4. ฟังก์ชันล้างรูปภาพ (Clear)
+    btnClear?.addEventListener('click', ()=>{
+        tempPlayerPhoto = ''; 
         input.value = ''; 
-        
-        // ** สำคัญ: คืนค่าคลาสจัดวาง Flexbox กลับมา **
-        preview.classList.add('flex', 'items-center', 'justify-center');
-        
-        // คืนค่า placeholder 
-        preview.innerHTML = '👤'; 
+        preview.innerHTML = '👤'; // คืนเป็น Icon Placeholder
     });
     
-    // 4. โค้ดอื่นๆ (คำนวณอายุ)
+    // 5. โค้ดสำหรับคำนวณอายุ (จากโค้ดเดิมของคุณ)
     $('#npBirth')?.addEventListener('input', ()=>{
-        const iso = $('#npBirth')?.value;
-        const a = calcAgeFromISO(iso);
-        if($('#npAge') && (a||a===0)) $('#npAge').value = a;
+        const iso=$('#npBirth')?.value;
+        const a=calcAgeFromISO(iso);
+        if($('#npAge') && (a||a===0)) $('#npAge').value=a;
     });
 }
     
@@ -1678,8 +1671,8 @@ function renderPlayerCard(p, team) {
 
   // รูป
   const photo = has(p.photo)
-    ? `<img src="${esc(p.photo)}" alt="${esc(p.name||'นักกีฬา')}" class="w-full h-full object-cover">`
-    : `<div class="w-full h-full grid place-items-center text-slate-400">👤</div>`;
+    ? `<img src="${esc(p.photo)}" alt="${esc(p.name||'นักกีฬา')}" class="player-avatar object-cover">`
+    : `<div class="player-avatar grid place-items-center text-slate-400">👤</div>`;
 
   const teamLogo = team?.logo
   ? `<div class="mt-2 flex justify-end">
@@ -1833,12 +1826,7 @@ function wireAddPlayer(){
 
       p.name  = name;  p.pos   = pos;  p.num   = num;
       p.birth = birth; p.age   = age;  p.phone = phone;
-      p.photo = (typeof window.tempPlayerPhoto === 'string' && window.tempPlayerPhoto.length > 0) 
-          ? window.tempPlayerPhoto 
-          : p.photo || ''; // ถ้าไม่มีรูปใหม่ (window.tempPlayerPhoto ว่าง) ให้ใช้ p.photo เดิม
-
-// *** เพิ่ม: ล้างค่าตัวแปรชั่วคราวทันทีหลังบันทึกเสร็จ
-window.tempPlayerPhoto = ''; 
+      p.photo = (typeof tempPlayerPhoto==='string' ? tempPlayerPhoto : '') || p.photo || '';
 
       save();
       renderRosterGrid?.(); renderDashboard?.();
