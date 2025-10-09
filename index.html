@@ -1,4 +1,6 @@
 
+
+
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -639,10 +641,7 @@ function renderMatchLog(){ renderMatchHistory(); }
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
     <!-- ซ้าย: รูปตัวอย่าง + ปุ่มเลือกรูป -->
     <div class="flex flex-col items-center gap-3">
-      <div id="preview" 
-     class="avatar w-28 h-28 flex items-center justify-center 
-            bg-slate-200 rounded-xl text-4xl text-slate-500 overflow-hidden shrink-0">
-    👤 </div>
+      <div id="preview" class="avatar">👤</div>
       <input id="npPhoto" type="file" accept="image/*" class="hidden">
       <div class="flex gap-2">
         <button id="btnPickPhoto"  type="button" class="btn btn-ghost">📷 เลือกรูป</button>
@@ -1519,79 +1518,27 @@ function wireTeamLogoPickers(){
 }
 
 /* ---------- Roster (upload + add + grid + actions) ---------- */
-let tempPlayerPhoto = ''; 
-
+let tempPlayerPhoto = '';
 function wireRosterPhotoPickers(){
-    // 1. อ้างถึง Element โดยใช้ $('#...') ตามโครงสร้างเดิมที่เคยทำงานได้
-    const btn = $('#btnPickPhoto');
-    const input = $('#npPhoto');
-    
-    // **ใช้ document.getElementById('preview') เพื่อให้มั่นใจว่าได้ Native Element สำหรับ innerHTML**
-    const preview = document.getElementById('preview'); 
-    
-    const btnClear = $('#btnClearPhoto');
-
-    // ตรวจสอบความพร้อมของ Element
-    if (!btn || !input || !preview) return;
-
-    // 2. ผูกปุ่มหลักให้เรียก Input File (ปุ่ม "เลือกรูป")
-    // Note: btn อาจเป็น jQuery/Custom Object ต้องใช้ addEventListener ของ Object นั้น
-    btn.addEventListener('click', ()=> input.click());
-
-    // 3. ผูก Event เมื่อมีการเลือกไฟล์
-    input.addEventListener('change', (e)=>{
-        const f = e.target.files?.[0]; 
-        
-        // 3.1 ตรวจสอบไฟล์ (ขนาดและประเภท)
-        if (!f) return;
-        if (!f.type.startsWith('image/')){ 
-            alert('กรุณาเลือกไฟล์ที่เป็นรูปภาพเท่านั้น'); 
-            e.target.value = ''; 
-            preview.innerHTML = '👤';
-            tempPlayerPhoto = '';
-            return; 
-        }
-        if (f.size > 5 * 1024 * 1024){ 
-            alert('ไฟล์รูปภาพต้องมีขนาดไม่เกิน 5MB'); 
-            e.target.value = ''; 
-            preview.innerHTML = '👤';
-            tempPlayerPhoto = '';
-            return; 
-        }
-
-        // 3.2 อ่านไฟล์และแสดงผล (ส่วนที่ทำให้รูปภาพเด้งขึ้นมาโชว์)
-        const reader = new FileReader();
-        
-        reader.onload = function(ev) {
-            tempPlayerPhoto = ev.target.result; 
-            
-            // **แสดงรูปภาพ (Preview) โดยใช้ Native Element**
-            const imgTag = `<img src="${tempPlayerPhoto}" 
-                               alt="Player Photo" 
-                               class="h-full w-full object-cover rounded-xl" />`;
-                               
-            // *** จุดที่ถูกต้อง: ใช้ innerHTML บน Native Element (preview) ***
-            preview.innerHTML = imgTag; 
-        };
-        
-        reader.readAsDataURL(f);
-    });
-
-    // 4. ฟังก์ชันล้างรูปภาพ (Clear)
-    btnClear?.addEventListener('click', ()=>{
-        tempPlayerPhoto = ''; 
-        input.value = ''; 
-        preview.innerHTML = '👤'; // คืนเป็น Icon Placeholder
-    });
-    
-    // 5. โค้ดสำหรับคำนวณอายุ (จากโค้ดเดิมของคุณ)
-    $('#npBirth')?.addEventListener('input', ()=>{
-        const iso=$('#npBirth')?.value;
-        const a=calcAgeFromISO(iso);
-        if($('#npAge') && (a||a===0)) $('#npAge').value=a;
-    });
+  $('#btnPickPhoto')?.addEventListener('click', ()=> $('#npPhoto')?.click());
+  $('#btnClearPhoto')?.addEventListener('click', ()=>{
+    tempPlayerPhoto=''; if($('#preview')) $('#preview').innerHTML='👤'; if($('#npPhoto')) $('#npPhoto').value='';
+  });
+  $('#npPhoto')?.addEventListener('change', e=>{
+    const f=e.target.files?.[0]; if(!f) return;
+    if(!f.type.startsWith('image/')){ alert('กรุณาเลือกรูปภาพ'); e.target.value=''; return; }
+    if(f.size>5*1024*1024){ alert('ไฟล์เกิน 5MB'); e.target.value=''; return; }
+    const r=new FileReader();
+    r.onload=ev=>{ tempPlayerPhoto=ev.target.result; if($('#preview')) $('#preview').innerHTML=`<img src="${tempPlayerPhoto}" class="w-full h-full object-cover">`; };
+    r.readAsDataURL(f);
+  });
+  $('#npBirth')?.addEventListener('input', ()=>{
+    const iso=$('#npBirth')?.value;
+    const a=calcAgeFromISO(iso);
+    if($('#npAge') && (a||a===0)) $('#npAge').value=a;
+  });
 }
-    
+
 // ตั้งสีหัวข้อรายชื่อทีมตามทีมที่เลือก
 function applyRosterColor(team){
   const hex = team?.color || $('#teamColor')?.value || '#16a34a';
