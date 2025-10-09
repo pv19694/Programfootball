@@ -1833,7 +1833,12 @@ function wireAddPlayer(){
 
       p.name  = name;  p.pos   = pos;  p.num   = num;
       p.birth = birth; p.age   = age;  p.phone = phone;
-      p.photo = (typeof tempPlayerPhoto==='string' ? tempPlayerPhoto : '') || p.photo || '';
+      p.photo = (typeof window.tempPlayerPhoto === 'string' && window.tempPlayerPhoto.length > 0) 
+          ? window.tempPlayerPhoto 
+          : p.photo || ''; // ถ้าไม่มีรูปใหม่ (window.tempPlayerPhoto ว่าง) ให้ใช้ p.photo เดิม
+
+// *** เพิ่ม: ล้างค่าตัวแปรชั่วคราวทันทีหลังบันทึกเสร็จ
+window.tempPlayerPhoto = ''; 
 
       save();
       renderRosterGrid?.(); renderDashboard?.();
