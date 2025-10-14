@@ -5496,75 +5496,139 @@ function clearMatchForm() {
 
 <script>
 // ===============================================
-// NEW CODE BLOCK: Leaderboard Persistence Wrapper
-// ใช้เพื่อจัดการการโหลดและบันทึกข้อมูลตารางคะแนนหลัก (Match History)
-// โดยไม่ต้องแก้ไขฟังก์ชันเก่า (recordMatch)
+// NEW CODE BLOCK: UNIVERSAL AUTO-SAVE PERSISTENCE
+// จัดการการบันทึก/โหลดข้อมูลหลักทุกส่วนของแอปพลิเคชัน
 // ===============================================
 
-const LEADERBOARD_DATA_KEY = 'jakhongMatchHistory'; 
+// -----------------------------------------------
+// 1. กำหนด Global Variables และ Keys
+// -----------------------------------------------
+
+// Map ข้อมูล Global Variable ที่ต้องการบันทึก: [Key สำหรับ Local Storage, ชื่อตัวแปร Global]
+const DATA_STRUCTURES = {
+    // ข้อมูลตารางคะแนน (Match History)
+    'matchHistory': { key: 'APP_MATCH_HISTORY', variableName: 'matchHistory' }, 
+    // ข้อมูลทีม (Team List)
+    'teams': { key: 'APP_TEAM_LIST', variableName: 'teams' }, 
+    // ข้อมูลรายชื่อนักกีฬา (สมมติว่าตัวแปรชื่อ 'players')
+    'players': { key: 'APP_PLAYER_LIST', variableName: 'players' }, 
+    // ข้อมูลตารางการแข่งขัน/แมตช์ต่อไป (สมมติว่าตัวแปรชื่อ 'schedule')
+    'schedule': { key: 'APP_SCHEDULE', variableName: 'schedule' }
+    // เพิ่มข้อมูลอื่นๆ ได้ที่นี่ เช่น 'settings', 'matchSummaries'
+};
+
+// Map ฟังก์ชันที่จะถูกห่อหุ้ม: [ชื่อฟังก์ชันเดิม, Array ของชื่อโครงสร้างข้อมูลที่ฟังก์ชันนั้นแก้ไข]
+const FUNCTIONS_TO_WRAP = {
+    // บันทึกผล, อัปเดตตารางคะแนน: แก้ไข matchHistory และ teams
+    'updateLeaderboard': ['matchHistory', 'teams'], 
+    // จัดการทีม: แก้ไข teams
+    'addTeam': ['teams'], 
+    // จัดการรายชื่อนักกีฬา: แก้ไข players
+    'addPlayer': ['players'], 
+    // จัดการแมตช์ต่อไป: แก้ไข schedule
+    'updateSchedule': ['schedule']
+    // *** คุณต้องเปลี่ยนชื่อฟังก์ชันข้างบน (เช่น 'addTeam') ให้เป็นชื่อฟังก์ชันจริงที่คุณใช้ ***
+};
+
+
+// -----------------------------------------------
+// 2. Data Saving/Loading Helpers
+// -----------------------------------------------
 
 /**
- * 1. ฟังก์ชันสำหรับบันทึกข้อมูลการแข่งขันทั้งหมด
- * @param {Array} history - ตัวแปร matchHistory ที่เก็บข้อมูลการแข่งขัน
+ * บันทึกข้อมูล Global Variable ที่กำหนดลงใน Local Storage
+ * @param {string} structName - ชื่อโครงสร้างข้อมูลจาก DATA_STRUCTURES (เช่น 'teams')
  */
-function saveLeaderboardData(history) {
-    if (history && history.length > 0) {
-        localStorage.setItem(LEADERBOARD_DATA_KEY, JSON.stringify(history));
-    } else {
-        localStorage.removeItem(LEADERBOARD_DATA_KEY);
+function saveData(structName) {
+    const struct = DATA_STRUCTURES[structName];
+    if (!struct) return;
+
+    const globalVar = window[struct.variableName]; // เข้าถึงตัวแปร Global
+    
+    if (globalVar && Array.isArray(globalVar) && globalVar.length > 0) {
+        localStorage.setItem(struct.key, JSON.stringify(globalVar));
+    } else if (globalVar !== undefined) {
+        // ลบข้อมูลถ้าตัวแปรเป็น Array ว่าง
+        localStorage.removeItem(struct.key);
     }
-    console.log('Leaderboard data persistence executed (Save).');
 }
 
 /**
- * 2. ฟังก์ชันสำหรับโหลดข้อมูลการแข่งขันทั้งหมด
+ * โหลดข้อมูลจาก Local Storage กลับเข้า Global Variable
+ * @param {string} structName - ชื่อโครงสร้างข้อมูลจาก DATA_STRUCTURES
  */
-function loadLeaderboardData() {
-    const storedHistory = localStorage.getItem(LEADERBOARD_DATA_KEY);
-    if (storedHistory && typeof matchHistory !== 'undefined') {
+function loadData(structName) {
+    const struct = DATA_STRUCTURES[structName];
+    if (!struct) return;
+
+    const storedData = localStorage.getItem(struct.key);
+    if (storedData) {
         try {
-            const loadedHistory = JSON.parse(storedHistory);
-            // โหลดข้อมูลกลับเข้าตัวแปรหลัก (Global Variable)
-            matchHistory = loadedHistory; 
-            console.log('Leaderboard data persistence executed (Load).');
+            const loadedData = JSON.parse(storedData);
+            // ตรวจสอบว่าตัวแปร Global มีอยู่จริงก่อนโหลดทับ
+            if (window[struct.variableName] !== undefined) {
+                window[struct.variableName] = loadedData; 
+                console.log(`Data loaded for: ${structName}`);
+            }
         } catch (e) {
-            console.error('Error loading or parsing leaderboard data:', e);
-            localStorage.removeItem(LEADERBOARD_DATA_KEY);
+            console.error(`Error parsing stored data for ${structName}, clearing data.`, e);
+            localStorage.removeItem(struct.key);
         }
     }
 }
 
 // -----------------------------------------------
-// 3. การห่อหุ้ม (Wrap) ฟังก์ชัน updateLeaderboard เพื่อเพิ่มการบันทึก
+// 3. Function Wrapping Logic
+// -----------------------------------------------
+
+/**
+ * ห่อหุ้มฟังก์ชันเดิมเพื่อเพิ่มขั้นตอนการบันทึกข้อมูลอัตโนมัติ
+ * @param {string} funcName - ชื่อฟังก์ชันที่จะห่อหุ้ม
+ * @param {Array<string>} saveKeys - Array ของชื่อโครงสร้างข้อมูลที่ต้องบันทึกหลังจากฟังก์ชันทำงาน
+ */
+function wrapFunction(funcName, saveKeys) {
+    // ตรวจสอบว่าฟังก์ชันเดิมมีอยู่จริงหรือไม่
+    if (typeof window[funcName] === 'function') {
+        const originalFunction = window[funcName];
+        
+        // ห่อหุ้มฟังก์ชันเดิมด้วยฟังก์ชันใหม่
+        window[funcName] = function() {
+            // 1. เรียกใช้งานฟังก์ชันเดิมก่อน
+            const result = originalFunction.apply(this, arguments); 
+            
+            // 2. บันทึกข้อมูลที่เกี่ยวข้องอัตโนมัติ
+            saveKeys.forEach(saveData);
+            
+            console.log(`Function '${funcName}' executed and auto-saved data.`);
+            return result;
+        };
+    } else {
+        console.warn(`Original function '${funcName}' not found. Cannot set auto-save.`);
+    }
+}
+
+
+// -----------------------------------------------
+// 4. Initialization (เริ่มต้นการทำงาน)
 // -----------------------------------------------
 
 document.addEventListener('DOMContentLoaded', () => {
     
-    // A. โหลดข้อมูลที่บันทึกไว้ทันทีเมื่อหน้าเว็บโหลดเสร็จ
-    loadLeaderboardData(); 
+    // 4.1 โหลดข้อมูลทั้งหมดที่ถูกบันทึกไว้กลับเข้าสู่ Global Variable
+    Object.keys(DATA_STRUCTURES).forEach(loadData);
     
-    // B. เรียกฟังก์ชัน updateLeaderboard เดิม (เพื่อให้ตารางแสดงผลทันทีหลังโหลด)
-    // ตรวจสอบก่อนว่าฟังก์ชันนี้มีอยู่จริงหรือไม่
+    // 4.2 ห่อหุ้มฟังก์ชันทั้งหมดที่ต้องมีการบันทึกข้อมูล
+    Object.entries(FUNCTIONS_TO_WRAP).forEach(([funcName, saveKeys]) => {
+        wrapFunction(funcName, saveKeys);
+    });
+
+    // 4.3 (สำคัญ) เรียก updateLeaderboard() เพื่อแสดงผลข้อมูลทันทีหลังโหลด
+    // เนื่องจาก updateLeaderboard ถูกห่อหุ้มแล้ว การเรียกครั้งนี้จะไม่บันทึกซ้ำ
     if (typeof updateLeaderboard === 'function') {
+        // ต้องเรียก originalUpdateLeaderboard เพื่อเลี่ยงการบันทึกซ้ำในครั้งแรก
+        // หรือเรียกฟังก์ชันที่ถูกห่อหุ้มแล้ว (ซึ่งตอนนี้มันถูกเรียกจากการห่อหุ้มในข้อ 4.2)
+        // เพื่อความชัวร์ ให้เรียกฟังก์ชันที่ห่อหุ้มแล้วอีกครั้ง เพื่อให้ UI อัปเดตข้อมูลที่โหลดมา
         updateLeaderboard(); 
-        
-        // C. ห่อหุ้มฟังก์ชัน updateLeaderboard เดิม
-        // เราจะเก็บฟังก์ชันเดิมไว้ก่อน
-        const originalUpdateLeaderboard = updateLeaderboard;
-        
-        // แล้วนิยามฟังก์ชัน updateLeaderboard ใหม่ทับตัวเก่า
-        updateLeaderboard = function() {
-            // 1. เรียกใช้งานฟังก์ชันเดิมก่อน
-            originalUpdateLeaderboard.apply(this, arguments); 
-            
-            // 2. เมื่อฟังก์ชันเดิมทำงานเสร็จและข้อมูลถูกคำนวณเรียบร้อยแล้ว 
-            //    เราจะทำการบันทึกข้อมูลลง Local Storage ทันที!
-            if (typeof matchHistory !== 'undefined') {
-                saveLeaderboardData(matchHistory);
-            }
-        };
-    } else {
-        console.warn("Function 'updateLeaderboard' not found. Auto-save persistence may not work.");
     }
 });
 
