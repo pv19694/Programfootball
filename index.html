@@ -5494,5 +5494,81 @@ function clearMatchForm() {
     </script>
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98d71c4750917b68',t:'MTc2MDI3NzQ5MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 
+<script>
+// ===============================================
+// NEW CODE BLOCK: Leaderboard Persistence Wrapper
+// ใช้เพื่อจัดการการโหลดและบันทึกข้อมูลตารางคะแนนหลัก (Match History)
+// โดยไม่ต้องแก้ไขฟังก์ชันเก่า (recordMatch)
+// ===============================================
+
+const LEADERBOARD_DATA_KEY = 'jakhongMatchHistory'; 
+
+/**
+ * 1. ฟังก์ชันสำหรับบันทึกข้อมูลการแข่งขันทั้งหมด
+ * @param {Array} history - ตัวแปร matchHistory ที่เก็บข้อมูลการแข่งขัน
+ */
+function saveLeaderboardData(history) {
+    if (history && history.length > 0) {
+        localStorage.setItem(LEADERBOARD_DATA_KEY, JSON.stringify(history));
+    } else {
+        localStorage.removeItem(LEADERBOARD_DATA_KEY);
+    }
+    console.log('Leaderboard data persistence executed (Save).');
+}
+
+/**
+ * 2. ฟังก์ชันสำหรับโหลดข้อมูลการแข่งขันทั้งหมด
+ */
+function loadLeaderboardData() {
+    const storedHistory = localStorage.getItem(LEADERBOARD_DATA_KEY);
+    if (storedHistory && typeof matchHistory !== 'undefined') {
+        try {
+            const loadedHistory = JSON.parse(storedHistory);
+            // โหลดข้อมูลกลับเข้าตัวแปรหลัก (Global Variable)
+            matchHistory = loadedHistory; 
+            console.log('Leaderboard data persistence executed (Load).');
+        } catch (e) {
+            console.error('Error loading or parsing leaderboard data:', e);
+            localStorage.removeItem(LEADERBOARD_DATA_KEY);
+        }
+    }
+}
+
+// -----------------------------------------------
+// 3. การห่อหุ้ม (Wrap) ฟังก์ชัน updateLeaderboard เพื่อเพิ่มการบันทึก
+// -----------------------------------------------
+
+document.addEventListener('DOMContentLoaded', () => {
+    
+    // A. โหลดข้อมูลที่บันทึกไว้ทันทีเมื่อหน้าเว็บโหลดเสร็จ
+    loadLeaderboardData(); 
+    
+    // B. เรียกฟังก์ชัน updateLeaderboard เดิม (เพื่อให้ตารางแสดงผลทันทีหลังโหลด)
+    // ตรวจสอบก่อนว่าฟังก์ชันนี้มีอยู่จริงหรือไม่
+    if (typeof updateLeaderboard === 'function') {
+        updateLeaderboard(); 
+        
+        // C. ห่อหุ้มฟังก์ชัน updateLeaderboard เดิม
+        // เราจะเก็บฟังก์ชันเดิมไว้ก่อน
+        const originalUpdateLeaderboard = updateLeaderboard;
+        
+        // แล้วนิยามฟังก์ชัน updateLeaderboard ใหม่ทับตัวเก่า
+        updateLeaderboard = function() {
+            // 1. เรียกใช้งานฟังก์ชันเดิมก่อน
+            originalUpdateLeaderboard.apply(this, arguments); 
+            
+            // 2. เมื่อฟังก์ชันเดิมทำงานเสร็จและข้อมูลถูกคำนวณเรียบร้อยแล้ว 
+            //    เราจะทำการบันทึกข้อมูลลง Local Storage ทันที!
+            if (typeof matchHistory !== 'undefined') {
+                saveLeaderboardData(matchHistory);
+            }
+        };
+    } else {
+        console.warn("Function 'updateLeaderboard' not found. Auto-save persistence may not work.");
+    }
+});
+
+</script>
+    
 </body>
 </html>
