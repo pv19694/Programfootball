@@ -5394,7 +5394,105 @@
                 `;
             }).join('');
         }
+
+
+// ... (โค้ด JavaScript เดิมทั้งหมดของคุณจบตรงนี้) ...
+
+// -----------------------------------------------
+// โค้ด JavaScript ที่เพิ่มใหม่
+// -----------------------------------------------
+// ===============================================
+// New Functionality: Auto-Save Form Data (Real-time Persistence)
+// ใช้ Local Storage เพื่อบันทึกข้อมูลแบบ Real-time
+// ===============================================
+
+const MATCH_FORM_KEY = 'matchRecordAutoSave';
+const matchFormElements = ['match-date', 'team-a', 'team-b', 'score-a', 'score-b'];
+
+/**
+ * 1. บันทึกข้อมูลฟอร์มปัจจุบันลงใน Local Storage
+ */
+function saveMatchFormData() {
+    const data = {};
+    matchFormElements.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            data[id] = element.value;
+        }
+    });
+    // บันทึกเป็นสตริง JSON
+    localStorage.setItem(MATCH_FORM_KEY, JSON.stringify(data));
+    console.log('Match form data auto-saved.');
+}
+
+/**
+ * 2. โหลดข้อมูลจาก Local Storage และกรอกกลับเข้าไปในฟอร์ม
+ */
+function loadMatchFormData() {
+    const storedData = localStorage.getItem(MATCH_FORM_KEY);
+    if (storedData) {
+        try {
+            const data = JSON.parse(storedData);
+            matchFormElements.forEach(id => {
+                const element = document.getElementById(id);
+                // ตรวจสอบว่ามี element และมีค่าที่ถูกบันทึกไว้
+                if (element && data[id] !== undefined) {
+                    element.value = data[id];
+                }
+            });
+            console.log('Match form data loaded from auto-save.');
+        } catch (e) {
+            console.error('Error parsing stored form data, clearing data.', e);
+            localStorage.removeItem(MATCH_FORM_KEY); // ล้างข้อมูลที่เสียหาย
+        }
+    }
+}
+
+/**
+ * 3. ผูก Event Listener เข้ากับฟิลด์ต่างๆ เพื่อเรียกใช้ saveMatchFormData เมื่อมีการเปลี่ยนแปลง
+ */
+function attachMatchFormAutoSaveListeners() {
+    matchFormElements.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            // ใช้ 'input' สำหรับ input ทั่วไป และ 'change' สำหรับ select
+            const eventType = (element.tagName === 'SELECT' || element.type === 'date') ? 'change' : 'input';
+            element.addEventListener(eventType, saveMatchFormData);
+        }
+    });
+}
+
+
+// -----------------------------------------------
+// 4. การเรียกใช้ฟังก์ชันเมื่อหน้าเว็บโหลดเสร็จ
+// -----------------------------------------------
+document.addEventListener('DOMContentLoaded', () => {
+    // โหลดข้อมูลที่บันทึกอัตโนมัติ
+    loadMatchFormData(); 
+    // ผูก Event Listener เพื่อบันทึกข้อมูลอัตโนมัติ
+    attachMatchFormAutoSaveListeners(); 
+});
+
+
+// -----------------------------------------------
+// 5. อัปเดตฟังก์ชัน clearMatchForm (สำคัญ: ต้องแทนที่ฟังก์ชันเดิม)
+// -----------------------------------------------
+function clearMatchForm() {
+    // ล้างค่าในฟอร์ม (ตามโค้ด HTML เดิมของคุณ)
+    document.getElementById('match-date').value = '';
+    document.getElementById('team-a').value = '';
+    document.getElementById('team-b').value = '';
+    document.getElementById('score-a').value = 0; 
+    document.getElementById('score-b').value = 0; 
+    
+    // สำคัญ: ล้างข้อมูลที่บันทึกอัตโนมัติจาก Local Storage ด้วย
+    localStorage.removeItem(MATCH_FORM_KEY); 
+    
+    // อัปเดต UI ให้ตรงกับการล้างข้อมูล (เช่น เรียกฟังก์ชันแสดงข้อความ)
+    // showMessage('ฟอร์มถูกล้างแล้ว', 'info'); // หากมีฟังก์ชัน showMessage
+}
     </script>
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98d71c4750917b68',t:'MTc2MDI3NzQ5MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+
 </body>
 </html>
