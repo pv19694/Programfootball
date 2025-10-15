@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ระบบจัดบอลสนาม Jakhong</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -5600,6 +5601,8 @@ function clearMatchForm() {
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98d71c4750917b68',t:'MTc2MDI3NzQ5MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 
 <script>
+
+    
 // ===============================================
 // NEW CODE BLOCK: UNIVERSAL AUTO-SAVE PERSISTENCE
 // จัดการการบันทึก/โหลดข้อมูลหลักทุกส่วนของแอปพลิเคชัน
@@ -5642,115 +5645,65 @@ const FUNCTIONS_TO_WRAP = {
     'handlePlayerImageUpload': ['players'] 
 };
 
-
-// -----------------------------------------------
-// 2. Data Saving/Loading Helpers
-// -----------------------------------------------
-
 /**
- * บันทึกข้อมูล Global Variable ที่กำหนดลงใน Local Storage
+ * บันทึกข้อมูล Global Variable ที่กำหนดลงใน IndexedDB (Asynchronous)
  * @param {string} structName - ชื่อโครงสร้างข้อมูลจาก DATA_STRUCTURES (เช่น 'teams')
  */
 function saveData(structName) {
     const struct = DATA_STRUCTURES[structName];
     if (!struct) return;
 
-    const globalVar = window[struct.variableName]; // เข้าถึงตัวแปร Global
+    const globalVar = window[struct.variableName];
+
+    // localforage จัดการ Object และ Array ได้โดยตรง ไม่ต้องใช้ JSON.stringify/parse
     
-    if (globalVar && Array.isArray(globalVar) && globalVar.length > 0) {
-        localStorage.setItem(struct.key, JSON.stringify(globalVar));
+    // 1. ตรวจสอบว่ามีข้อมูลหรือไม่ (มากกว่า 0 ตัว/คีย์)
+    const hasData = (globalVar && Array.isArray(globalVar) && globalVar.length > 0) || (globalVar && typeof globalVar === 'object' && Object.keys(globalVar).length > 0);
+
+    if (hasData) {
+        // บันทึกข้อมูล
+        localforage.setItem(struct.key, globalVar)
+            .catch(err => {
+                console.error(`[IndexedDB SAVE] ล้มเหลวสำหรับ ${structName}:`, err);
+                // สมมติว่าคุณมีฟังก์ชัน showErrorMessage() สำหรับแสดงข้อความเตือน
+                if (typeof showErrorMessage === 'function') {
+                    showErrorMessage(`ข้อผิดพลาดในการบันทึกข้อมูล ${structName}. โปรดตรวจสอบพื้นที่เก็บข้อมูลอุปกรณ์.`);
+                }
+            });
     } else if (globalVar !== undefined) {
-        // ลบข้อมูลถ้าตัวแปรเป็น Array ว่าง
-        localStorage.removeItem(struct.key);
+        // ลบข้อมูลถ้าตัวแปรเป็น Array/Object ว่าง
+        localforage.removeItem(struct.key)
+            .catch(err => console.error(`[IndexedDB REMOVE] ล้มเหลวสำหรับ ${structName}:`, err));
     }
 }
 
 /**
- * โหลดข้อมูลจาก Local Storage กลับเข้า Global Variable
+ * โหลดข้อมูลจาก IndexedDB กลับเข้า Global Variable (Asynchronous)
  * @param {string} structName - ชื่อโครงสร้างข้อมูลจาก DATA_STRUCTURES
  */
-function loadData(structName) {
+async function loadData(structName) {
+    // ฟังก์ชันนี้ต้องเป็น async/await เพื่อรอการโหลดข้อมูลจาก IndexedDB
     const struct = DATA_STRUCTURES[structName];
     if (!struct) return;
 
-    const storedData = localStorage.getItem(struct.key);
-    if (storedData) {
-        try {
-            const loadedData = JSON.parse(storedData);
-            // ตรวจสอบว่าตัวแปร Global มีอยู่จริงก่อนโหลดทับ
-            if (window[struct.variableName] !== undefined) {
-                window[struct.variableName] = loadedData; 
-                console.log(`Data loaded for: ${structName}`);
-            }
-        } catch (e) {
-            console.error(`Error parsing stored data for ${structName}, clearing data.`, e);
-            localStorage.removeItem(struct.key);
-        }
-    }
-}
-
-// -----------------------------------------------
-// 3. Function Wrapping Logic
-// -----------------------------------------------
-
-/**
- * ห่อหุ้มฟังก์ชันเดิมเพื่อเพิ่มขั้นตอนการบันทึกข้อมูลอัตโนมัติ
- * @param {string} funcName - ชื่อฟังก์ชันที่จะห่อหุ้ม
- * @param {Array<string>} saveKeys - Array ของชื่อโครงสร้างข้อมูลที่ต้องบันทึกหลังจากฟังก์ชันทำงาน
- */
-function wrapFunction(funcName, saveKeys) {
-    // ตรวจสอบว่าฟังก์ชันเดิมมีอยู่จริงหรือไม่
-    if (typeof window[funcName] === 'function') {
-        const originalFunction = window[funcName];
+    try {
+        const loadedData = await localforage.getItem(struct.key);
         
-        // ห่อหุ้มฟังก์ชันเดิมด้วยฟังก์ชันใหม่
-        window[funcName] = function() {
-            // 1. เรียกใช้งานฟังก์ชันเดิมก่อน
-            const result = originalFunction.apply(this, arguments); 
-            
-            // 2. บันทึกข้อมูลที่เกี่ยวข้องอัตโนมัติ
-            saveKeys.forEach(saveData);
-            
-            console.log(`Function '${funcName}' executed and auto-saved data.`);
-            return result;
-        };
-    } else {
-        console.warn(`Original function '${funcName}' not found. Cannot set auto-save.`);
+        if (loadedData !== null) {
+            // โหลดข้อมูลที่ได้กลับเข้าสู่ Global Variable
+            if (window[struct.variableName] !== undefined) {
+                window[struct.variableName] = loadedData;
+                console.log(`[IndexedDB LOAD] Data loaded for: ${structName}`);
+            }
+        }
+        // ถ้า loadedData เป็น null หรือเกิด Error ใน catch: 
+        // จะใช้ค่าเริ่มต้น (Default Value) ที่กำหนดไว้ในตัวแปร Global นั้น ๆ แทน (ซึ่งเป็นพฤติกรรมเดิม)
+
+    } catch (e) {
+        console.error(`[IndexedDB LOAD] Error retrieving data for ${structName}.`, e);
+        // ในกรณีที่เกิดข้อผิดพลาดร้ายแรง ให้ใช้ค่าเริ่มต้น
     }
 }
-
-// 4.3 (สำคัญ) เรียก UI Rendering Functions ทันทีหลังโหลดข้อมูล
-    
-    // A. ฟังก์ชันตารางคะแนน (ใช้ข้อมูล teams และ matchHistory)
-    if (typeof updateLeaderboard === 'function') {
-        updateLeaderboard(); 
-    }
-    
-    // B. *** โค้ดที่ถูกต้อง: บังคับให้ UI รายชื่อทีมแสดงผล ***
-    // จากการตรวจสอบโค้ดจริง ฟังก์ชันนี้ใช้ในการวาดรายชื่อทีมในส่วนจัดการทีม
-    if (typeof updateTeamManagersList === 'function') { 
-        updateTeamManagersList(); 
-        console.log("Called: updateTeamManagersList");
-    }
-
-    // ฟังก์ชันที่ 1: อัปเดต Dropdown (ใช้สำหรับเลือกทีมในฟอร์มต่างๆ)
-    if (typeof updateTeamDropdown === 'function') { 
-        updateTeamDropdown(); 
-        console.log("Called: updateTeamDropdown");
-    }
-    
-    // ฟังก์ชันที่ 2: อัปเดตรายชื่อผู้เล่น (ใช้สำหรับเลือกนักกีฬาในฟอร์มต่างๆ)
-    if (typeof updatePlayersList === 'function') { 
-        updatePlayersList(); 
-        console.log("Called: updatePlayersList");
-    }
-    
-    // ฟังก์ชันที่ 3: อัปเดตรายชื่อทีมในหน้า Match ต่อไป (ถ้ามี)
-    if (typeof updateSchedule === 'function') { 
-        updateSchedule(); 
-        console.log("Called: updateSchedule");
-    }
-});
 </script>
     
 </body>
