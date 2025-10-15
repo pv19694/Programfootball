@@ -1144,7 +1144,18 @@
         let editingPlayerRecord = null;
         let editingNextMatch = null;
         let deleteCallback = null;
-
+        
+    // -----------------------------------------------
+    // NEW FUNCTION: Manual Save All Data (สำหรับปุ่มที่คุณสร้าง)
+    // -----------------------------------------------
+    function manualSaveAllData() {
+    // สั่งให้ระบบบันทึกข้อมูลหลักทั้งหมด (matchHistory, teams, players, schedule) ทันที
+    Object.keys(DATA_STRUCTURES).forEach(saveData); 
+    
+    // แสดงข้อความแจ้งเตือน (alert) เพื่อยืนยันว่าบันทึกสำเร็จ
+    alert('บันทึกข้อมูลทั้งหมดเรียบร้อยแล้ว! (รวมรูปภาพ Base64)');
+    }
+ 
         // Auto-save functions
         function saveToDatabase() {
             try {
@@ -5530,8 +5541,6 @@ const FUNCTIONS_TO_WRAP = {
     'updateLeaderboard': ['matchHistory', 'teams'], 
     // จัดการทีม: แก้ไข teams
     'addTeam': ['teams'], 
-    // จัดการรายชื่อนักกีฬา: แก้ไข players
-    'handlePlayerSubmit': ['players'], 
     // จัดการแมตช์ต่อไป: แก้ไข schedule
     'updateSchedule': ['schedule'], // <--- ต้องมีคอมม่าตรงนี้!
     // ฟังก์ชันแสดงผล UI (เป็นจุดบันทึกสำรองและแสดงผลรูปภาพ)
@@ -5588,33 +5597,19 @@ function loadData(structName) {
 }
 
 // -----------------------------------------------
-// 3. Function Wrapping Logic
+// 3. Function Wrapping Logic (นำ Delay ออกทั้งหมด)
 // -----------------------------------------------
-
-/**
- * ห่อหุ้มฟังก์ชันเดิมเพื่อเพิ่มขั้นตอนการบันทึกข้อมูลอัตโนมัติ
- * และเพิ่ม Delay สำหรับการจัดการข้อมูล Asynchronous (เช่น Base64)
- * @param {string} funcName - ชื่อฟังก์ชันที่จะห่อหุ้ม
- * @param {Array<string>} saveKeys - Array ของชื่อโครงสร้างข้อมูลที่ฟังก์ชันนั้นแก้ไข
- */
 function wrapFunction(funcName, saveKeys) {
-    // ตรวจสอบว่าฟังก์ชันเดิมมีอยู่จริงหรือไม่
     if (typeof window[funcName] === 'function') {
         const originalFunction = window[funcName];
         
-        // ห่อหุ้มฟังก์ชันเดิมด้วยฟังก์ชันใหม่
         window[funcName] = function() {
-            // 1. เรียกใช้งานฟังก์ชันเดิมก่อน
             const result = originalFunction.apply(this, arguments); 
             
-            // 2. *** การแก้ไขที่สำคัญที่สุด: เพิ่ม setTimeout 500ms ***
-            //    เพื่อให้ Base64 conversion (การแปลงรูปภาพ) มีเวลาเสร็จสมบูรณ์
-            setTimeout(() => { 
-                // 3. บันทึกข้อมูลที่เกี่ยวข้องอัตโนมัติ
-                saveKeys.forEach(saveData);
-                console.log(`Function '${funcName}' executed and auto-saved data with a 500ms delay.`);
-            }, 500); // <--- แก้ไข Delay เป็น 500ms
+            // บันทึกข้อมูลที่เกี่ยวข้องอัตโนมัติทันที
+            saveKeys.forEach(saveData);
             
+            console.log(`Function '${funcName}' executed and auto-saved data.`);
             return result;
         };
     } else {
