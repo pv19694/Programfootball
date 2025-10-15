@@ -2418,7 +2418,7 @@ reader.readAsDataURL(file);
             });
         }
 
-       // Player Management Functions
+      // Player Management Functions
 function handlePlayerSubmit(event) {
     event.preventDefault();
     
@@ -2454,6 +2454,7 @@ function handlePlayerSubmit(event) {
     if (editingPlayer) {
         const playerIndex = players.findIndex(player => player.id === editingPlayer.id);
         if (playerIndex !== -1) {
+            // อัปเดตข้อมูลพื้นฐาน
             players[playerIndex].name = name;
             players[playerIndex].birthdate = birthdate || null;
             players[playerIndex].jersey = jersey ? parseInt(jersey) : null;
@@ -2474,13 +2475,11 @@ function handlePlayerSubmit(event) {
                         canvas.height = img.height;
                         ctx.drawImage(img, 0, 0);
                         
-                        // บีบอัด: ลดคุณภาพเหลือ 70% และแปลงเป็น JPEG
                         const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7); 
                         
-                        players[playerIndex].photo = compressedBase64; // (1) กำหนดรูปภาพ
+                        players[playerIndex].photo = compressedBase64; 
                         
-                        // (2) บันทึกและจบการแก้ไข 
-                        // *การเรียก saveToDatabase() ต้องอยู่ภายใน img.onload เท่านั้น*
+                        // *** บันทึกและจบการแก้ไข (ภายใน img.onload) ***
                         saveToDatabase(); 
                         finishPlayerEdit(name);
                     };
@@ -2488,8 +2487,8 @@ function handlePlayerSubmit(event) {
                 };
                 reader.readAsDataURL(photoFile);
             } else {
-                // ถ้าไม่มีไฟล์ใหม่ถูกเลือก
-                saveToDatabase(); // บันทึกการแก้ไขข้อมูลอื่น (Synchronous)
+                // ถ้าไม่มีไฟล์ใหม่ถูกเลือก (บันทึกข้อมูลพื้นฐาน Synchronous)
+                saveToDatabase(); 
                 finishPlayerEdit(name);
             }
             // *** END OF ASYNCHRONOUS COMPRESSION AND SAVE (Edit) ***
@@ -2525,14 +2524,12 @@ function handlePlayerSubmit(event) {
                     canvas.height = img.height;
                     ctx.drawImage(img, 0, 0);
                     
-                    // บีบอัด: ลดคุณภาพเหลือ 70% และแปลงเป็น JPEG
                     const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7); 
                     
-                    newPlayer.photo = compressedBase64; // (1) กำหนดรูปภาพ
-                    players.push(newPlayer); // (2) เพิ่มผู้เล่นใหม่
+                    newPlayer.photo = compressedBase64; 
+                    players.push(newPlayer); // (1) เพิ่มผู้เล่นใหม่
                     
-                    // (3) บันทึกและอัปเดต UI 
-                    // *การเรียก saveToDatabase() และการอัปเดต UI ต้องอยู่ภายใน img.onload เท่านั้น*
+                    // *** บันทึกและอัปเดต UI (ภายใน img.onload) ***
                     saveToDatabase(); 
                     updatePlayersList();
                     updateDashboardStats();
