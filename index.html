@@ -2448,7 +2448,9 @@ function handlePlayerSubmit(event) {
         }
     }
     
+    // ----------------------------------------------------------------
     // A. EDIT EXISTING PLAYER (แก้ไขผู้เล่นเดิม)
+    // ----------------------------------------------------------------
     if (editingPlayer) {
         const playerIndex = players.findIndex(player => player.id === editingPlayer.id);
         if (playerIndex !== -1) {
@@ -2476,6 +2478,7 @@ function handlePlayerSubmit(event) {
                         const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7); 
                         
                         players[playerIndex].photo = compressedBase64; // ใช้ Base64 ที่บีบอัด
+                        saveToDatabase(); // <<< เพิ่มการบันทึกใน Asynchronous Block
                         finishPlayerEdit(name);
                     };
                     img.src = e.target.result;
@@ -2483,12 +2486,15 @@ function handlePlayerSubmit(event) {
                 reader.readAsDataURL(photoFile);
             } else {
                 // ถ้าไม่มีไฟล์ใหม่ถูกเลือก
+                saveToDatabase(); // ถ้ามีการแก้ไขข้อมูลอื่นโดยไม่มีรูปใหม่ ก็ต้องบันทึก
                 finishPlayerEdit(name);
             }
             // *** END OF IMAGE COMPRESSION LOGIC (Edit) ***
         }
     } 
+    // ----------------------------------------------------------------
     // B. ADD NEW PLAYER (เพิ่มผู้เล่นใหม่)
+    // ----------------------------------------------------------------
     else {
         const newPlayer = {
             id: Date.now(),
@@ -2522,8 +2528,10 @@ function handlePlayerSubmit(event) {
                     newPlayer.photo = compressedBase64; // ใช้ Base64 ที่บีบอัด
                     players.push(newPlayer);
                     
-                    // การเรียกฟังก์ชัน UI และการบันทึก
+                    // *** เพิ่มการบันทึกใน Asynchronous Block เพื่อให้แน่ใจว่า Base64 ถูกเซฟ ***
                     saveToDatabase(); 
+                    
+                    // การเรียกฟังก์ชัน UI 
                     updatePlayersList();
                     updateDashboardStats();
                     updateTeamManagersList();
@@ -2535,7 +2543,7 @@ function handlePlayerSubmit(event) {
             };
             reader.readAsDataURL(photoFile);
         } else {
-            // Add new player without photo
+            // Add new player without photo (Synchronous save is fine here)
             players.push(newPlayer);
             saveToDatabase();
             updatePlayersList();
