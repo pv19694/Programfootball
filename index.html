@@ -5583,8 +5583,9 @@ function loadData(structName) {
 
 /**
  * ห่อหุ้มฟังก์ชันเดิมเพื่อเพิ่มขั้นตอนการบันทึกข้อมูลอัตโนมัติ
+ * และเพิ่ม Delay สำหรับการจัดการข้อมูล Asynchronous (เช่น Base64)
  * @param {string} funcName - ชื่อฟังก์ชันที่จะห่อหุ้ม
- * @param {Array<string>} saveKeys - Array ของชื่อโครงสร้างข้อมูลที่ต้องบันทึกหลังจากฟังก์ชันทำงาน
+ * @param {Array<string>} saveKeys - Array ของชื่อโครงสร้างข้อมูลที่ฟังก์ชันนั้นแก้ไข
  */
 function wrapFunction(funcName, saveKeys) {
     // ตรวจสอบว่าฟังก์ชันเดิมมีอยู่จริงหรือไม่
@@ -5596,10 +5597,14 @@ function wrapFunction(funcName, saveKeys) {
             // 1. เรียกใช้งานฟังก์ชันเดิมก่อน
             const result = originalFunction.apply(this, arguments); 
             
-            // 2. บันทึกข้อมูลที่เกี่ยวข้องอัตโนมัติ
-            saveKeys.forEach(saveData);
+            // 2. *** การแก้ไขที่สำคัญที่สุด: เพิ่ม setTimeout 100ms ***
+            //    เพื่อให้ Base64 conversion (การแปลงรูปภาพ) เสร็จสมบูรณ์
+            setTimeout(() => { 
+                // 3. บันทึกข้อมูลที่เกี่ยวข้องอัตโนมัติ
+                saveKeys.forEach(saveData);
+                console.log(`Function '${funcName}' executed and auto-saved data with a delay.`);
+            }, 100); 
             
-            console.log(`Function '${funcName}' executed and auto-saved data.`);
             return result;
         };
     } else {
