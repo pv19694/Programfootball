@@ -2036,19 +2036,16 @@
         // วาดรูปภาพลงใน Canvas
         ctx.drawImage(img, 0, 0);
         
-        // *** จุดสำคัญ: แปลง Canvas กลับเป็น Base64 พร้อมการบีบอัด ***
-        // 'image/jpeg': ใช้ JPEG เพื่อบีบอัด
-        // 0.7: คือ Quality (คุณภาพ) 70% ซึ่งลดขนาด Base64 ได้มากโดยคุณภาพไม่ต่างกันมาก
+        // *** บีบอัด: ลดคุณภาพเหลือ 70% และแปลงเป็น JPEG ***
         const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7); 
         
-        // บันทึก Base64 ที่ถูกบีบอัดแล้วลงในตัวแปรผู้เล่น/ทีม
-        // *** คุณต้องตรวจสอบว่าใช้ newPlayer.player_img หรือ newTeam.team_logo ***
-        // ตัวอย่างเช่น: 
-        // newPlayer.player_img = compressedBase64; 
+        // บันทึก Base64 ที่ถูกบีบอัดแล้วลงใน Global Variable
+        // (ผมสันนิษฐานว่าคุณใช้ตัวแปร global สำหรับเก็บโลโก้ชั่วคราว)
+        window.tempTeamLogo = compressedBase64; 
         
-        // *****************************************************************
-        // *** วางโค้ดเดิมของคุณที่ต้องทำงานต่อ (เช่น การปิด Modal หรือเรียก updatePlayersList) ต่อจากบรรทัดนี้ ***
-        // *****************************************************************
+        // แสดงโลโก้ใน UI (ถ้ามี)
+        document.getElementById('team-logo-preview').src = compressedBase64; 
+        document.getElementById('team-logo-preview').classList.remove('hidden');
     };
     img.src = e.target.result; // ใช้ Base64 ชั่วคราวเพื่อโหลดรูปภาพ
 };
@@ -5556,6 +5553,10 @@ const FUNCTIONS_TO_WRAP = {
     'updatePlayersList': ['players', 'teams'], 
     // ฟังก์ชันสำหรับปุ่ม Manual Save
     'manualSaveAllData': ['matchHistory', 'teams', 'players', 'schedule'] 
+    // *** NEW FIX: เพิ่มฟังก์ชันอัปโหลดโลโก้ทีม (สำคัญมาก) ***
+    'handleLogoUpload': ['teams'], 
+    // *** NEW FIX: เพิ่มฟังก์ชันอัปโหลดรูปนักกีฬา (สำคัญมาก) ***
+    'handlePlayerImageUpload': ['players'] 
 };
 
 
