@@ -5609,10 +5609,9 @@ function wrapFunction(funcName, saveKeys) {
 }
 
 
-// -----------------------------------------------
+// ----------------------------------------------
 // 4. Initialization (เริ่มต้นการทำงาน)
-// -----------------------------------------------
-
+// ----------------------------------------------
 document.addEventListener('DOMContentLoaded', () => {
     
     // 4.1 โหลดข้อมูลทั้งหมดที่ถูกบันทึกไว้กลับเข้าสู่ Global Variable
@@ -5623,19 +5622,36 @@ document.addEventListener('DOMContentLoaded', () => {
         wrapFunction(funcName, saveKeys);
     });
 
-    // 4.3 (สำคัญ) เรียก updateLeaderboard() เพื่อแสดงผลข้อมูลทันทีหลังโหลด
+    // 4.3 (สำคัญ) เรียก UI Rendering Functions ทันทีหลังโหลดข้อมูล
+    
+    // A. ฟังก์ชันตารางคะแนน (แน่นอนว่าถูกเรียกแล้ว)
     if (typeof updateLeaderboard === 'function') {
         updateLeaderboard(); 
     }
     
-    // **NEW MINIMAL CODE ADDED HERE: เพื่อให้รายชื่อทีมแสดงผลหลังจากโหลดข้อมูล 'teams'**
-    // *** คุณต้องเปลี่ยนชื่อ 'renderTeamList' เป็นชื่อฟังก์ชันจริงที่คุณใช้แสดงรายชื่อทีม ***
+    // B. *** จุดสำคัญ: เพิ่มการเรียกฟังก์ชันแสดงผลทีมที่เป็นไปได้ทั้งหมด ***
+    // เราจะลองเรียกฟังก์ชันที่ใช้ในการอัปเดต Team List และ Dropdowns
+    
+    // ฟังก์ชันที่ 1: อัปเดต Dropdown (อาจแสดงรายชื่อทีม)
+    if (typeof updateTeamDropdown === 'function') { 
+        updateTeamDropdown(); 
+        console.log("Called: updateTeamDropdown");
+    }
+
+    // ฟังก์ชันที่ 2: อัปเดตรายชื่อทีมในหน้าจัดการทีม
     if (typeof renderTeamList === 'function') { 
         renderTeamList(); 
-        console.log("Forcing team list UI update.");
+        console.log("Called: renderTeamList");
     }
+    
+    // ฟังก์ชันที่ 3: อัปเดตรายชื่อทีมในหน้า Match ต่อไป (ถ้ามี)
+    if (typeof updateSchedule === 'function') { 
+        updateSchedule(); 
+        console.log("Called: updateSchedule");
+    }
+    
+    // *****************************************************************
 });
-
 </script>
     
 </body>
