@@ -2079,14 +2079,42 @@ function manualSaveAllData() {
                 return;
             }
             
-            const reader = new FileReader();
             reader.onload = function(e) {
-                const photoPreview = document.getElementById('player-photo-preview');
-                photoPreview.innerHTML = `<img src="${e.target.result}" alt="Player Photo" class="w-full h-full object-cover rounded-full">`;
-                document.getElementById('remove-player-photo').classList.remove('hidden');
-            };
-            reader.readAsDataURL(file);
-        }
+    const img = new Image();
+    img.onload = function() {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // กำหนดขนาด Canvas ให้เท่ากับรูปภาพเดิม
+        canvas.width = img.width;
+        canvas.height = img.height;
+        
+        // วาดรูปภาพลงใน Canvas
+        ctx.drawImage(img, 0, 0);
+        
+        // *** จุดสำคัญ: แปลง Canvas กลับเป็น Base64 พร้อมการบีบอัด ***
+        // image/jpeg: ใช้ JPEG เพื่อให้บีบอัดได้ดีกว่า PNG
+        // 0.8: คือ Quality (คุณภาพ) ยิ่งน้อย ไฟล์ยิ่งเล็ก (0.7-0.9 เป็นค่าที่เหมาะสม)
+        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8); 
+        
+        // บันทึก Base64 ที่ถูกบีบอัดแล้วลงในตัวแปรผู้เล่น
+        newPlayer.player_img = compressedBase64; 
+        
+        // *** เรียกฟังก์ชันแสดงผล/บันทึกหลังจากนี้
+        // updatePlayersList(); // ถ้ามี
+        // handlePlayerSubmitHelper(); // หรือฟังก์ชันต่อไปในการบันทึก
+        
+        // ******* เนื่องจากโค้ดเดิมของคุณต้องทำงานต่อจากบรรทัดนี้ *******
+        // ให้เรียกใช้ฟังก์ชันเดิมที่รับผิดชอบการบันทึกต่อ
+        // (คุณอาจต้องตรวจสอบโค้ดเดิมว่ามีฟังก์ชันอื่นที่ถูกเรียกต่อหรือไม่)
+        
+        // สมมติว่าโค้ดเดิมของคุณจะทำงานต่อจากตรงนี้
+        // *** ให้เพิ่มโค้ดที่เรียกฟังก์ชัน updatePlayersList และจัดการการแสดงผลอื่นๆ ของคุณต่อจากบรรทัดนี้ ***
+        
+    };
+    img.src = e.target.result; // ใช้ Base64 ชั่วคราวเพื่อโหลดรูปภาพ
+};
+reader.readAsDataURL(file);
 
         function removePlayerPhoto() {
             document.getElementById('player-photo').value = '';
