@@ -2115,7 +2115,7 @@ reader.readAsDataURL(file);
     }
     
     // ----------------------------------------------------------------
-    // A. EDIT EXISTING TEAM (แก้ไขทีมเดิม)
+    // A. EDIT EXISTING TEAM (แก้ไขทีมเดิม) - โค้ดถูกแก้ไขแล้ว
     // ----------------------------------------------------------------
     if (editingTeam) {
         const teamIndex = teams.findIndex(team => team.id === editingTeam.id);
@@ -2139,7 +2139,7 @@ reader.readAsDataURL(file);
                         // บีบอัด: ลดคุณภาพเหลือ 70%
                         const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7); 
                         
-                        // บันทึก Base64 ที่บีบอัดแล้ว และจบการแก้ไข
+                        // *** แก้ไข: ใช้ teams[teamIndex] และเรียก finishTeamEdit ***
                         teams[teamIndex].logo = compressedBase64; 
                         finishTeamEdit(name);
                     };
@@ -2153,14 +2153,14 @@ reader.readAsDataURL(file);
         }
     } 
     // ----------------------------------------------------------------
-    // B. ADD NEW TEAM (เพิ่มทีมใหม่)
+    // B. ADD NEW TEAM (เพิ่มทีมใหม่) - โค้ดถูกแก้ไขแล้ว
     // ----------------------------------------------------------------
     else {
         const newTeam = {
             id: Date.now(),
             name: name,
             primaryColor: selectedColor,
-            logo: null, // จะถูกแทนที่ด้วย Base64 ที่ถูกบีบอัด
+            logo: null,
             createdAt: new Date()
         };
         
@@ -2181,7 +2181,7 @@ reader.readAsDataURL(file);
                     // บีบอัด: ลดคุณภาพเหลือ 70%
                     const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7); 
                     
-                    // บันทึก Base64 ที่บีบอัดแล้ว
+                    // *** โค้ดส่วนเพิ่มทีมใหม่: ใช้ newTeam และ teams.push ***
                     newTeam.logo = compressedBase64; 
                     teams.push(newTeam);
                     
@@ -2200,8 +2200,8 @@ reader.readAsDataURL(file);
         } else {
             // Add new team without logo (โค้ดส่วนนี้ยังคงเดิม)
             teams.push(newTeam);
-            // คุณมี saveToDatabase() แต่ผมแนะนำให้พึ่งพา wrapper มากกว่า
-            // saveToDatabase(); 
+            // ถ้ามีการเรียก saveToDatabase() ในโค้ดเดิม ให้ลบออกและพึ่งพา Wrapper
+            saveToDatabase(); 
             updateTeamsList();
             updateTeamDropdowns();
             updatePlayerFilters();
@@ -2425,97 +2425,139 @@ reader.readAsDataURL(file);
         }
 
         // Player Management Functions
-        function handlePlayerSubmit(event) {
-            event.preventDefault();
+function handlePlayerSubmit(event) {
+    event.preventDefault();
+    
+    const name = document.getElementById('player-name').value.trim();
+    const birthdate = document.getElementById('player-birthdate').value;
+    const jersey = document.getElementById('player-jersey').value;
+    const teamId = document.getElementById('player-team').value;
+    const phone = document.getElementById('player-phone').value.trim();
+    const isManager = document.getElementById('is-team-manager').checked;
+    const photoFile = document.getElementById('player-photo').files[0];
+    
+    if (!name) {
+        showErrorMessage('กรุณากรอกชื่อผู้เล่น');
+        return;
+    }
+    
+    // Check for duplicate jersey number in the same team (exclude current editing player)
+    if (jersey && teamId) {
+        const duplicateJersey = players.find(player => 
+            player.teamId == teamId && 
+            player.jersey == jersey &&
+            player.id !== editingPlayer?.id
+        );
+        if (duplicateJersey) {
+            showErrorMessage(`เบอร์เสื้อ ${jersey} มีผู้ใช้แล้วในทีมนี้`);
+            return;
+        }
+    }
+    
+    // ----------------------------------------------------------------
+    // A. EDIT EXISTING PLAYER (แก้ไขผู้เล่นเดิม)
+    // ----------------------------------------------------------------
+    if (editingPlayer) {
+        const playerIndex = players.findIndex(player => player.id === editingPlayer.id);
+        if (playerIndex !== -1) {
+            players[playerIndex].name = name;
+            players[playerIndex].birthdate = birthdate || null;
+            players[playerIndex].jersey = jersey ? parseInt(jersey) : null;
+            players[playerIndex].teamId = teamId ? parseInt(teamId) : null;
+            players[playerIndex].phone = phone || null;
+            players[playerIndex].isManager = isManager;
             
-            const name = document.getElementById('player-name').value.trim();
-            const birthdate = document.getElementById('player-birthdate').value;
-            const jersey = document.getElementById('player-jersey').value;
-            const teamId = document.getElementById('player-team').value;
-            const phone = document.getElementById('player-phone').value.trim();
-            const isManager = document.getElementById('is-team-manager').checked;
-            const photoFile = document.getElementById('player-photo').files[0];
-            
-            if (!name) {
-                showErrorMessage('กรุณากรอกชื่อผู้เล่น');
-                return;
-            }
-            
-            // Check for duplicate jersey number in the same team (exclude current editing player)
-            if (jersey && teamId) {
-                const duplicateJersey = players.find(player => 
-                    player.teamId == teamId && 
-                    player.jersey == jersey &&
-                    player.id !== editingPlayer?.id
-                );
-                if (duplicateJersey) {
-                    showErrorMessage(`เบอร์เสื้อ ${jersey} มีผู้ใช้แล้วในทีมนี้`);
-                    return;
-                }
-            }
-            
-            if (editingPlayer) {
-                // Edit existing player
-                const playerIndex = players.findIndex(player => player.id === editingPlayer.id);
-                if (playerIndex !== -1) {
-                    players[playerIndex].name = name;
-                    players[playerIndex].birthdate = birthdate || null;
-                    players[playerIndex].jersey = jersey ? parseInt(jersey) : null;
-                    players[playerIndex].teamId = teamId ? parseInt(teamId) : null;
-                    players[playerIndex].phone = phone || null;
-                    players[playerIndex].isManager = isManager;
-                    
-                    if (photoFile) {
-                        const reader = new FileReader();
-                        reader.onload = function(e) {
-                            players[playerIndex].photo = e.target.result;
-                            finishPlayerEdit(name);
-                        };
-                        reader.readAsDataURL(photoFile);
-                    } else {
+            // *** START OF IMAGE COMPRESSION LOGIC (Edit) ***
+            if (photoFile) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        ctx.drawImage(img, 0, 0);
+                        
+                        // บีบอัด: ลดคุณภาพเหลือ 70% และแปลงเป็น JPEG
+                        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7); 
+                        
+                        players[playerIndex].photo = compressedBase64; // ใช้ Base64 ที่บีบอัด
                         finishPlayerEdit(name);
-                    }
-                }
-            } else {
-                // Add new player
-                const newPlayer = {
-                    id: Date.now(),
-                    name: name,
-                    birthdate: birthdate || null,
-                    jersey: jersey ? parseInt(jersey) : null,
-                    teamId: teamId ? parseInt(teamId) : null,
-                    phone: phone || null,
-                    isManager: isManager,
-                    photo: null,
-                    createdAt: new Date()
-                };
-                
-                if (photoFile) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        newPlayer.photo = e.target.result;
-                        players.push(newPlayer);
-                        saveToDatabase();
-                        updatePlayersList();
-                        updateDashboardStats();
-                        updateTeamManagersList();
-                        updatePlayerFilters();
-                        clearPlayerForm();
-                        showSuccessMessage(`เพิ่มผู้เล่น "${name}" พร้อมรูปโปรไฟล์สำเร็จ!`);
                     };
-                    reader.readAsDataURL(photoFile);
-                } else {
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(photoFile);
+            } else {
+                // ถ้าไม่มีไฟล์ใหม่ถูกเลือก
+                finishPlayerEdit(name);
+            }
+            // *** END OF IMAGE COMPRESSION LOGIC (Edit) ***
+        }
+    } 
+    // ----------------------------------------------------------------
+    // B. ADD NEW PLAYER (เพิ่มผู้เล่นใหม่)
+    // ----------------------------------------------------------------
+    else {
+        const newPlayer = {
+            id: Date.now(),
+            name: name,
+            birthdate: birthdate || null,
+            jersey: jersey ? parseInt(jersey) : null,
+            teamId: teamId ? parseInt(teamId) : null,
+            phone: phone || null,
+            isManager: isManager,
+            photo: null,
+            createdAt: new Date()
+        };
+        
+        // *** START OF IMAGE COMPRESSION LOGIC (Add New) ***
+        if (photoFile) {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+                    
+                    // บีบอัด: ลดคุณภาพเหลือ 70% และแปลงเป็น JPEG
+                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7); 
+                    
+                    newPlayer.photo = compressedBase64; // ใช้ Base64 ที่บีบอัด
                     players.push(newPlayer);
-                    saveToDatabase();
+                    
+                    // การเรียกฟังก์ชัน UI และการบันทึก
+                    saveToDatabase(); // (อาจจะไม่จำเป็นถ้าคุณมี Wrapper แล้ว แต่ใส่ไว้เพื่อความมั่นใจ)
                     updatePlayersList();
                     updateDashboardStats();
                     updateTeamManagersList();
                     updatePlayerFilters();
                     clearPlayerForm();
-                    showSuccessMessage(`เพิ่มผู้เล่น "${name}" สำเร็จ!`);
-                }
-            }
+                    showSuccessMessage(`เพิ่มผู้เล่น "${name}" พร้อมรูปโปรไฟล์สำเร็จ!`);
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(photoFile);
+        } else {
+            // Add new player without photo
+            players.push(newPlayer);
+            saveToDatabase();
+            updatePlayersList();
+            updateDashboardStats();
+            updateTeamManagersList();
+            updatePlayerFilters();
+            clearPlayerForm();
+            showSuccessMessage(`เพิ่มผู้เล่น "${name}" สำเร็จ!`);
         }
+        // *** END OF IMAGE COMPRESSION LOGIC (Add New) ***
+    }
+}
 
         function finishPlayerEdit(name) {
             saveToDatabase();
