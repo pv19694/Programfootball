@@ -2477,9 +2477,10 @@ function handlePlayerSubmit(event) {
                         // บีบอัด: ลดคุณภาพเหลือ 70% และแปลงเป็น JPEG
                         const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7); 
                         
-                        players[playerIndex].photo = compressedBase64; // ใช้ Base64 ที่บีบอัด
+                        players[playerIndex].photo = compressedBase64; // (1) กำหนดรูปภาพ
                         
-                        // *** บันทึกและอัปเดต UI ที่นี่เท่านั้น เพื่อเลี่ยง Wrapper ***
+                        // (2) บันทึกและจบการแก้ไข 
+                        // *การเรียก saveToDatabase() ต้องอยู่ภายใน img.onload เท่านั้น*
                         saveToDatabase(); 
                         finishPlayerEdit(name);
                     };
@@ -2487,8 +2488,8 @@ function handlePlayerSubmit(event) {
                 };
                 reader.readAsDataURL(photoFile);
             } else {
-                // ถ้าไม่มีไฟล์ใหม่ถูกเลือก ข้อมูลจะถูกบันทึกทันที (Synchronous)
-                saveToDatabase(); 
+                // ถ้าไม่มีไฟล์ใหม่ถูกเลือก
+                saveToDatabase(); // บันทึกการแก้ไขข้อมูลอื่น (Synchronous)
                 finishPlayerEdit(name);
             }
             // *** END OF ASYNCHRONOUS COMPRESSION AND SAVE (Edit) ***
@@ -2527,10 +2528,11 @@ function handlePlayerSubmit(event) {
                     // บีบอัด: ลดคุณภาพเหลือ 70% และแปลงเป็น JPEG
                     const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7); 
                     
-                    newPlayer.photo = compressedBase64; 
-                    players.push(newPlayer);
+                    newPlayer.photo = compressedBase64; // (1) กำหนดรูปภาพ
+                    players.push(newPlayer); // (2) เพิ่มผู้เล่นใหม่
                     
-                    // *** บันทึกและอัปเดต UI ที่นี่เท่านั้น เพื่อเลี่ยง Wrapper ***
+                    // (3) บันทึกและอัปเดต UI 
+                    // *การเรียก saveToDatabase() และการอัปเดต UI ต้องอยู่ภายใน img.onload เท่านั้น*
                     saveToDatabase(); 
                     updatePlayersList();
                     updateDashboardStats();
