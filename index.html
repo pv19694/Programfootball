@@ -5546,13 +5546,16 @@ const DATA_STRUCTURES = {
 const FUNCTIONS_TO_WRAP = {
     // บันทึกผล, อัปเดตตารางคะแนน: แก้ไข matchHistory และ teams
     'updateLeaderboard': ['matchHistory', 'teams'], 
-    // จัดการทีม: แก้ไข teams
-    'addTeam': ['teams'], 
-    // จัดการรายชื่อนักกีฬา: แก้ไข players
-    'addPlayer': ['players'], 
+    // **แก้ไขจาก 'addTeam' เป็น 'handleTeamSubmit'**
+    'handleTeamSubmit': ['teams'], 
+    // **แก้ไขจาก 'addPlayer' เป็น 'handlePlayerSubmit'**
+    'handlePlayerSubmit': ['players'], 
     // จัดการแมตช์ต่อไป: แก้ไข schedule
-    'updateSchedule': ['schedule']
-    // *** คุณต้องเปลี่ยนชื่อฟังก์ชันข้างบน (เช่น 'addTeam') ให้เป็นชื่อฟังก์ชันจริงที่คุณใช้ ***
+    'updateSchedule': ['schedule'], 
+    // ฟังก์ชันแสดงผล UI (ใช้เป็นจุดบันทึกสำรองและโหลดรูปภาพ)
+    'updatePlayersList': ['players', 'teams'], 
+    // ฟังก์ชันสำหรับปุ่ม Manual Save
+    'manualSaveAllData': ['matchHistory', 'teams', 'players', 'schedule'] 
 };
 
 
@@ -5632,40 +5635,30 @@ function wrapFunction(funcName, saveKeys) {
     }
 }
 
-
-// ----------------------------------------------
-// 4. Initialization (เริ่มต้นการทำงาน)
-// ----------------------------------------------
-document.addEventListener('DOMContentLoaded', () => {
+// 4.3 (สำคัญ) เรียก UI Rendering Functions ทันทีหลังโหลดข้อมูล
     
-    // 4.1 โหลดข้อมูลทั้งหมดที่ถูกบันทึกไว้กลับเข้าสู่ Global Variable
-    Object.keys(DATA_STRUCTURES).forEach(loadData);
-    
-    // 4.2 ห่อหุ้มฟังก์ชันทั้งหมดที่ต้องมีการบันทึกข้อมูล
-    Object.entries(FUNCTIONS_TO_WRAP).forEach(([funcName, saveKeys]) => {
-        wrapFunction(funcName, saveKeys);
-    });
-
-    // 4.3 (สำคัญ) เรียก UI Rendering Functions ทันทีหลังโหลดข้อมูล
-    
-    // A. ฟังก์ชันตารางคะแนน (แน่นอนว่าถูกเรียกแล้ว)
+    // A. ฟังก์ชันตารางคะแนน (ใช้ข้อมูล teams และ matchHistory)
     if (typeof updateLeaderboard === 'function') {
         updateLeaderboard(); 
     }
     
-    // B. *** จุดสำคัญ: เพิ่มการเรียกฟังก์ชันแสดงผลทีมที่เป็นไปได้ทั้งหมด ***
-    // เราจะลองเรียกฟังก์ชันที่ใช้ในการอัปเดต Team List และ Dropdowns
-    
-    // ฟังก์ชันที่ 1: อัปเดต Dropdown (อาจแสดงรายชื่อทีม)
+    // B. *** โค้ดที่ถูกต้อง: บังคับให้ UI รายชื่อทีมแสดงผล ***
+    // จากการตรวจสอบโค้ดจริง ฟังก์ชันนี้ใช้ในการวาดรายชื่อทีมในส่วนจัดการทีม
+    if (typeof updateTeamManagersList === 'function') { 
+        updateTeamManagersList(); 
+        console.log("Called: updateTeamManagersList");
+    }
+
+    // ฟังก์ชันที่ 1: อัปเดต Dropdown (ใช้สำหรับเลือกทีมในฟอร์มต่างๆ)
     if (typeof updateTeamDropdown === 'function') { 
         updateTeamDropdown(); 
         console.log("Called: updateTeamDropdown");
     }
-
-    // ฟังก์ชันที่ 2: อัปเดตรายชื่อทีมในหน้าจัดการทีม
-    if (typeof renderTeamList === 'function') { 
-        renderTeamList(); 
-        console.log("Called: renderTeamList");
+    
+    // ฟังก์ชันที่ 2: อัปเดตรายชื่อผู้เล่น (ใช้สำหรับเลือกนักกีฬาในฟอร์มต่างๆ)
+    if (typeof updatePlayersList === 'function') { 
+        updatePlayersList(); 
+        console.log("Called: updatePlayersList");
     }
     
     // ฟังก์ชันที่ 3: อัปเดตรายชื่อทีมในหน้า Match ต่อไป (ถ้ามี)
@@ -5673,8 +5666,6 @@ document.addEventListener('DOMContentLoaded', () => {
         updateSchedule(); 
         console.log("Called: updateSchedule");
     }
-    
-    // *****************************************************************
 });
 </script>
     
