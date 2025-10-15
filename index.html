@@ -5630,8 +5630,13 @@ document.addEventListener('DOMContentLoaded', () => {
         // เพื่อความชัวร์ ให้เรียกฟังก์ชันที่ห่อหุ้มแล้วอีกครั้ง เพื่อให้ UI อัปเดตข้อมูลที่โหลดมา
         updateLeaderboard(); 
     }
-});
 
+    // **NEW MINIMAL CODE ADDED HERE:** // เพื่อให้รายชื่อนักกีฬาและรูปภาพแสดงผลหลังจากโหลดข้อมูล 'players'
+    // *** ตรวจสอบชื่อฟังก์ชันนี้ในโค้ดเดิมของคุณ ***
+    if (typeof renderPlayerList === 'function') { 
+        renderPlayerList(); 
+    }
+});
 </script>
     
 </body>
