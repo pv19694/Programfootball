@@ -5395,7 +5395,245 @@
                 `;
             }).join('');
         }
+
+
+// ... (โค้ด JavaScript เดิมทั้งหมดของคุณจบตรงนี้) ...
+
+// -----------------------------------------------
+// โค้ด JavaScript ที่เพิ่มใหม่
+// -----------------------------------------------
+// ===============================================
+// New Functionality: Auto-Save Form Data (Real-time Persistence)
+// ใช้ Local Storage เพื่อบันทึกข้อมูลแบบ Real-time
+// ===============================================
+
+const MATCH_FORM_KEY = 'matchRecordAutoSave';
+const matchFormElements = ['match-date', 'team-a', 'team-b', 'score-a', 'score-b'];
+
+/**
+ * 1. บันทึกข้อมูลฟอร์มปัจจุบันลงใน Local Storage
+ */
+function saveMatchFormData() {
+    const data = {};
+    matchFormElements.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            data[id] = element.value;
+        }
+    });
+    // บันทึกเป็นสตริง JSON
+    localStorage.setItem(MATCH_FORM_KEY, JSON.stringify(data));
+    console.log('Match form data auto-saved.');
+}
+
+/**
+ * 2. โหลดข้อมูลจาก Local Storage และกรอกกลับเข้าไปในฟอร์ม
+ */
+function loadMatchFormData() {
+    const storedData = localStorage.getItem(MATCH_FORM_KEY);
+    if (storedData) {
+        try {
+            const data = JSON.parse(storedData);
+            matchFormElements.forEach(id => {
+                const element = document.getElementById(id);
+                // ตรวจสอบว่ามี element และมีค่าที่ถูกบันทึกไว้
+                if (element && data[id] !== undefined) {
+                    element.value = data[id];
+                }
+            });
+            console.log('Match form data loaded from auto-save.');
+        } catch (e) {
+            console.error('Error parsing stored form data, clearing data.', e);
+            localStorage.removeItem(MATCH_FORM_KEY); // ล้างข้อมูลที่เสียหาย
+        }
+    }
+}
+
+/**
+ * 3. ผูก Event Listener เข้ากับฟิลด์ต่างๆ เพื่อเรียกใช้ saveMatchFormData เมื่อมีการเปลี่ยนแปลง
+ */
+function attachMatchFormAutoSaveListeners() {
+    matchFormElements.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            // ใช้ 'input' สำหรับ input ทั่วไป และ 'change' สำหรับ select
+            const eventType = (element.tagName === 'SELECT' || element.type === 'date') ? 'change' : 'input';
+            element.addEventListener(eventType, saveMatchFormData);
+        }
+    });
+}
+
+
+// -----------------------------------------------
+// 4. การเรียกใช้ฟังก์ชันเมื่อหน้าเว็บโหลดเสร็จ
+// -----------------------------------------------
+document.addEventListener('DOMContentLoaded', () => {
+    // โหลดข้อมูลที่บันทึกอัตโนมัติ
+    loadMatchFormData(); 
+    // ผูก Event Listener เพื่อบันทึกข้อมูลอัตโนมัติ
+    attachMatchFormAutoSaveListeners(); 
+});
+
+
+// -----------------------------------------------
+// 5. อัปเดตฟังก์ชัน clearMatchForm (สำคัญ: ต้องแทนที่ฟังก์ชันเดิม)
+// -----------------------------------------------
+function clearMatchForm() {
+    // ล้างค่าในฟอร์ม (ตามโค้ด HTML เดิมของคุณ)
+    document.getElementById('match-date').value = '';
+    document.getElementById('team-a').value = '';
+    document.getElementById('team-b').value = '';
+    document.getElementById('score-a').value = 0; 
+    document.getElementById('score-b').value = 0; 
+    
+    // สำคัญ: ล้างข้อมูลที่บันทึกอัตโนมัติจาก Local Storage ด้วย
+    localStorage.removeItem(MATCH_FORM_KEY); 
+    
+    // อัปเดต UI ให้ตรงกับการล้างข้อมูล (เช่น เรียกฟังก์ชันแสดงข้อความ)
+    // showMessage('ฟอร์มถูกล้างแล้ว', 'info'); // หากมีฟังก์ชัน showMessage
+}
     </script>
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98d71c4750917b68',t:'MTc2MDI3NzQ5MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+
+<script>
+// ===============================================
+// NEW CODE BLOCK: UNIVERSAL AUTO-SAVE PERSISTENCE
+// จัดการการบันทึก/โหลดข้อมูลหลักทุกส่วนของแอปพลิเคชัน
+// ===============================================
+
+// -----------------------------------------------
+// 1. กำหนด Global Variables และ Keys
+// -----------------------------------------------
+
+// Map ข้อมูล Global Variable ที่ต้องการบันทึก: [Key สำหรับ Local Storage, ชื่อตัวแปร Global]
+const DATA_STRUCTURES = {
+    // ข้อมูลตารางคะแนน (Match History)
+    'matchHistory': { key: 'APP_MATCH_HISTORY', variableName: 'matchHistory' }, 
+    // ข้อมูลทีม (Team List)
+    'teams': { key: 'APP_TEAM_LIST', variableName: 'teams' }, 
+    // ข้อมูลรายชื่อนักกีฬา (สมมติว่าตัวแปรชื่อ 'players')
+    'players': { key: 'APP_PLAYER_LIST', variableName: 'players' }, 
+    // ข้อมูลตารางการแข่งขัน/แมตช์ต่อไป (สมมติว่าตัวแปรชื่อ 'schedule')
+    'schedule': { key: 'APP_SCHEDULE', variableName: 'schedule' }
+    // เพิ่มข้อมูลอื่นๆ ได้ที่นี่ เช่น 'settings', 'matchSummaries'
+};
+
+// Map ฟังก์ชันที่จะถูกห่อหุ้ม: [ชื่อฟังก์ชันเดิม, Array ของชื่อโครงสร้างข้อมูลที่ฟังก์ชันนั้นแก้ไข]
+const FUNCTIONS_TO_WRAP = {
+    // บันทึกผล, อัปเดตตารางคะแนน: แก้ไข matchHistory และ teams
+    'updateLeaderboard': ['matchHistory', 'teams'], 
+    // จัดการทีม: แก้ไข teams
+    'addTeam': ['teams'], 
+    // จัดการรายชื่อนักกีฬา: แก้ไข players
+    'addPlayer': ['players'], 
+    // จัดการแมตช์ต่อไป: แก้ไข schedule
+    'updateSchedule': ['schedule']
+    // *** คุณต้องเปลี่ยนชื่อฟังก์ชันข้างบน (เช่น 'addTeam') ให้เป็นชื่อฟังก์ชันจริงที่คุณใช้ ***
+};
+
+
+// -----------------------------------------------
+// 2. Data Saving/Loading Helpers
+// -----------------------------------------------
+
+/**
+ * บันทึกข้อมูล Global Variable ที่กำหนดลงใน Local Storage
+ * @param {string} structName - ชื่อโครงสร้างข้อมูลจาก DATA_STRUCTURES (เช่น 'teams')
+ */
+function saveData(structName) {
+    const struct = DATA_STRUCTURES[structName];
+    if (!struct) return;
+
+    const globalVar = window[struct.variableName]; // เข้าถึงตัวแปร Global
+    
+    if (globalVar && Array.isArray(globalVar) && globalVar.length > 0) {
+        localStorage.setItem(struct.key, JSON.stringify(globalVar));
+    } else if (globalVar !== undefined) {
+        // ลบข้อมูลถ้าตัวแปรเป็น Array ว่าง
+        localStorage.removeItem(struct.key);
+    }
+}
+
+/**
+ * โหลดข้อมูลจาก Local Storage กลับเข้า Global Variable
+ * @param {string} structName - ชื่อโครงสร้างข้อมูลจาก DATA_STRUCTURES
+ */
+function loadData(structName) {
+    const struct = DATA_STRUCTURES[structName];
+    if (!struct) return;
+
+    const storedData = localStorage.getItem(struct.key);
+    if (storedData) {
+        try {
+            const loadedData = JSON.parse(storedData);
+            // ตรวจสอบว่าตัวแปร Global มีอยู่จริงก่อนโหลดทับ
+            if (window[struct.variableName] !== undefined) {
+                window[struct.variableName] = loadedData; 
+                console.log(`Data loaded for: ${structName}`);
+            }
+        } catch (e) {
+            console.error(`Error parsing stored data for ${structName}, clearing data.`, e);
+            localStorage.removeItem(struct.key);
+        }
+    }
+}
+
+// -----------------------------------------------
+// 3. Function Wrapping Logic
+// -----------------------------------------------
+
+/**
+ * ห่อหุ้มฟังก์ชันเดิมเพื่อเพิ่มขั้นตอนการบันทึกข้อมูลอัตโนมัติ
+ * @param {string} funcName - ชื่อฟังก์ชันที่จะห่อหุ้ม
+ * @param {Array<string>} saveKeys - Array ของชื่อโครงสร้างข้อมูลที่ต้องบันทึกหลังจากฟังก์ชันทำงาน
+ */
+function wrapFunction(funcName, saveKeys) {
+    // ตรวจสอบว่าฟังก์ชันเดิมมีอยู่จริงหรือไม่
+    if (typeof window[funcName] === 'function') {
+        const originalFunction = window[funcName];
+        
+        // ห่อหุ้มฟังก์ชันเดิมด้วยฟังก์ชันใหม่
+        window[funcName] = function() {
+            // 1. เรียกใช้งานฟังก์ชันเดิมก่อน
+            const result = originalFunction.apply(this, arguments); 
+            
+            // 2. บันทึกข้อมูลที่เกี่ยวข้องอัตโนมัติ
+            saveKeys.forEach(saveData);
+            
+            console.log(`Function '${funcName}' executed and auto-saved data.`);
+            return result;
+        };
+    } else {
+        console.warn(`Original function '${funcName}' not found. Cannot set auto-save.`);
+    }
+}
+
+
+// -----------------------------------------------
+// 4. Initialization (เริ่มต้นการทำงาน)
+// -----------------------------------------------
+
+document.addEventListener('DOMContentLoaded', () => {
+    
+    // 4.1 โหลดข้อมูลทั้งหมดที่ถูกบันทึกไว้กลับเข้าสู่ Global Variable
+    Object.keys(DATA_STRUCTURES).forEach(loadData);
+    
+    // 4.2 ห่อหุ้มฟังก์ชันทั้งหมดที่ต้องมีการบันทึกข้อมูล
+    Object.entries(FUNCTIONS_TO_WRAP).forEach(([funcName, saveKeys]) => {
+        wrapFunction(funcName, saveKeys);
+    });
+
+    // 4.3 (สำคัญ) เรียก updateLeaderboard() เพื่อแสดงผลข้อมูลทันทีหลังโหลด
+    // เนื่องจาก updateLeaderboard ถูกห่อหุ้มแล้ว การเรียกครั้งนี้จะไม่บันทึกซ้ำ
+    if (typeof updateLeaderboard === 'function') {
+        // ต้องเรียก originalUpdateLeaderboard เพื่อเลี่ยงการบันทึกซ้ำในครั้งแรก
+        // หรือเรียกฟังก์ชันที่ถูกห่อหุ้มแล้ว (ซึ่งตอนนี้มันถูกเรียกจากการห่อหุ้มในข้อ 4.2)
+        // เพื่อความชัวร์ ให้เรียกฟังก์ชันที่ห่อหุ้มแล้วอีกครั้ง เพื่อให้ UI อัปเดตข้อมูลที่โหลดมา
+        updateLeaderboard(); 
+    }
+});
+
+</script>
+    
 </body>
 </html>
