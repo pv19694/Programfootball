@@ -5569,14 +5569,74 @@ function attachMatchFormAutoSaveListeners() {
 }
 
 
-// -----------------------------------------------
-// 4. การเรียกใช้ฟังก์ชันเมื่อหน้าเว็บโหลดเสร็จ
-// -----------------------------------------------
+// ----------------------------------------------
+// 4. Initialization (เริ่มต้นการทำงาน)
+//    *** โค้ด Asynchronous สำหรับ IndexedDB ***
+// ----------------------------------------------
+
+/**
+ * ฟังก์ชันหลักในการเริ่มต้นแอปพลิเคชัน (ต้องเป็น Async)
+ * รับประกันว่าข้อมูลหลักจะถูกโหลดเสร็จสิ้นก่อนวาด UI
+ */
+async function initializeApp() {
+    console.log('🚀 กำลังเริ่มต้นระบบ IndexedDB...');
+    
+    // 1. โหลดข้อมูลหลักทั้งหมดจาก IndexedDB (Asynchronous: ต้องรอ)
+    const dataKeys = Object.keys(DATA_STRUCTURES);
+    const loadPromises = dataKeys.map(key => loadData(key));
+    
+    // **await**: รอให้ Promise การโหลดข้อมูลทั้งหมดเสร็จสิ้น
+    await Promise.all(loadPromises); 
+    console.log("1. Data loaded from IndexedDB.");
+    
+    // 2. ห่อหุ้มฟังก์ชันทั้งหมดที่ต้องมีการบันทึกข้อมูล (Synchronous)
+    if (typeof FUNCTIONS_TO_WRAP !== 'undefined') {
+        Object.entries(FUNCTIONS_TO_WRAP).forEach(([funcName, saveKeys]) => {
+            wrapFunction(funcName, saveKeys);
+        });
+        console.log("2. Functions wrapped for Auto-Save.");
+    }
+    
+    // 3. เรียก UI Rendering Functions ทันทีหลังโหลดข้อมูลเสร็จ
+    console.log('🔄 กำลังอัปเดต UI ทันที...');
+
+    // A. เรียกฟังก์ชัน UI ทั้งหมดที่คุณมี (ตามคำตอบก่อนหน้า)
+    if (typeof updateDashboardStats === 'function') updateDashboardStats();
+    if (typeof updateTeamDropdowns === 'function') updateTeamDropdowns();
+    if (typeof updatePlayerFilters === 'function') updatePlayerFilters();
+    if (typeof updateTeamManagersList === 'function') updateTeamManagersList();
+    if (typeof updateTeamsList === 'function') updateTeamsList();
+    if (typeof updatePlayersList === 'function') updatePlayersList();
+    if (typeof updateMatchHistory === 'function') updateMatchHistory();
+    if (typeof updateLeaderboard === 'function') updateLeaderboard();
+    if (typeof updatePlayerRecordsList === 'function') updatePlayerRecordsList();
+    if (typeof updateTopPlayersStats === 'function') updateTopPlayersStats();
+    if (typeof updateDailySummary === 'function') updateDailySummary();
+    if (typeof updateRecordTeamDropdown === 'function') updateRecordTeamDropdown();
+    if (typeof updateStatsTeamFilter === 'function') updateStatsTeamFilter();
+    if (typeof updateNextMatchDropdowns === 'function') updateNextMatchDropdowns();
+    if (typeof updateUpcomingMatchesList === 'function') updateUpcomingMatchesList();
+    if (typeof setupDeleteModal === 'function') setupDeleteModal();
+
+    console.log('✅ อัปเดต UI เสร็จสิ้น');
+    if (typeof showSuccessMessage === 'function') {
+        showSuccessMessage('ระบบพร้อมใช้งาน! ข้อมูลโหลดเรียบร้อยแล้ว 🎉');
+    }
+}
+
+
 document.addEventListener('DOMContentLoaded', () => {
-    // โหลดข้อมูลที่บันทึกอัตโนมัติ
-    loadMatchFormData(); 
-    // ผูก Event Listener เพื่อบันทึกข้อมูลอัตโนมัติ
-    attachMatchFormAutoSaveListeners(); 
+    
+    // 1. เริ่มต้นการทำงานทั้งหมด (รวมถึงการโหลดข้อมูลจาก IndexedDB)
+    initializeApp();
+    
+    // 2. โหลดและผูก Event Listener ของฟอร์มบันทึกอัตโนมัติ (ใช้ Local Storage)
+    if (typeof loadMatchFormData === 'function') {
+        loadMatchFormData(); 
+    }
+    if (typeof attachMatchFormAutoSaveListeners === 'function') {
+        attachMatchFormAutoSaveListeners(); 
+    }
 });
 
 
