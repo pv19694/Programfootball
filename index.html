@@ -5660,6 +5660,14 @@ const FUNCTIONS_TO_WRAP = {
     'handlePlayerImageUpload': ['players'] 
 };
 
+// -----------------------------------------------
+// 4. เปิดใช้งาน Auto-Save Logic (เพิ่มส่วนนี้)
+// -----------------------------------------------
+// วนลูปเรียกใช้ wrapFunction สำหรับทุกฟังก์ชันที่กำหนดไว้
+Object.keys(FUNCTIONS_TO_WRAP).forEach(funcName => {
+    wrapFunction(funcName, FUNCTIONS_TO_WRAP[funcName]);
+});
+
 
 /**
  * บันทึกข้อมูล Global Variable ที่กำหนดลงใน Firebase Firestore (Asynchronous)
@@ -5745,13 +5753,44 @@ async function loadFromFirestore(structName) {
 }
 
 // -----------------------------------------------
-// 5. เปิดใช้งาน Auto-Save Logic
+// 3. Function Wrapping Logic (แก้ไขสำหรับ Firebase Firestore)
 // -----------------------------------------------
 
-// วนลูปเรียกใช้ wrapFunction สำหรับทุกฟังก์ชันที่กำหนดไว้
-Object.keys(FUNCTIONS_TO_WRAP).forEach(funcName => {
-    wrapFunction(funcName, FUNCTIONS_TO_WRAP[funcName]);
-});
+/**
+ * ห่อหุ้มฟังก์ชันเดิมเพื่อเพิ่มขั้นตอนการบันทึกข้อมูลอัตโนมัติ
+ * (แก้ไขเพื่อให้รองรับ Asynchronous ของ saveToFirestore)
+ * @param {string} funcName - ชื่อฟังก์ชันที่จะห่อหุ้ม
+ * @param {Array<string>} saveKeys - Array ของชื่อโครงสร้างข้อมูลที่ต้องบันทึกหลังจากฟังก์ชันทำงาน
+ */
+function wrapFunction(funcName, saveKeys) {
+    // ตรวจสอบว่าฟังก์ชันเดิมมีอยู่จริงหรือไม่
+    if (typeof window[funcName] === 'function') {
+        const originalFunction = window[funcName];
+        
+        // ⚠️ การแก้ไขที่สำคัญที่สุด: เปลี่ยนฟังก์ชันที่ห่อหุ้มให้เป็น ASYNC
+        window[funcName] = async function() { 
+            console.log(`[AutoSave] Executing: ${funcName}`);
+            
+            // 1. เรียกใช้งานฟังก์ชันเดิมก่อน
+            const result = originalFunction.apply(this, arguments); 
+            
+            // 2. ถ้าฟังก์ชันเดิมคืนค่า Promise (เช่น โค้ดอัปโหลดรูป) ต้องรอให้เสร็จก่อน
+            if (result && typeof result.then === 'function') {
+                await result;
+            }
+            
+            // 3. ✅ การแก้ไขเพื่อใช้ Firestore: ต้องใช้ await Promise.all() และ saveToFirestore
+            // เพื่อรอให้การบันทึกข้อมูลขึ้น Cloud เสร็จสิ้น
+            await Promise.all(saveKeys.map(key => saveToFirestore(key)));
+            
+            console.log(`✅ [AutoSave] Saved keys: ${saveKeys.join(', ')} to Firestore.`);
+            return result;
+        };
+    } else {
+        console.warn(`Original function '${funcName}' not found. Cannot set auto-save.`);
+    }
+}
+
 <script type="module">
     // 1. นำเข้า Firebase Modules ที่จำเป็น
     // - initializeApp: สำหรับเริ่มการทำงานของ Firebase
