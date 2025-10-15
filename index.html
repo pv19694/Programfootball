@@ -1146,15 +1146,22 @@
         let deleteCallback = null;
         
     // -----------------------------------------------
-    // NEW FUNCTION: Manual Save All Data (สำหรับปุ่มที่คุณสร้าง)
+    // NEW FUNCTION: Manual Save All Data (แก้ไขให้มี Delay)
     // -----------------------------------------------
-    function manualSaveAllData() {
-    // สั่งให้ระบบบันทึกข้อมูลหลักทั้งหมด (matchHistory, teams, players, schedule) ทันที
-    Object.keys(DATA_STRUCTURES).forEach(saveData); 
-    
-    // แสดงข้อความแจ้งเตือน (alert) เพื่อยืนยันว่าบันทึกสำเร็จ
-    alert('บันทึกข้อมูลทั้งหมดเรียบร้อยแล้ว! (รวมรูปภาพ Base64)');
-    }
+function manualSaveAllData() {
+    // 1. แสดงข้อความแจ้งให้ผู้ใช้ทราบว่ากำลังบันทึก
+    alert('กำลังบันทึกข้อมูล กรุณารอสักครู่...');
+
+    // 2. ใช้ setTimeout 500ms เพื่อให้ Base64 Conversion เสร็จสมบูรณ์
+    setTimeout(() => {
+        // สั่งให้ระบบบันทึกข้อมูลหลักทั้งหมด (matchHistory, teams, players, schedule) ทันที
+        Object.keys(DATA_STRUCTURES).forEach(saveData); 
+        
+        // 3. แสดงข้อความยืนยันการบันทึกสำเร็จ
+        console.log('*** Manual Save All Data Executed after 500ms delay! ***');
+        alert('บันทึกข้อมูลทั้งหมดเรียบร้อยแล้ว!');
+    }, 500); // 500 มิลลิวินาที (0.5 วินาที)
+}
  
         // Auto-save functions
         function saveToDatabase() {
