@@ -5691,8 +5691,6 @@ const FUNCTIONS_TO_WRAP = {
     'updateLeaderboard': ['matchHistory', 'teams'], 
     // **แก้ไขจาก 'addTeam' เป็น 'handleTeamSubmit'**
     'handleTeamSubmit': ['teams'], 
-    // **แก้ไขจาก 'addPlayer' เป็น 'handlePlayerSubmit'**
-    'handlePlayerSubmit': ['players'], 
     // จัดการแมตช์ต่อไป: แก้ไข schedule
     'updateSchedule': ['schedule'], 
     // ฟังก์ชันแสดงผล UI (ใช้เป็นจุดบันทึกสำรองและโหลดรูปภาพ)
@@ -5721,20 +5719,23 @@ function saveData(structName) {
     const hasData = (globalVar && Array.isArray(globalVar) && globalVar.length > 0) || (globalVar && typeof globalVar === 'object' && Object.keys(globalVar).length > 0);
 
     if (hasData) {
-        // บันทึกข้อมูล
-        localforage.setItem(struct.key, globalVar)
+        // *** โค้ดที่แก้ไข: ต้อง RETURN Promise เพื่อให้ await ได้ ***
+        return localforage.setItem(struct.key, globalVar) // <--- เพิ่ม RETURN ตรงนี้
             .catch(err => {
                 console.error(`[IndexedDB SAVE] ล้มเหลวสำหรับ ${structName}:`, err);
-                // สมมติว่าคุณมีฟังก์ชัน showErrorMessage() สำหรับแสดงข้อความเตือน
                 if (typeof showErrorMessage === 'function') {
                     showErrorMessage(`ข้อผิดพลาดในการบันทึกข้อมูล ${structName}. โปรดตรวจสอบพื้นที่เก็บข้อมูลอุปกรณ์.`);
                 }
+                throw err; // โยน Error ออกไปเพื่อให้ handlePlayerSubmit รู้ว่าเกิดข้อผิดพลาด
             });
     } else if (globalVar !== undefined) {
         // ลบข้อมูลถ้าตัวแปรเป็น Array/Object ว่าง
-        localforage.removeItem(struct.key)
+        return localforage.removeItem(struct.key) // <--- เพิ่ม RETURN ตรงนี้
             .catch(err => console.error(`[IndexedDB REMOVE] ล้มเหลวสำหรับ ${structName}:`, err));
     }
+    
+    // ต้องมีการคืนค่า Promise ในกรณีที่ไม่มีการกระทำใดๆ
+    return Promise.resolve(); 
 }
 
 /**
