@@ -2024,8 +2024,8 @@
             
             const reader = new FileReader();
             reader.onload = function(e) {
-        const img = new Image();
-        img.onload = function() {
+    const img = new Image();
+    img.onload = function() {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         
@@ -2037,18 +2037,18 @@
         ctx.drawImage(img, 0, 0);
         
         // *** จุดสำคัญ: แปลง Canvas กลับเป็น Base64 พร้อมการบีบอัด ***
-        // 'image/jpeg': บีบอัดได้ดีกว่า PNG
-        // 0.8: คือ Quality (คุณภาพ) 80% ซึ่งช่วยลดขนาด Base64 ได้มาก
-        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8); 
+        // 'image/jpeg': ใช้ JPEG เพื่อบีบอัด
+        // 0.7: คือ Quality (คุณภาพ) 70% ซึ่งลดขนาด Base64 ได้มากโดยคุณภาพไม่ต่างกันมาก
+        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7); 
         
-        // บันทึก Base64 ที่ถูกบีบอัดแล้วลงในตัวแปรผู้เล่น
-        newPlayer.player_img = compressedBase64; 
+        // บันทึก Base64 ที่ถูกบีบอัดแล้วลงในตัวแปรผู้เล่น/ทีม
+        // *** คุณต้องตรวจสอบว่าใช้ newPlayer.player_img หรือ newTeam.team_logo ***
+        // ตัวอย่างเช่น: 
+        // newPlayer.player_img = compressedBase64; 
         
         // *****************************************************************
-        // *** โค้ดที่ต้องทำงานต่อ: วางโค้ดเดิมของคุณต่อจากบรรทัดนี้ ***
-        // *** เช่น โค้ดที่เรียก updatePlayersList() หรือการปิด Modal ***
+        // *** วางโค้ดเดิมของคุณที่ต้องทำงานต่อ (เช่น การปิด Modal หรือเรียก updatePlayersList) ต่อจากบรรทัดนี้ ***
         // *****************************************************************
-
     };
     img.src = e.target.result; // ใช้ Base64 ชั่วคราวเพื่อโหลดรูปภาพ
 };
