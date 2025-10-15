@@ -5597,13 +5597,13 @@ function wrapFunction(funcName, saveKeys) {
             // 1. เรียกใช้งานฟังก์ชันเดิมก่อน
             const result = originalFunction.apply(this, arguments); 
             
-            // 2. *** การแก้ไขที่สำคัญที่สุด: เพิ่ม setTimeout 100ms ***
-            //    เพื่อให้ Base64 conversion (การแปลงรูปภาพ) เสร็จสมบูรณ์
+            // 2. *** การแก้ไขที่สำคัญที่สุด: เพิ่ม setTimeout 500ms ***
+            //    เพื่อให้ Base64 conversion (การแปลงรูปภาพ) มีเวลาเสร็จสมบูรณ์
             setTimeout(() => { 
                 // 3. บันทึกข้อมูลที่เกี่ยวข้องอัตโนมัติ
                 saveKeys.forEach(saveData);
-                console.log(`Function '${funcName}' executed and auto-saved data with a delay.`);
-            }, 100); 
+                console.log(`Function '${funcName}' executed and auto-saved data with a 500ms delay.`);
+            }, 500); // <--- แก้ไข Delay เป็น 500ms
             
             return result;
         };
@@ -5611,7 +5611,6 @@ function wrapFunction(funcName, saveKeys) {
         console.warn(`Original function '${funcName}' not found. Cannot set auto-save.`);
     }
 }
-
 
 // -----------------------------------------------
 // 4. Initialization (เริ่มต้นการทำงาน)
