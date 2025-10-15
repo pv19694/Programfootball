@@ -88,10 +88,17 @@
                         <h1 class="text-2xl font-bold">ระบบจัดบอลสนาม Jakhong</h1>
                         <p class="text-blue-100 text-sm">Football Management System</p>
                     </div>
+                    
                 </div>
-                <div class="text-right">
-                    <div class="text-sm opacity-90" id="current-date"></div>
-                    <div class="text-xs opacity-75" id="current-time"></div>
+                <div class="flex items-center space-x-4">
+                    <div class="text-right">
+                        <div class="text-sm opacity-90" id="current-date"></div>
+                        <div class="text-xs opacity-75" id="current-time"></div>
+                    </div>
+                    <button onclick="manualSaveAllData()" 
+                            class="px-3 py-1 bg-green-500 text-white rounded-lg shadow-md hover:bg-green-600 transition duration-150 text-sm flex items-center">
+                        <i class="fas fa-save mr-2"></i> บันทึกข้อมูล
+                    </button>
                 </div>
             </div>
         </div>
@@ -5526,8 +5533,11 @@ const FUNCTIONS_TO_WRAP = {
     // จัดการรายชื่อนักกีฬา: แก้ไข players
     'handlePlayerSubmit': ['players'], 
     // จัดการแมตช์ต่อไป: แก้ไข schedule
-    'updateSchedule': ['schedule']
-    // *** คุณต้องเปลี่ยนชื่อฟังก์ชันข้างบน (เช่น 'addTeam') ให้เป็นชื่อฟังก์ชันจริงที่คุณใช้ ***
+    'updateSchedule': ['schedule'], // <--- ต้องมีคอมม่าตรงนี้!
+    // ฟังก์ชันแสดงผล UI (เป็นจุดบันทึกสำรองและแสดงผลรูปภาพ)
+    'updatePlayersList': ['players'], 
+    // ฟังก์ชันสำหรับปุ่ม Manual Save ที่เราสร้างเพิ่มเอง
+    'manualSaveAllData': ['matchHistory', 'teams', 'players', 'schedule'] 
 };
 
 
