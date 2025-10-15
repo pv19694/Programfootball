@@ -1141,7 +1141,7 @@
         let deleteCallback = null;
 
         // Auto-save functions
-        function saveToDatabase() {
+         saveToDatabase() {
             try {
                 const data = {
                     teams: teams,
@@ -2022,74 +2022,11 @@
                 event.target.value = '';
                 return;
             }
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-    const img = new Image();
-    img.onload = function() {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        
-        // กำหนดขนาด Canvas ให้เท่ากับรูปภาพเดิม
-        canvas.width = img.width;
-        canvas.height = img.height;
-        
-        // วาดรูปภาพลงใน Canvas
-        ctx.drawImage(img, 0, 0);
-        
-        // *** บีบอัด: ลดคุณภาพเหลือ 70% และแปลงเป็น JPEG ***
-        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7); 
-        
-        // บันทึก Base64 ที่ถูกบีบอัดแล้วลงใน Global Variable
-        // (ผมสันนิษฐานว่าคุณใช้ตัวแปร global สำหรับเก็บโลโก้ชั่วคราว)
-        window.tempTeamLogo = compressedBase64; 
-        
-        // แสดงโลโก้ใน UI (ถ้ามี)
-        document.getElementById('team-logo-preview').src = compressedBase64; 
-        document.getElementById('team-logo-preview').classList.remove('hidden');
-    };
-    img.src = e.target.result; // ใช้ Base64 ชั่วคราวเพื่อโหลดรูปภาพ
-};
-reader.readAsDataURL(file);
-        }
 
         function removeLogo() {
             document.getElementById('team-logo').value = '';
             document.getElementById('logo-preview').innerHTML = '<i class="fas fa-camera text-gray-400 text-xl"></i>';
             document.getElementById('remove-logo').classList.add('hidden');
-        }
-
-        function handlePlayerPhotoUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            
-            // Check file size (2MB limit)
-            if (file.size > 2 * 1024 * 1024) {
-                showErrorMessage('ไฟล์รูปต้องมีขนาดไม่เกิน 2MB');
-                event.target.value = '';
-                return;
-            }
-            
-            // Check file type
-            if (!file.type.startsWith('image/')) {
-                showErrorMessage('กรุณาเลือกไฟล์รูปภาพเท่านั้น');
-                event.target.value = '';
-                return;
-            }
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const photoPreview = document.getElementById('player-photo-preview');
-                photoPreview.innerHTML = `<img src="${e.target.result}" alt="Player Photo" class="w-full h-full object-cover rounded-full">`;
-                document.getElementById('remove-player-photo').classList.remove('hidden');
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function removePlayerPhoto() {
-            document.getElementById('player-photo').value = '';
-            document.getElementById('player-photo-preview').innerHTML = '<i class="fas fa-user text-gray-400 text-xl"></i>';
-            document.getElementById('remove-player-photo').classList.add('hidden');
         }
 
        function handleTeamSubmit(event) {
@@ -2397,6 +2334,8 @@ reader.readAsDataURL(file);
             });
         }
 
+
+        
         function updateTeamDropdowns() {
             const teamASelect = document.getElementById('team-a');
             const teamBSelect = document.getElementById('team-b');
@@ -2419,10 +2358,19 @@ reader.readAsDataURL(file);
             });
         }
 
-      // Player Management Functions
-function handlePlayerSubmit(event) {
+    // ต้องแน่ใจว่าได้ประกาศตัวแปรเหล่านี้ไว้ในโค้ด JavaScript หลักของคุณ
+// เช่น const { ref, uploadBytes, getDownloadURL } = window.firebaseStorage;
+const { ref, uploadBytes, getDownloadURL } = window.firebaseStorage;
+
+// *** 1. ทำให้ฟังก์ชันนี้เป็น ASYNC ***
+async function handlePlayerSubmit(event) {
     event.preventDefault();
-    
+
+    // -------------------------------------------------------------------
+    // A. รวบรวมข้อมูลฟอร์มและตรวจสอบเบื้องต้น
+    // -------------------------------------------------------------------
+    // สันนิษฐานว่ามีตัวแปร Global: editingPlayer
+    const playerId = editingPlayer ? editingPlayer.id : Date.now().toString(); 
     const name = document.getElementById('player-name').value.trim();
     const birthdate = document.getElementById('player-birthdate').value;
     const jersey = document.getElementById('player-jersey').value;
@@ -2430,132 +2378,105 @@ function handlePlayerSubmit(event) {
     const phone = document.getElementById('player-phone').value.trim();
     const isManager = document.getElementById('is-team-manager').checked;
     const photoFile = document.getElementById('player-photo').files[0];
-    
+
     if (!name) {
         showErrorMessage('กรุณากรอกชื่อผู้เล่น');
         return;
     }
-    
+
     // Check for duplicate jersey number in the same team (exclude current editing player)
     if (jersey && teamId) {
-        const duplicateJersey = players.find(player => 
-            player.teamId == teamId && 
+        const duplicateJersey = players.find(player =>
+            player.teamId == teamId &&
             player.jersey == jersey &&
-            player.id !== editingPlayer?.id
+            player.id !== playerId // ใช้ playerId แทน editingPlayer?.id
         );
         if (duplicateJersey) {
             showErrorMessage(`เบอร์เสื้อ ${jersey} มีผู้ใช้แล้วในทีมนี้`);
             return;
         }
     }
-    
-    // ----------------------------------------------------------------
-    // A. EDIT EXISTING PLAYER (แก้ไขผู้เล่นเดิม)
-    // ----------------------------------------------------------------
-    if (editingPlayer) {
-        const playerIndex = players.findIndex(player => player.id === editingPlayer.id);
-        if (playerIndex !== -1) {
-            // อัปเดตข้อมูลพื้นฐาน
-            players[playerIndex].name = name;
-            players[playerIndex].birthdate = birthdate || null;
-            players[playerIndex].jersey = jersey ? parseInt(jersey) : null;
-            players[playerIndex].teamId = teamId ? parseInt(teamId) : null;
-            players[playerIndex].phone = phone || null;
-            players[playerIndex].isManager = isManager;
+
+    // สร้างหรือหา Object นักกีฬา
+    let playerIndex = players.findIndex(p => p.id === playerId);
+    let playerObject = playerIndex !== -1 ? players[playerIndex] : {
+        id: playerId,
+        photo: null, // ใช้ 'photo' เพื่อให้สอดคล้องกับโค้ดเดิมของคุณ
+        createdAt: new Date()
+    };
+
+    // อัปเดตข้อมูล Text Field
+    playerObject.name = name;
+    playerObject.birthdate = birthdate || null;
+    playerObject.jersey = jersey ? parseInt(jersey) : null;
+    playerObject.teamId = teamId ? parseInt(teamId) : null;
+    playerObject.phone = phone || null;
+    playerObject.isManager = isManager;
+
+    // -------------------------------------------------------------------
+    // B. AWAIT: อัปโหลดรูปภาพไปยัง Firebase Storage แทนการบีบอัด Base64
+    // -------------------------------------------------------------------
+    if (photoFile) {
+        try {
+            const fileName = `players/${playerObject.id}_${Date.now()}_${photoFile.name}`; 
             
-            // *** START OF ASYNCHRONOUS COMPRESSION AND SAVE (Edit) ***
-            if (photoFile) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const img = new Image();
-                    img.onload = function() {
-                        const canvas = document.createElement('canvas');
-                        const ctx = canvas.getContext('2d');
-                        
-                        canvas.width = img.width;
-                        canvas.height = img.height;
-                        ctx.drawImage(img, 0, 0);
-                        
-                        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7); 
-                        
-                        players[playerIndex].photo = compressedBase64; 
-                        
-                        // *** บันทึกและจบการแก้ไข (ภายใน img.onload) ***
-                        saveToDatabase(); 
-                        finishPlayerEdit(name);
-                    };
-                    img.src = e.target.result;
-                };
-                reader.readAsDataURL(photoFile);
-            } else {
-                // ถ้าไม่มีไฟล์ใหม่ถูกเลือก (บันทึกข้อมูลพื้นฐาน Synchronous)
-                saveToDatabase(); 
-                finishPlayerEdit(name);
-            }
-            // *** END OF ASYNCHRONOUS COMPRESSION AND SAVE (Edit) ***
+            // 1. สร้าง Reference ใน Firebase Storage 
+            const fileRef = ref(window.firebaseStorage, fileName); 
+            
+            // 2. อัปโหลดไฟล์ (ต้อง AWAIT)
+            await uploadBytes(fileRef, photoFile); 
+            
+            // 3. ดึง URL (ต้อง AWAIT)
+            const imageURL = await getDownloadURL(fileRef);
+            
+            playerObject.photo = imageURL; // 💡 บันทึก URL แทน Base64!
+            showSuccessMessage('อัปโหลดรูปภาพไปยัง Cloud สำเร็จ');
+            
+        } catch (error) {
+            console.error("Firebase upload failed:", error);
+            showErrorMessage('ไม่สามารถอัปโหลดรูปภาพได้: ' + error.message);
+            return; // หยุดทำงานถ้าอัปโหลดรูปไม่สำเร็จ
         }
     } 
-    // ----------------------------------------------------------------
-    // B. ADD NEW PLAYER (เพิ่มผู้เล่นใหม่)
-    // ----------------------------------------------------------------
-    else {
-        const newPlayer = {
-            id: Date.now(),
-            name: name,
-            birthdate: birthdate || null,
-            jersey: jersey ? parseInt(jersey) : null,
-            teamId: teamId ? parseInt(teamId) : null,
-            phone: phone || null,
-            isManager: isManager,
-            photo: null,
-            createdAt: new Date()
-        };
+    // ถ้าผู้ใช้ไม่ได้เลือกไฟล์ใหม่ และไม่ได้กดลบ เราจะใช้ photo URL เดิมที่เคยมีอยู่แล้ว (ถ้ามี)
+    else if (playerObject.photo && document.getElementById('player-photo-remove-btn')?.dataset.removed === 'true') {
+        // หากมีตรรกะการลบรูปภาพที่ต้องลบ URL เดิม
+        playerObject.photo = null;
+    }
+
+
+    // -------------------------------------------------------------------
+    // C. อัปเดต Global Variable และ AWAIT: บันทึกข้อมูล (แก้ปัญหา Race Condition)
+    // -------------------------------------------------------------------
+    if (playerIndex === -1) {
+        // Add New Player
+        players.push(playerObject);
+    } else {
+        // Edit Existing Player
+        players[playerIndex] = playerObject;
+    }
+
+    try {
+        // *** AWAIT: การบันทึกข้อมูลหลักต้องรอการอัปโหลดรูปภาพให้เสร็จก่อน ***
+        // สันนิษฐานว่า saveToDatabase() ของคุณถูกเปลี่ยนเป็น await saveData('players')
+        await saveData('players'); 
         
-        // *** START OF ASYNCHRONOUS COMPRESSION AND SAVE (Add New) ***
-        if (photoFile) {
-            const reader = new FileReader();
-            
-            reader.onload = function(e) {
-                const img = new Image();
-                img.onload = function() {
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-                    
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    ctx.drawImage(img, 0, 0);
-                    
-                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7); 
-                    
-                    newPlayer.photo = compressedBase64; 
-                    players.push(newPlayer); // (1) เพิ่มผู้เล่นใหม่
-                    
-                    // *** บันทึกและอัปเดต UI (ภายใน img.onload) ***
-                    saveToDatabase(); 
-                    updatePlayersList();
-                    updateDashboardStats();
-                    updateTeamManagersList();
-                    updatePlayerFilters();
-                    clearPlayerForm();
-                    showSuccessMessage(`เพิ่มผู้เล่น "${name}" พร้อมรูปโปรไฟล์สำเร็จ!`);
-                };
-                img.src = e.target.result;
-            };
-            reader.readAsDataURL(photoFile);
-        } else {
-            // Add new player without photo (Synchronous save is fine here)
-            players.push(newPlayer);
-            saveToDatabase();
-            updatePlayersList();
-            updateDashboardStats();
-            updateTeamManagersList();
-            updatePlayerFilters();
-            clearPlayerForm();
-            showSuccessMessage(`เพิ่มผู้เล่น "${name}" สำเร็จ!`);
-        }
-        // *** END OF ASYNCHRONOUS COMPRESSION AND SAVE (Add New) ***
+        showSuccessMessage(`บันทึกข้อมูลผู้เล่น "${name}" สำเร็จแล้ว 🎉`);
+        
+        // เรียก UI Functions แทนโค้ดเดิมที่อยู่ใน Callback (finishPlayerEdit/updatePlayersList)
+        if (typeof updatePlayersList === 'function') updatePlayersList();
+        if (typeof updateDashboardStats === 'function') updateDashboardStats();
+        if (typeof updateTeamManagersList === 'function') updateTeamManagersList();
+        if (typeof updatePlayerFilters === 'function') updatePlayerFilters();
+        if (typeof clearPlayerForm === 'function') clearPlayerForm();
+        if (typeof finishPlayerEdit === 'function' && editingPlayer) finishPlayerEdit(name);
+        
+    } catch (error) {
+        console.error("Final data save failed:", error);
+        showErrorMessage('ไม่สามารถบันทึกข้อมูลลงในอุปกรณ์ได้');
     }
 }
+        
         
         function finishPlayerEdit(name) {
             saveToDatabase();
@@ -5765,7 +5686,35 @@ async function loadData(structName) {
         // ในกรณีที่เกิดข้อผิดพลาดร้ายแรง ให้ใช้ค่าเริ่มต้น
     }
 }
-</script>
+<script>
+
+<script type="module">
+    // 1. นำเข้า Firebase Modules ที่จำเป็น
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.1.0/firebase-app.js";
+    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.1.0/firebase-storage.js";
+    // *** หมายเหตุ: ควรใช้ CDN เวอร์ชันล่าสุด (เช่น 11.x) ตามที่คุณเคยส่งมา หรือ 9.1.0 ตามที่ผมใช้ตัวอย่าง
     
+    // 2. ข้อมูล Config ของโปรเจกต์ของคุณ (ต้องแทนที่ XXXXXX)
+    const firebaseConfig = {
+        apiKey: "AIzaSyDRhbcfmYVWV0rjwZYyIVFFoqDdMjipXMk", // ⚠️ ต้องเปลี่ยนเป็น API Key จริงของคุณ
+        authDomain: "footballprogram-93b7d.firebaseapp.com",
+        projectId: "footballprogram-93b7d",
+        storageBucket: "footballprogram-93b7d.firebasestorage.app",
+        messagingSenderId: "242565780267",
+        appId: "1:242565780267:web:f5ccc63cec293be2de6b6e"
+    };
+
+    // 3. เริ่มเชื่อมต่อ Firebase และสร้าง Global Variable
+    const app = initializeApp(firebaseConfig);
+    // 💡 ตัวแปรที่สำคัญที่สุดที่เราจะใช้ในการอัปโหลดรูปภาพ
+    window.firebaseStorage = getStorage(app); 
+    
+    // หากคุณต้องการใช้ Firestore เพื่อบันทึกข้อมูลหลัก (Optional)
+    // import { getFirestore } from "https://www.gstatic.com/firebasejs/9.1.0/firebase-firestore.js";
+    // window.firebaseDB = getFirestore(app); 
+
+    console.log("Firebase initialized. Storage is ready.");
+</script>
+
 </body>
 </html>
