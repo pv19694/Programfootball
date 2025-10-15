@@ -2024,11 +2024,35 @@
             
             const reader = new FileReader();
             reader.onload = function(e) {
-                const logoPreview = document.getElementById('logo-preview');
-                logoPreview.innerHTML = `<img src="${e.target.result}" alt="Team Logo" class="w-full h-full object-cover rounded-lg">`;
-                document.getElementById('remove-logo').classList.remove('hidden');
-            };
-            reader.readAsDataURL(file);
+        const img = new Image();
+        img.onload = function() {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // กำหนดขนาด Canvas ให้เท่ากับรูปภาพเดิม
+        canvas.width = img.width;
+        canvas.height = img.height;
+        
+        // วาดรูปภาพลงใน Canvas
+        ctx.drawImage(img, 0, 0);
+        
+        // *** จุดสำคัญ: แปลง Canvas กลับเป็น Base64 พร้อมการบีบอัด ***
+        // 'image/jpeg': บีบอัดได้ดีกว่า PNG
+        // 0.8: คือ Quality (คุณภาพ) 80% ซึ่งช่วยลดขนาด Base64 ได้มาก
+        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8); 
+        
+        // บันทึก Base64 ที่ถูกบีบอัดแล้วลงในตัวแปรผู้เล่น
+        newPlayer.player_img = compressedBase64; 
+        
+        // *****************************************************************
+        // *** โค้ดที่ต้องทำงานต่อ: วางโค้ดเดิมของคุณต่อจากบรรทัดนี้ ***
+        // *** เช่น โค้ดที่เรียก updatePlayersList() หรือการปิด Modal ***
+        // *****************************************************************
+
+    };
+    img.src = e.target.result; // ใช้ Base64 ชั่วคราวเพื่อโหลดรูปภาพ
+};
+reader.readAsDataURL(file);
         }
 
         function removeLogo() {
