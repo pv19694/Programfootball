@@ -2114,9 +2114,7 @@ reader.readAsDataURL(file);
         return;
     }
     
-    // ----------------------------------------------------------------
-    // A. EDIT EXISTING TEAM (แก้ไขทีมเดิม) - โค้ดถูกแก้ไขแล้ว
-    // ----------------------------------------------------------------
+    // A. EDIT EXISTING TEAM (แก้ไขทีมเดิม)
     if (editingTeam) {
         const teamIndex = teams.findIndex(team => team.id === editingTeam.id);
         if (teamIndex !== -1) {
@@ -2136,10 +2134,10 @@ reader.readAsDataURL(file);
                         canvas.height = img.height;
                         ctx.drawImage(img, 0, 0);
                         
-                        // บีบอัด: ลดคุณภาพเหลือ 70%
+                        // บีบอัด: ลดคุณภาพเหลือ 70% และแปลงเป็น JPEG
                         const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7); 
                         
-                        // *** แก้ไข: ใช้ teams[teamIndex] และเรียก finishTeamEdit ***
+                        // บันทึก Base64 ที่บีบอัดแล้ว และจบการแก้ไข
                         teams[teamIndex].logo = compressedBase64; 
                         finishTeamEdit(name);
                     };
@@ -2152,9 +2150,7 @@ reader.readAsDataURL(file);
             }
         }
     } 
-    // ----------------------------------------------------------------
-    // B. ADD NEW TEAM (เพิ่มทีมใหม่) - โค้ดถูกแก้ไขแล้ว
-    // ----------------------------------------------------------------
+    // B. ADD NEW TEAM (เพิ่มทีมใหม่)
     else {
         const newTeam = {
             id: Date.now(),
@@ -2178,14 +2174,13 @@ reader.readAsDataURL(file);
                     canvas.height = img.height;
                     ctx.drawImage(img, 0, 0);
                     
-                    // บีบอัด: ลดคุณภาพเหลือ 70%
+                    // บีบอัด: ลดคุณภาพเหลือ 70% และแปลงเป็น JPEG
                     const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7); 
                     
-                    // *** โค้ดส่วนเพิ่มทีมใหม่: ใช้ newTeam และ teams.push ***
                     newTeam.logo = compressedBase64; 
                     teams.push(newTeam);
                     
-                    // เรียกฟังก์ชัน UI (ซึ่ง Wrapper จะสั่งบันทึกอัตโนมัติ)
+                    // เรียกฟังก์ชัน UI 
                     updateTeamsList();
                     updateTeamDropdowns();
                     updatePlayerFilters();
@@ -2198,9 +2193,8 @@ reader.readAsDataURL(file);
             reader.readAsDataURL(logoFile);
             
         } else {
-            // Add new team without logo (โค้ดส่วนนี้ยังคงเดิม)
+            // Add new team without logo
             teams.push(newTeam);
-            // ถ้ามีการเรียก saveToDatabase() ในโค้ดเดิม ให้ลบออกและพึ่งพา Wrapper
             saveToDatabase(); 
             updateTeamsList();
             updateTeamDropdowns();
@@ -2211,7 +2205,7 @@ reader.readAsDataURL(file);
         }
     }
 }
-
+        
         function finishTeamEdit(name) {
             saveToDatabase();
             updateTeamsList();
@@ -2424,7 +2418,7 @@ reader.readAsDataURL(file);
             });
         }
 
-        // Player Management Functions
+       // Player Management Functions
 function handlePlayerSubmit(event) {
     event.preventDefault();
     
@@ -2454,9 +2448,7 @@ function handlePlayerSubmit(event) {
         }
     }
     
-    // ----------------------------------------------------------------
     // A. EDIT EXISTING PLAYER (แก้ไขผู้เล่นเดิม)
-    // ----------------------------------------------------------------
     if (editingPlayer) {
         const playerIndex = players.findIndex(player => player.id === editingPlayer.id);
         if (playerIndex !== -1) {
@@ -2496,9 +2488,7 @@ function handlePlayerSubmit(event) {
             // *** END OF IMAGE COMPRESSION LOGIC (Edit) ***
         }
     } 
-    // ----------------------------------------------------------------
     // B. ADD NEW PLAYER (เพิ่มผู้เล่นใหม่)
-    // ----------------------------------------------------------------
     else {
         const newPlayer = {
             id: Date.now(),
@@ -2533,7 +2523,7 @@ function handlePlayerSubmit(event) {
                     players.push(newPlayer);
                     
                     // การเรียกฟังก์ชัน UI และการบันทึก
-                    saveToDatabase(); // (อาจจะไม่จำเป็นถ้าคุณมี Wrapper แล้ว แต่ใส่ไว้เพื่อความมั่นใจ)
+                    saveToDatabase(); 
                     updatePlayersList();
                     updateDashboardStats();
                     updateTeamManagersList();
