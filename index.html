@@ -2091,82 +2091,126 @@ reader.readAsDataURL(file);
             document.getElementById('remove-player-photo').classList.add('hidden');
         }
 
-        function handleTeamSubmit(event) {
-            event.preventDefault();
+       function handleTeamSubmit(event) {
+    event.preventDefault();
+    
+    const name = document.getElementById('team-name').value.trim();
+    const selectedColor = document.querySelector('input[name="team-color"]:checked')?.value;
+    const logoFile = document.getElementById('team-logo').files[0];
+    
+    if (!name) {
+        showErrorMessage('กรุณากรอกชื่อทีม');
+        return;
+    }
+    
+    if (!selectedColor) {
+        showErrorMessage('กรุณาเลือกสีประจำทีม');
+        return;
+    }
+    
+    // Check for duplicate team name (exclude current editing team)
+    if (teams.some(team => team.name.toLowerCase() === name.toLowerCase() && team.id !== editingTeam?.id)) {
+        showErrorMessage('ชื่อทีมนี้มีอยู่แล้ว กรุณาเลือกชื่ออื่น');
+        return;
+    }
+    
+    // ----------------------------------------------------------------
+    // A. EDIT EXISTING TEAM (แก้ไขทีมเดิม)
+    // ----------------------------------------------------------------
+    if (editingTeam) {
+        const teamIndex = teams.findIndex(team => team.id === editingTeam.id);
+        if (teamIndex !== -1) {
+            teams[teamIndex].name = name;
+            teams[teamIndex].primaryColor = selectedColor;
             
-            const name = document.getElementById('team-name').value.trim();
-            const selectedColor = document.querySelector('input[name="team-color"]:checked')?.value;
-            const logoFile = document.getElementById('team-logo').files[0];
-            
-            if (!name) {
-                showErrorMessage('กรุณากรอกชื่อทีม');
-                return;
-            }
-            
-            if (!selectedColor) {
-                showErrorMessage('กรุณาเลือกสีประจำทีม');
-                return;
-            }
-            
-            // Check for duplicate team name (exclude current editing team)
-            if (teams.some(team => team.name.toLowerCase() === name.toLowerCase() && team.id !== editingTeam?.id)) {
-                showErrorMessage('ชื่อทีมนี้มีอยู่แล้ว กรุณาเลือกชื่ออื่น');
-                return;
-            }
-            
-            if (editingTeam) {
-                // Edit existing team
-                const teamIndex = teams.findIndex(team => team.id === editingTeam.id);
-                if (teamIndex !== -1) {
-                    teams[teamIndex].name = name;
-                    teams[teamIndex].primaryColor = selectedColor;
-                    
-                    if (logoFile) {
-                        const reader = new FileReader();
-                        reader.onload = function(e) {
-                            teams[teamIndex].logo = e.target.result;
-                            finishTeamEdit(name);
-                        };
-                        reader.readAsDataURL(logoFile);
-                    } else {
+            // Handle logo if uploaded (with compression)
+            if (logoFile) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        ctx.drawImage(img, 0, 0);
+                        
+                        // บีบอัด: ลดคุณภาพเหลือ 70%
+                        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7); 
+                        
+                        // บันทึก Base64 ที่บีบอัดแล้ว และจบการแก้ไข
+                        teams[teamIndex].logo = compressedBase64; 
                         finishTeamEdit(name);
-                    }
-                }
-            } else {
-                // Add new team
-                const newTeam = {
-                    id: Date.now(),
-                    name: name,
-                    primaryColor: selectedColor,
-                    logo: null,
-                    createdAt: new Date()
-                };
-                
-                // Handle logo if uploaded
-                if (logoFile) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        newTeam.logo = e.target.result;
-                        teams.push(newTeam);
-                        updateTeamsList();
-                        updateTeamDropdowns();
-                        clearTeamForm();
-                        showSuccessMessage(`เพิ่มทีม "${name}" พร้อมโลโก้สำเร็จ!`);
-                        updateDashboardStats();
                     };
-                    reader.readAsDataURL(logoFile);
-                } else {
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(logoFile);
+            } else {
+                // ถ้าไม่มีไฟล์โลโก้ใหม่ถูกเลือก ให้จบการแก้ไข
+                finishTeamEdit(name);
+            }
+        }
+    } 
+    // ----------------------------------------------------------------
+    // B. ADD NEW TEAM (เพิ่มทีมใหม่)
+    // ----------------------------------------------------------------
+    else {
+        const newTeam = {
+            id: Date.now(),
+            name: name,
+            primaryColor: selectedColor,
+            logo: null, // จะถูกแทนที่ด้วย Base64 ที่ถูกบีบอัด
+            createdAt: new Date()
+        };
+        
+        // Handle logo if uploaded (with compression)
+        if (logoFile) {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+                    
+                    // บีบอัด: ลดคุณภาพเหลือ 70%
+                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7); 
+                    
+                    // บันทึก Base64 ที่บีบอัดแล้ว
+                    newTeam.logo = compressedBase64; 
                     teams.push(newTeam);
-                    saveToDatabase();
+                    
+                    // เรียกฟังก์ชัน UI (ซึ่ง Wrapper จะสั่งบันทึกอัตโนมัติ)
                     updateTeamsList();
                     updateTeamDropdowns();
                     updatePlayerFilters();
                     clearTeamForm();
-                    showSuccessMessage(`เพิ่มทีม "${name}" สำเร็จ!`);
+                    showSuccessMessage(`เพิ่มทีม "${name}" พร้อมโลโก้สำเร็จ!`);
                     updateDashboardStats();
-                }
-            }
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(logoFile);
+            
+        } else {
+            // Add new team without logo (โค้ดส่วนนี้ยังคงเดิม)
+            teams.push(newTeam);
+            // คุณมี saveToDatabase() แต่ผมแนะนำให้พึ่งพา wrapper มากกว่า
+            // saveToDatabase(); 
+            updateTeamsList();
+            updateTeamDropdowns();
+            updatePlayerFilters();
+            clearTeamForm();
+            showSuccessMessage(`เพิ่มทีม "${name}" สำเร็จ!`);
+            updateDashboardStats();
         }
+    }
+}
 
         function finishTeamEdit(name) {
             saveToDatabase();
