@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -88,17 +89,10 @@
                         <h1 class="text-2xl font-bold">ระบบจัดบอลสนาม Jakhong</h1>
                         <p class="text-blue-100 text-sm">Football Management System</p>
                     </div>
-                    
                 </div>
-                <div class="flex items-center space-x-4">
-                    <div class="text-right">
-                        <div class="text-sm opacity-90" id="current-date"></div>
-                        <div class="text-xs opacity-75" id="current-time"></div>
-                    </div>
-                    <button onclick="manualSaveAllData()" 
-                            class="px-3 py-1 bg-green-500 text-white rounded-lg shadow-md hover:bg-green-600 transition duration-150 text-sm flex items-center">
-                        <i class="fas fa-save mr-2"></i> บันทึกข้อมูล
-                    </button>
+                <div class="text-right">
+                    <div class="text-sm opacity-90" id="current-date"></div>
+                    <div class="text-xs opacity-75" id="current-time"></div>
                 </div>
             </div>
         </div>
@@ -1144,25 +1138,7 @@
         let editingPlayerRecord = null;
         let editingNextMatch = null;
         let deleteCallback = null;
-        
-    // -----------------------------------------------
-    // NEW FUNCTION: Manual Save All Data (แก้ไขให้มี Delay)
-    // -----------------------------------------------
-function manualSaveAllData() {
-    // 1. แสดงข้อความแจ้งให้ผู้ใช้ทราบว่ากำลังบันทึก
-    alert('กำลังบันทึกข้อมูล กรุณารอสักครู่...');
 
-    // 2. ใช้ setTimeout 500ms เพื่อให้ Base64 Conversion เสร็จสมบูรณ์
-    setTimeout(() => {
-        // สั่งให้ระบบบันทึกข้อมูลหลักทั้งหมด (matchHistory, teams, players, schedule) ทันที
-        Object.keys(DATA_STRUCTURES).forEach(saveData); 
-        
-        // 3. แสดงข้อความยืนยันการบันทึกสำเร็จ
-        console.log('*** Manual Save All Data Executed after 500ms delay! ***');
-        alert('บันทึกข้อมูลทั้งหมดเรียบร้อยแล้ว!');
-    }, 500); // 500 มิลลิวินาที (0.5 วินาที)
-}
- 
         // Auto-save functions
         function saveToDatabase() {
             try {
@@ -2079,42 +2055,14 @@ function manualSaveAllData() {
                 return;
             }
             
+            const reader = new FileReader();
             reader.onload = function(e) {
-    const img = new Image();
-    img.onload = function() {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        
-        // กำหนดขนาด Canvas ให้เท่ากับรูปภาพเดิม
-        canvas.width = img.width;
-        canvas.height = img.height;
-        
-        // วาดรูปภาพลงใน Canvas
-        ctx.drawImage(img, 0, 0);
-        
-        // *** จุดสำคัญ: แปลง Canvas กลับเป็น Base64 พร้อมการบีบอัด ***
-        // image/jpeg: ใช้ JPEG เพื่อให้บีบอัดได้ดีกว่า PNG
-        // 0.8: คือ Quality (คุณภาพ) ยิ่งน้อย ไฟล์ยิ่งเล็ก (0.7-0.9 เป็นค่าที่เหมาะสม)
-        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8); 
-        
-        // บันทึก Base64 ที่ถูกบีบอัดแล้วลงในตัวแปรผู้เล่น
-        newPlayer.player_img = compressedBase64; 
-        
-        // *** เรียกฟังก์ชันแสดงผล/บันทึกหลังจากนี้
-        // updatePlayersList(); // ถ้ามี
-        // handlePlayerSubmitHelper(); // หรือฟังก์ชันต่อไปในการบันทึก
-        
-        // ******* เนื่องจากโค้ดเดิมของคุณต้องทำงานต่อจากบรรทัดนี้ *******
-        // ให้เรียกใช้ฟังก์ชันเดิมที่รับผิดชอบการบันทึกต่อ
-        // (คุณอาจต้องตรวจสอบโค้ดเดิมว่ามีฟังก์ชันอื่นที่ถูกเรียกต่อหรือไม่)
-        
-        // สมมติว่าโค้ดเดิมของคุณจะทำงานต่อจากตรงนี้
-        // *** ให้เพิ่มโค้ดที่เรียกฟังก์ชัน updatePlayersList และจัดการการแสดงผลอื่นๆ ของคุณต่อจากบรรทัดนี้ ***
-        
-    };
-    img.src = e.target.result; // ใช้ Base64 ชั่วคราวเพื่อโหลดรูปภาพ
-};
-reader.readAsDataURL(file);
+                const photoPreview = document.getElementById('player-photo-preview');
+                photoPreview.innerHTML = `<img src="${e.target.result}" alt="Player Photo" class="w-full h-full object-cover rounded-full">`;
+                document.getElementById('remove-player-photo').classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
 
         function removePlayerPhoto() {
             document.getElementById('player-photo').value = '';
@@ -5447,241 +5395,7 @@ reader.readAsDataURL(file);
                 `;
             }).join('');
         }
-
-
-// ... (โค้ด JavaScript เดิมทั้งหมดของคุณจบตรงนี้) ...
-
-// -----------------------------------------------
-// โค้ด JavaScript ที่เพิ่มใหม่
-// -----------------------------------------------
-// ===============================================
-// New Functionality: Auto-Save Form Data (Real-time Persistence)
-// ใช้ Local Storage เพื่อบันทึกข้อมูลแบบ Real-time
-// ===============================================
-
-const MATCH_FORM_KEY = 'matchRecordAutoSave';
-const matchFormElements = ['match-date', 'team-a', 'team-b', 'score-a', 'score-b'];
-
-/**
- * 1. บันทึกข้อมูลฟอร์มปัจจุบันลงใน Local Storage
- */
-function saveMatchFormData() {
-    const data = {};
-    matchFormElements.forEach(id => {
-        const element = document.getElementById(id);
-        if (element) {
-            data[id] = element.value;
-        }
-    });
-    // บันทึกเป็นสตริง JSON
-    localStorage.setItem(MATCH_FORM_KEY, JSON.stringify(data));
-    console.log('Match form data auto-saved.');
-}
-
-/**
- * 2. โหลดข้อมูลจาก Local Storage และกรอกกลับเข้าไปในฟอร์ม
- */
-function loadMatchFormData() {
-    const storedData = localStorage.getItem(MATCH_FORM_KEY);
-    if (storedData) {
-        try {
-            const data = JSON.parse(storedData);
-            matchFormElements.forEach(id => {
-                const element = document.getElementById(id);
-                // ตรวจสอบว่ามี element และมีค่าที่ถูกบันทึกไว้
-                if (element && data[id] !== undefined) {
-                    element.value = data[id];
-                }
-            });
-            console.log('Match form data loaded from auto-save.');
-        } catch (e) {
-            console.error('Error parsing stored form data, clearing data.', e);
-            localStorage.removeItem(MATCH_FORM_KEY); // ล้างข้อมูลที่เสียหาย
-        }
-    }
-}
-
-/**
- * 3. ผูก Event Listener เข้ากับฟิลด์ต่างๆ เพื่อเรียกใช้ saveMatchFormData เมื่อมีการเปลี่ยนแปลง
- */
-function attachMatchFormAutoSaveListeners() {
-    matchFormElements.forEach(id => {
-        const element = document.getElementById(id);
-        if (element) {
-            // ใช้ 'input' สำหรับ input ทั่วไป และ 'change' สำหรับ select
-            const eventType = (element.tagName === 'SELECT' || element.type === 'date') ? 'change' : 'input';
-            element.addEventListener(eventType, saveMatchFormData);
-        }
-    });
-}
-
-
-// -----------------------------------------------
-// 4. การเรียกใช้ฟังก์ชันเมื่อหน้าเว็บโหลดเสร็จ
-// -----------------------------------------------
-document.addEventListener('DOMContentLoaded', () => {
-    // โหลดข้อมูลที่บันทึกอัตโนมัติ
-    loadMatchFormData(); 
-    // ผูก Event Listener เพื่อบันทึกข้อมูลอัตโนมัติ
-    attachMatchFormAutoSaveListeners(); 
-});
-
-
-// -----------------------------------------------
-// 5. อัปเดตฟังก์ชัน clearMatchForm (สำคัญ: ต้องแทนที่ฟังก์ชันเดิม)
-// -----------------------------------------------
-function clearMatchForm() {
-    // ล้างค่าในฟอร์ม (ตามโค้ด HTML เดิมของคุณ)
-    document.getElementById('match-date').value = '';
-    document.getElementById('team-a').value = '';
-    document.getElementById('team-b').value = '';
-    document.getElementById('score-a').value = 0; 
-    document.getElementById('score-b').value = 0; 
-    
-    // สำคัญ: ล้างข้อมูลที่บันทึกอัตโนมัติจาก Local Storage ด้วย
-    localStorage.removeItem(MATCH_FORM_KEY); 
-    
-    // อัปเดต UI ให้ตรงกับการล้างข้อมูล (เช่น เรียกฟังก์ชันแสดงข้อความ)
-    // showMessage('ฟอร์มถูกล้างแล้ว', 'info'); // หากมีฟังก์ชัน showMessage
-}
     </script>
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98d71c4750917b68',t:'MTc2MDI3NzQ5MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
-
-<script>
-// ===============================================
-// NEW CODE BLOCK: UNIVERSAL AUTO-SAVE PERSISTENCE
-// จัดการการบันทึก/โหลดข้อมูลหลักทุกส่วนของแอปพลิเคชัน
-// ===============================================
-
-// -----------------------------------------------
-// 1. กำหนด Global Variables และ Keys
-// -----------------------------------------------
-
-// Map ข้อมูล Global Variable ที่ต้องการบันทึก: [Key สำหรับ Local Storage, ชื่อตัวแปร Global]
-const DATA_STRUCTURES = {
-    // ข้อมูลตารางคะแนน (Match History)
-    'matchHistory': { key: 'APP_MATCH_HISTORY', variableName: 'matchHistory' }, 
-    // ข้อมูลทีม (Team List)
-    'teams': { key: 'APP_TEAM_LIST', variableName: 'teams' }, 
-    // ข้อมูลรายชื่อนักกีฬา (สมมติว่าตัวแปรชื่อ 'players')
-    'players': { key: 'APP_PLAYER_LIST', variableName: 'players' }, 
-    // ข้อมูลตารางการแข่งขัน/แมตช์ต่อไป (สมมติว่าตัวแปรชื่อ 'schedule')
-    'schedule': { key: 'APP_SCHEDULE', variableName: 'schedule' }
-    // เพิ่มข้อมูลอื่นๆ ได้ที่นี่ เช่น 'settings', 'matchSummaries'
-};
-
-// Map ฟังก์ชันที่จะถูกห่อหุ้ม: [ชื่อฟังก์ชันเดิม, Array ของชื่อโครงสร้างข้อมูลที่ฟังก์ชันนั้นแก้ไข]
-const FUNCTIONS_TO_WRAP = {
-    // บันทึกผล, อัปเดตตารางคะแนน: แก้ไข matchHistory และ teams
-    'updateLeaderboard': ['matchHistory', 'teams'], 
-    // จัดการทีม: แก้ไข teams
-    'addTeam': ['teams'], 
-    // จัดการแมตช์ต่อไป: แก้ไข schedule
-    'updateSchedule': ['schedule'], // <--- ต้องมีคอมม่าตรงนี้!
-    // ฟังก์ชันแสดงผล UI (เป็นจุดบันทึกสำรองและแสดงผลรูปภาพ)
-    'updatePlayersList': ['players'], 
-    // ฟังก์ชันสำหรับปุ่ม Manual Save ที่เราสร้างเพิ่มเอง
-    'manualSaveAllData': ['matchHistory', 'teams', 'players', 'schedule'] 
-};
-
-
-// -----------------------------------------------
-// 2. Data Saving/Loading Helpers
-// -----------------------------------------------
-
-/**
- * บันทึกข้อมูล Global Variable ที่กำหนดลงใน Local Storage
- * @param {string} structName - ชื่อโครงสร้างข้อมูลจาก DATA_STRUCTURES (เช่น 'teams')
- */
-function saveData(structName) {
-    const struct = DATA_STRUCTURES[structName];
-    if (!struct) return;
-
-    const globalVar = window[struct.variableName]; // เข้าถึงตัวแปร Global
-    
-    if (globalVar && Array.isArray(globalVar) && globalVar.length > 0) {
-        localStorage.setItem(struct.key, JSON.stringify(globalVar));
-    } else if (globalVar !== undefined) {
-        // ลบข้อมูลถ้าตัวแปรเป็น Array ว่าง
-        localStorage.removeItem(struct.key);
-    }
-}
-
-/**
- * โหลดข้อมูลจาก Local Storage กลับเข้า Global Variable
- * @param {string} structName - ชื่อโครงสร้างข้อมูลจาก DATA_STRUCTURES
- */
-function loadData(structName) {
-    const struct = DATA_STRUCTURES[structName];
-    if (!struct) return;
-
-    const storedData = localStorage.getItem(struct.key);
-    if (storedData) {
-        try {
-            const loadedData = JSON.parse(storedData);
-            // ตรวจสอบว่าตัวแปร Global มีอยู่จริงก่อนโหลดทับ
-            if (window[struct.variableName] !== undefined) {
-                window[struct.variableName] = loadedData; 
-                console.log(`Data loaded for: ${structName}`);
-            }
-        } catch (e) {
-            console.error(`Error parsing stored data for ${structName}, clearing data.`, e);
-            localStorage.removeItem(struct.key);
-        }
-    }
-}
-
-// -----------------------------------------------
-// 3. Function Wrapping Logic (นำ Delay ออกทั้งหมด)
-// -----------------------------------------------
-function wrapFunction(funcName, saveKeys) {
-    if (typeof window[funcName] === 'function') {
-        const originalFunction = window[funcName];
-        
-        window[funcName] = function() {
-            const result = originalFunction.apply(this, arguments); 
-            
-            // บันทึกข้อมูลที่เกี่ยวข้องอัตโนมัติทันที
-            saveKeys.forEach(saveData);
-            
-            console.log(`Function '${funcName}' executed and auto-saved data.`);
-            return result;
-        };
-    } else {
-        console.warn(`Original function '${funcName}' not found. Cannot set auto-save.`);
-    }
-}
-
-// -----------------------------------------------
-// 4. Initialization (เริ่มต้นการทำงาน)
-// -----------------------------------------------
-
-document.addEventListener('DOMContentLoaded', () => {
-    
-    // 4.1 โหลดข้อมูลทั้งหมดที่ถูกบันทึกไว้กลับเข้าสู่ Global Variable
-    Object.keys(DATA_STRUCTURES).forEach(loadData);
-    
-    // 4.2 ห่อหุ้มฟังก์ชันทั้งหมดที่ต้องมีการบันทึกข้อมูล
-    Object.entries(FUNCTIONS_TO_WRAP).forEach(([funcName, saveKeys]) => {
-        wrapFunction(funcName, saveKeys);
-    });
-
-    // 4.3 (สำคัญ) เรียก updateLeaderboard() เพื่อแสดงผลข้อมูลทันทีหลังโหลด
-    // เนื่องจาก updateLeaderboard ถูกห่อหุ้มแล้ว การเรียกครั้งนี้จะไม่บันทึกซ้ำ
-    if (typeof updateLeaderboard === 'function') {
-        // ต้องเรียก originalUpdateLeaderboard เพื่อเลี่ยงการบันทึกซ้ำในครั้งแรก
-        // หรือเรียกฟังก์ชันที่ถูกห่อหุ้มแล้ว (ซึ่งตอนนี้มันถูกเรียกจากการห่อหุ้มในข้อ 4.2)
-        // เพื่อความชัวร์ ให้เรียกฟังก์ชันที่ห่อหุ้มแล้วอีกครั้ง เพื่อให้ UI อัปเดตข้อมูลที่โหลดมา
-        updateLeaderboard(); 
-    }
-
-    // **NEW MINIMAL CODE ADDED HERE:** // เพื่อให้รายชื่อนักกีฬาและรูปภาพแสดงผลหลังจากโหลดข้อมูล 'players'
-    // *** ตรวจสอบชื่อฟังก์ชันนี้ในโค้ดเดิมของคุณ ***
-    if (typeof updatePlayersList === 'function') {
-        renderPlayerList(); 
-    }
-});
-</script>
-    
 </body>
 </html>
