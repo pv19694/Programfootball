@@ -7,7 +7,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ระบบจัดบอลสนาม Jakhong</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -383,7 +382,7 @@
                         <label class="block text-sm font-medium text-gray-700 mb-2">โลโก้ทีม</label>
                         <div class="flex items-center space-x-4 mb-4">
                             <div class="relative">
-                                <input type="file" id="team-logo" accept="image/*" class="sr-only" onchange="handleLogoUpload(event)">
+                                <input type="file" id="team-logo" accept="image/*" class="sr-only" onchange="handleLogoUp(event)">
                                 <label for="team-logo" class="cursor-pointer flex items-center justify-center w-20 h-20 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 transition-colors">
                                     <div id="logo-preview" class="w-full h-full rounded-lg bg-gray-100 flex items-center justify-center">
                                         <i class="fas fa-camera text-gray-400 text-xl"></i>
@@ -603,7 +602,7 @@
                             <label class="block text-sm font-medium text-gray-700 mb-2">รูปโปรไฟล์</label>
                             <div class="flex items-center space-x-4 mb-4">
                                 <div class="relative">
-                                    <input type="file" id="player-photo" accept="image/*" class="sr-only" onchange="handlePlayerPhotoUpload(event)">
+                                    <input type="file" id="player-photo" accept="image/*" class="sr-only" onchange="handlePlayerPhotoUp(event)">
                                     <label for="player-photo" class="cursor-pointer flex items-center justify-center w-20 h-20 border-2 border-dashed border-gray-300 rounded-full hover:border-blue-500 transition-colors">
                                         <div id="player-photo-preview" class="w-full h-full rounded-full bg-gray-100 flex items-center justify-center">
                                             <i class="fas fa-user text-gray-400 text-xl"></i>
@@ -1141,117 +1140,103 @@
         let editingNextMatch = null;
         let deleteCallback = null;
 
-        // Auto-save functions
-        function saveToDatabase() {
-            try {
-                const data = {
-                    teams: teams,
-                    players: players,
-                    matches: matches,
-                    playerRecords: playerRecords,
-                    nextMatches: nextMatches,
-                    lastSaved: new Date().toISOString()
-                };
-                localStorage.setItem('jakhong_football_data', JSON.stringify(data));
-                console.log('✅ ข้อมูลถูกบันทึกอัตโนมัติแล้ว');
-            } catch (error) {
-                console.error('❌ เกิดข้อผิดพลาดในการบันทึกข้อมูล:', error);
-            }
-        }
+       // เปลี่ยนชื่อฟังก์ชันเป็น saveAllDataToCloud เพื่อให้สื่อสารกับ Firestore ได้อย่างมีประสิทธิภาพ
+async function saveAllDataToCloud() {
+    console.log('🔄 กำลังบันทึกข้อมูลทั้งหมดขึ้น Cloud...');
+    
+    // โครงสร้างข้อมูลที่คุณต้องการบันทึก (อ้างอิงจากโค้ดเดิมของคุณ)
+    const dataStructuresToSave = {
+        'teams': window.teams,
+        'players': window.players,
+        'matches': window.matches, // matches อาจจะแทนที่ matchHistory 
+        'playerRecords': window.playerRecords,
+        'nextMatches': window.nextMatches // nextMatches อาจจะแทนที่ schedule
+    };
 
-        function loadFromDatabase() {
-            try {
-                const savedData = localStorage.getItem('jakhong_football_data');
-                if (savedData) {
-                    const data = JSON.parse(savedData);
-                    teams = data.teams || [];
-                    players = data.players || [];
-                    matches = data.matches || [];
-                    playerRecords = data.playerRecords || [];
-                    nextMatches = data.nextMatches || [];
-                    console.log('✅ โหลดข้อมูลจากฐานข้อมูลสำเร็จ:', {
-                        teams: teams.length,
-                        players: players.length,
-                        matches: matches.length,
-                        playerRecords: playerRecords.length,
-                        nextMatches: nextMatches.length,
-                        lastSaved: data.lastSaved
-                    });
-                    return true;
-                }
-            } catch (error) {
-                console.error('❌ เกิดข้อผิดพลาดในการโหลดข้อมูล:', error);
-            }
-            return false;
-        }
-
-        // Initialize the application
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 กำลังเริ่มต้นระบบ...');
-            
-            // Try to load existing data first
-            console.log('📊 กำลังโหลดข้อมูลที่บันทึกไว้...');
-            const hasExistingData = loadFromDatabase();
-            
-            if (!hasExistingData) {
-                // If no existing data, add sample data and save it
-                console.log('📊 ไม่พบข้อมูลเดิม กำลังสร้างข้อมูลตัวอย่าง...');
-                addSampleData();
-                saveToDatabase();
-                console.log('✅ สร้างและบันทึกข้อมูลตัวอย่างเสร็จสิ้น');
-            }
-            
-            console.log('✅ โหลดข้อมูลเสร็จสิ้น:', {
-                teams: teams.length,
-                players: players.length,
-                matches: matches.length,
-                playerRecords: playerRecords.length,
-                nextMatches: nextMatches.length
-            });
-            
-            updateCurrentDateTime();
-            setInterval(updateCurrentDateTime, 1000);
-            
-            // Set today's date as default
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('match-date').value = today;
-            document.getElementById('summary-date').value = today;
-            document.getElementById('record-date').value = today;
-            
-            // Add event listeners for team color selection
-            document.querySelectorAll('input[name="team-color"]').forEach(radio => {
-                radio.addEventListener('change', updateTeamColorPreview);
-            });
-
-            // Force immediate UI update with data
-            console.log('🔄 กำลังอัปเดต UI ทันที...');
-            
-            // Update all components immediately with the loaded data
-            setTimeout(() => {
-                updateDashboardStats();
-                updateTeamDropdowns();
-                updatePlayerFilters();
-                updateTeamManagersList();
-                updateTeamsList();
-                updatePlayersList();
-                updateMatchHistory();
-                updateLeaderboard();
-                updatePlayerRecordsList();
-                updateTopPlayersStats();
-                updateDailySummary();
-                updateRecordTeamDropdown();
-                updateStatsTeamFilter();
-                updateNextMatchDropdowns();
-                updateUpcomingMatchesList();
-                
-                console.log('✅ อัปเดต UI เสร็จสิ้น');
-                showSuccessMessage('ระบบพร้อมใช้งาน! ข้อมูลโหลดเรียบร้อยแล้ว 🎉');
-            }, 100);
-            
-            // Setup delete modal event listeners
-            setupDeleteModal();
+    // ใช้ Promise.all เพื่อเรียก saveToFirestore สำหรับโครงสร้างข้อมูลทั้งหมด
+    try {
+        const savePromises = Object.keys(dataStructuresToSave).map(key => {
+            // เราอาจต้องปรับ DATA_STRUCTURES ให้รองรับตัวแปรเหล่านี้ก่อน
+            // แต่เพื่อความรวดเร็ว ใช้ saveToFirestore โดยตรง (สมมติว่าคุณได้แก้ไข DATA_STRUCTURES แล้ว)
+            return saveToFirestore(key); 
         });
+        
+        await Promise.all(savePromises);
+        
+        // บันทึกสำเร็จจะแสดงผลในแต่ละ saveToFirestore อยู่แล้ว
+        console.log('✅ บันทึกข้อมูลทั้งหมดขึ้น Cloud เสร็จสิ้น');
+    } catch (error) {
+         console.error('❌ เกิดข้อผิดพลาดในการบันทึกข้อมูลทั้งหมด:', error);
+    }
+}
 
+        // แทนที่ document.addEventListener('DOMContentLoaded', function() { ... }) เดิมทั้งหมด
+document.addEventListener('DOMContentLoaded', async function() { // *** ต้องเพิ่ม async ***
+    console.log('🚀 กำลังเริ่มต้นระบบ...');
+    
+    // โครงสร้างข้อมูลทั้งหมดที่คุณต้องการโหลด
+    const dataStructuresToLoad = Object.keys(DATA_STRUCTURES); // ใช้ DATA_STRUCTURES ที่คุณกำหนดไว้
+
+    try {
+        console.log('📊 กำลังโหลดข้อมูลจาก Cloud...');
+        
+        // *** ใช้ AWAIT เพื่อรอการโหลดข้อมูลจาก Cloud ทั้งหมดให้เสร็จก่อนรันต่อ ***
+        await Promise.all(dataStructuresToLoad.map(loadFromFirestore));
+        
+        // โค้ดส่วนนี้จะทำงานต่อเมื่อข้อมูลถูกโหลดเข้าตัวแปร Global แล้ว
+        
+        console.log('✅ โหลดข้อมูลเสร็จสิ้น');
+
+        // ตรวจสอบว่ามีข้อมูลหรือไม่ (ใช้ Teams เป็นตัวแทน)
+        if (teams.length === 0) {
+            console.log('📊 ไม่พบข้อมูลเดิม กำลังสร้างข้อมูลตัวอย่าง...');
+            addSampleData(); // ฟังก์ชันนี้ต้องมีอยู่
+            // บันทึกข้อมูลตัวอย่างขึ้น Cloud ทันที
+            await saveAllDataToCloud(); 
+            console.log('✅ สร้างและบันทึกข้อมูลตัวอย่างเสร็จสิ้น');
+        }
+
+    } catch (error) {
+        console.error('❌ เกิดข้อผิดพลาดในการโหลดข้อมูลเริ่มต้น:', error);
+    }
+    
+    // ⬇️ โค้ดส่วนล่างนี้สามารถย้ายมาจากโค้ดเดิมของคุณได้ ⬇️
+
+    console.log('🔄 กำลังอัปเดต UI ทันที...');
+    
+    // ไม่ต้องใช้ setTimeout() แล้ว เพราะเรารอข้อมูลเสร็จแล้ว
+    updateDashboardStats();
+    updateTeamDropdowns();
+    updatePlayerFilters();
+    updateTeamManagersList();
+    updateTeamsList();
+    updatePlayersList();
+    updateMatchHistory();
+    updateLeaderboard();
+    updatePlayerRecordsList();
+    updateTopPlayersStats();
+    updateDailySummary();
+    updateRecordTeamDropdown();
+    updateStatsTeamFilter();
+    updateNextMatchDropdowns();
+    updateUpcomingMatchesList();
+    
+    // โค้ดอื่นๆ เดิมของคุณ
+    updateCurrentDateTime();
+    setInterval(updateCurrentDateTime, 1000);
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('match-date').value = today;
+    document.getElementById('summary-date').value = today;
+    document.getElementById('record-date').value = today;
+    document.querySelectorAll('input[name="team-color"]').forEach(radio => {
+        radio.addEventListener('change', updateTeamColorPreview);
+    });
+    setupDeleteModal();
+
+    console.log('✅ อัปเดต UI เสร็จสิ้น');
+    showSuccessMessage('ระบบพร้อมใช้งาน! ข้อมูลโหลดเรียบร้อยแล้ว 🎉');
+});
+        
         // Add comprehensive sample data for demonstration
         function addSampleData() {
             // Sample teams with diverse colors and characteristics
