@@ -2005,23 +2005,40 @@
             }
         }
 
-        function handleLogoUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            
-            // Check file size (2MB limit)
-            if (file.size > 2 * 1024 * 1024) {
-                showErrorMessage('ไฟล์โลโก้ต้องมีขนาดไม่เกิน 2MB');
-                event.target.value = '';
-                return;
-            }
-            
-            // Check file type
-            if (!file.type.startsWith('image/')) {
-                showErrorMessage('กรุณาเลือกไฟล์รูปภาพเท่านั้น');
-                event.target.value = '';
-                return;
-            }
+        // ฟังก์ชันนี้ถูกเรียกเมื่อผู้ใช้เลือกไฟล์ใน input 'team-logo'
+function handleLogoUpload(event) {
+    const file = event.target.files[0];
+    const previewElement = document.getElementById('logo-preview');
+    const removeButton = document.getElementById('remove-logo'); 
+
+    if (!file) {
+        // ไม่มีไฟล์ ถูกยกเลิก หรือถูกลบ
+        previewElement.innerHTML = '<i class="fas fa-camera text-gray-400 text-xl"></i>';
+        removeButton.classList.add('hidden');
+        return;
+    }
+    
+    // 💡 การตรวจสอบไฟล์ (โค้ดตรวจสอบเดิมของคุณ)
+    if (file.size > 2 * 1024 * 1024) { // 2MB limit
+        showErrorMessage('ไฟล์โลโก้ต้องมีขนาดไม่เกิน 2MB');
+        event.target.value = '';
+        return;
+    }
+    if (!file.type.startsWith('image/')) {
+        showErrorMessage('กรุณาเลือกไฟล์รูปภาพเท่านั้น');
+        event.target.value = '';
+        return;
+    }
+    
+    // *** การใช้ URL.createObjectURL เพื่อสร้าง Preview ชั่วคราว (แก้ปัญหา Base64) ***
+    const imageURL = URL.createObjectURL(file);
+    
+    // แสดง Preview
+    previewElement.innerHTML = `<img id="team-logo-preview" src="${imageURL}" alt="Team Logo" class="w-full h-full object-cover rounded-lg">`;
+    removeButton.classList.remove('hidden');
+
+    // **(ไม่จำเป็นต้องใช้ URL.revokeObjectURL เพราะ URL ชั่วคราวนี้จะถูกล้างเมื่อหน้านั้นถูกปิด)**
+}
 
         function removeLogo() {
             document.getElementById('team-logo').value = '';
