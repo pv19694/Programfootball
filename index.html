@@ -5637,18 +5637,25 @@ const DATA_STRUCTURES = {
 const FUNCTIONS_TO_WRAP = {
     // บันทึกผล, อัปเดตตารางคะแนน: แก้ไข matchHistory และ teams
     'updateLeaderboard': ['matchHistory', 'teams'], 
+    
     // **แก้ไขจาก 'addTeam' เป็น 'handleTeamSubmit'**
     'handleTeamSubmit': ['teams'], 
+    
     // **แก้ไขจาก 'addPlayer' เป็น 'handlePlayerSubmit'**
     'handlePlayerSubmit': ['players'], 
+    
     // จัดการแมตช์ต่อไป: แก้ไข schedule
     'updateSchedule': ['schedule'], 
+    
     // ฟังก์ชันแสดงผล UI (ใช้เป็นจุดบันทึกสำรองและโหลดรูปภาพ)
     'updatePlayersList': ['players', 'teams'], 
-    // ฟังก์ชันสำหรับปุ่ม Manual Save
-    'manualSaveAllData': ['matchHistory', 'teams', 'players', 'schedule'] 
+    
+    // ฟังก์ชันสำหรับปุ่ม Manual Save (ต้องเปลี่ยนชื่อเป็นฟังก์ชันจริงที่เรียกใช้)
+    'manualSaveAllData': ['matchHistory', 'teams', 'players', 'schedule', 'playerRecords', 'nextMatches'], // เพิ่ม keys ที่เหลือ
+    
     // *** NEW FIX: เพิ่มฟังก์ชันอัปโหลดโลโก้ทีม (สำคัญมาก) ***
     'handleLogoUpload': ['teams'], 
+    
     // *** NEW FIX: เพิ่มฟังก์ชันอัปโหลดรูปนักกีฬา (สำคัญมาก) ***
     'handlePlayerImageUpload': ['players'] 
 };
@@ -5738,68 +5745,13 @@ async function loadFromFirestore(structName) {
 }
 
 // -----------------------------------------------
-// 3. Function Wrapping Logic
+// 5. เปิดใช้งาน Auto-Save Logic
 // -----------------------------------------------
 
-/**
- * ห่อหุ้มฟังก์ชันเดิมเพื่อเพิ่มขั้นตอนการบันทึกข้อมูลอัตโนมัติ
- * @param {string} funcName - ชื่อฟังก์ชันที่จะห่อหุ้ม
- * @param {Array<string>} saveKeys - Array ของชื่อโครงสร้างข้อมูลที่ต้องบันทึกหลังจากฟังก์ชันทำงาน
- */
-function wrapFunction(funcName, saveKeys) {
-    // ตรวจสอบว่าฟังก์ชันเดิมมีอยู่จริงหรือไม่
-    if (typeof window[funcName] === 'function') {
-        const originalFunction = window[funcName];
-        
-        // ห่อหุ้มฟังก์ชันเดิมด้วยฟังก์ชันใหม่
-        window[funcName] = function() {
-            // 1. เรียกใช้งานฟังก์ชันเดิมก่อน
-            const result = originalFunction.apply(this, arguments); 
-            
-            // 2. บันทึกข้อมูลที่เกี่ยวข้องอัตโนมัติ
-            saveKeys.forEach(saveData);
-            
-            console.log(`Function '${funcName}' executed and auto-saved data.`);
-            return result;
-        };
-    } else {
-        console.warn(`Original function '${funcName}' not found. Cannot set auto-save.`);
-    }
-}
-
-// 4.3 (สำคัญ) เรียก UI Rendering Functions ทันทีหลังโหลดข้อมูล
-    
-    // A. ฟังก์ชันตารางคะแนน (ใช้ข้อมูล teams และ matchHistory)
-    if (typeof updateLeaderboard === 'function') {
-        updateLeaderboard(); 
-    }
-    
-    // B. *** โค้ดที่ถูกต้อง: บังคับให้ UI รายชื่อทีมแสดงผล ***
-    // จากการตรวจสอบโค้ดจริง ฟังก์ชันนี้ใช้ในการวาดรายชื่อทีมในส่วนจัดการทีม
-    if (typeof updateTeamManagersList === 'function') { 
-        updateTeamManagersList(); 
-        console.log("Called: updateTeamManagersList");
-    }
-
-    // ฟังก์ชันที่ 1: อัปเดต Dropdown (ใช้สำหรับเลือกทีมในฟอร์มต่างๆ)
-    if (typeof updateTeamDropdown === 'function') { 
-        updateTeamDropdown(); 
-        console.log("Called: updateTeamDropdown");
-    }
-    
-    // ฟังก์ชันที่ 2: อัปเดตรายชื่อผู้เล่น (ใช้สำหรับเลือกนักกีฬาในฟอร์มต่างๆ)
-    if (typeof updatePlayersList === 'function') { 
-        updatePlayersList(); 
-        console.log("Called: updatePlayersList");
-    }
-    
-    // ฟังก์ชันที่ 3: อัปเดตรายชื่อทีมในหน้า Match ต่อไป (ถ้ามี)
-    if (typeof updateSchedule === 'function') { 
-        updateSchedule(); 
-        console.log("Called: updateSchedule");
-    }
+// วนลูปเรียกใช้ wrapFunction สำหรับทุกฟังก์ชันที่กำหนดไว้
+Object.keys(FUNCTIONS_TO_WRAP).forEach(funcName => {
+    wrapFunction(funcName, FUNCTIONS_TO_WRAP[funcName]);
 });
-
 <script type="module">
     // 1. นำเข้า Firebase Modules ที่จำเป็น
     // - initializeApp: สำหรับเริ่มการทำงานของ Firebase
