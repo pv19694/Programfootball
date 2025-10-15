@@ -2461,7 +2461,7 @@ function handlePlayerSubmit(event) {
             players[playerIndex].phone = phone || null;
             players[playerIndex].isManager = isManager;
             
-            // *** START OF IMAGE COMPRESSION LOGIC (Edit) ***
+            // *** START OF ASYNCHRONOUS COMPRESSION AND SAVE (Edit) ***
             if (photoFile) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
@@ -2478,18 +2478,20 @@ function handlePlayerSubmit(event) {
                         const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7); 
                         
                         players[playerIndex].photo = compressedBase64; // ใช้ Base64 ที่บีบอัด
-                        saveToDatabase(); // <<< เพิ่มการบันทึกใน Asynchronous Block
+                        
+                        // *** บันทึกและอัปเดต UI ที่นี่เท่านั้น เพื่อเลี่ยง Wrapper ***
+                        saveToDatabase(); 
                         finishPlayerEdit(name);
                     };
                     img.src = e.target.result;
                 };
                 reader.readAsDataURL(photoFile);
             } else {
-                // ถ้าไม่มีไฟล์ใหม่ถูกเลือก
-                saveToDatabase(); // ถ้ามีการแก้ไขข้อมูลอื่นโดยไม่มีรูปใหม่ ก็ต้องบันทึก
+                // ถ้าไม่มีไฟล์ใหม่ถูกเลือก ข้อมูลจะถูกบันทึกทันที (Synchronous)
+                saveToDatabase(); 
                 finishPlayerEdit(name);
             }
-            // *** END OF IMAGE COMPRESSION LOGIC (Edit) ***
+            // *** END OF ASYNCHRONOUS COMPRESSION AND SAVE (Edit) ***
         }
     } 
     // ----------------------------------------------------------------
@@ -2508,7 +2510,7 @@ function handlePlayerSubmit(event) {
             createdAt: new Date()
         };
         
-        // *** START OF IMAGE COMPRESSION LOGIC (Add New) ***
+        // *** START OF ASYNCHRONOUS COMPRESSION AND SAVE (Add New) ***
         if (photoFile) {
             const reader = new FileReader();
             
@@ -2525,13 +2527,11 @@ function handlePlayerSubmit(event) {
                     // บีบอัด: ลดคุณภาพเหลือ 70% และแปลงเป็น JPEG
                     const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7); 
                     
-                    newPlayer.photo = compressedBase64; // ใช้ Base64 ที่บีบอัด
+                    newPlayer.photo = compressedBase64; 
                     players.push(newPlayer);
                     
-                    // *** เพิ่มการบันทึกใน Asynchronous Block เพื่อให้แน่ใจว่า Base64 ถูกเซฟ ***
+                    // *** บันทึกและอัปเดต UI ที่นี่เท่านั้น เพื่อเลี่ยง Wrapper ***
                     saveToDatabase(); 
-                    
-                    // การเรียกฟังก์ชัน UI 
                     updatePlayersList();
                     updateDashboardStats();
                     updateTeamManagersList();
@@ -2553,10 +2553,10 @@ function handlePlayerSubmit(event) {
             clearPlayerForm();
             showSuccessMessage(`เพิ่มผู้เล่น "${name}" สำเร็จ!`);
         }
-        // *** END OF IMAGE COMPRESSION LOGIC (Add New) ***
+        // *** END OF ASYNCHRONOUS COMPRESSION AND SAVE (Add New) ***
     }
 }
-
+        
         function finishPlayerEdit(name) {
             saveToDatabase();
             updatePlayersList();
